@@ -1,0 +1,5 @@
+copperegg:
+  apikey: [your api key here]
+aws:
+  access_key_id: "YourAWSAccessKey"
+  secret_access_key: "SuperSecretAWSKeyGoesHere"
