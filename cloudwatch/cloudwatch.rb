@@ -7,7 +7,7 @@ require 'getoptlong'
 require 'copperegg'
 require 'json'
 require 'yaml'
-require 'aws'
+require 'aws-sdk'
 
 ####################################################################
 
@@ -406,7 +406,7 @@ puts "Checking for existence of metric group for AWS"
 ce_metrics = CopperEgg::Metrics.new(apikey, @apihost)
 mgroup = ce_metrics.metric_group("aws_ec2")
 
-if !mgroup.nil?
+if mgroup.nil?
   # no metric group found - create one
   create_aws_metric_groups(apikey)
 end
