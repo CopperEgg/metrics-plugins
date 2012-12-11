@@ -7,7 +7,7 @@ require 'getoptlong'
 require 'copperegg'
 require 'json'
 require 'yaml'
-require 'aws'
+require 'aws-sdk'
 
 ####################################################################
 
@@ -84,13 +84,19 @@ end
 def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions)
 
   cl = AWS::CloudWatch::Client.new()
-  stats = cl.get_metric_statistics( :namespace => namespace,
-                                  :metric_name => metric_name,
-                                  :dimensions => dimensions,
-                                  :start_time => (Time.now - 13200).to_time.iso8601,
-                                  :end_time => Time.now.utc.iso8601,
-                                  :period => 60,
-                                  :statistics => stats)
+
+  begin
+    stats = cl.get_metric_statistics( :namespace => namespace,
+                                    :metric_name => metric_name,
+                                    :dimensions => dimensions,
+                                    :start_time => (Time.now - 13200).to_time.iso8601,
+                                    :end_time => Time.now.utc.iso8601,
+                                    :period => 60,
+                                    :statistics => stats)
+  rescue Exception => e
+    puts "Error getting cloudwatch stats: #{metric_name} [skipping]"
+    stats = nil
+  end
   return stats
 end
 
@@ -117,21 +123,21 @@ def monitor_aws(apikey)
     dbs.each do |db|
       metrics = {}
       instance = db.db_instance_id
-      
+
       stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats[:datapoints].length > 0
+      if stats != nil && stats[:datapoints].length > 0
         puts "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
         metrics["DiskQueueDepth"] = stats[:datapoints][0][:average].to_i
       end
 
       stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats[:datapoints].length > 0
+      if stats != nil && stats[:datapoints].length > 0
         puts "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
         metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
       end
 
       stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats[:datapoints].length > 0
+      if stats != nil && stats[:datapoints].length > 0
         puts "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
         metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
       end
@@ -147,25 +153,25 @@ def monitor_aws(apikey)
       instance = lb.name
 
       stats = fetch_cloudwatch_stats("AWS/ELB", "Latency", ['Average'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats[:datapoints].length > 0
+      if stats != nil && stats[:datapoints].length > 0
         puts "#{lb.name} : Latency : #{stats[:datapoints][0][:average]*1000} ms" if @debug
         metrics["Latency"] = stats[:datapoints][0][:average]*1000
       end
 
       stats = fetch_cloudwatch_stats("AWS/ELB", "RequestCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats[:datapoints].length > 0
+      if stats != nil && stats[:datapoints].length > 0
         puts "#{lb.name} : RequestCount : #{stats[:datapoints][0][:sum].to_i} requests" if @debug
         metrics["RequestCount"] = stats[:datapoints][0][:sum].to_i
       end
 
       stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_2XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats[:datapoints].length > 0
+      if stats != nil && stats[:datapoints].length > 0
         puts "#{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][0][:sum].to_i} Successes" if @debug
         metrics["HTTPCode_Backend_2XX"] = stats[:datapoints][0][:sum].to_i
       end
 
       stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats[:datapoints].length > 0
+      if stats != nil && stats[:datapoints].length > 0
         puts "#{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][0][:sum].to_i} Errors" if @debug
         metrics["HTTPCode_Backend_5XX"] = stats[:datapoints][0][:sum].to_i
       end
@@ -176,7 +182,7 @@ def monitor_aws(apikey)
     metrics = {}
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["Total"] = stats[:datapoints][-1][:maximum].to_f
     end
@@ -184,49 +190,49 @@ def monitor_aws(apikey)
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonEC2"},
                                                       {:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["EC2"] = stats[:datapoints][-1][:maximum].to_f
     end
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonRDS"},
                                                       {:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["RDS"] = stats[:datapoints][-1][:maximum].to_f
     end
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonS3"},
                                                       {:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["S3"] = stats[:datapoints][-1][:maximum].to_f
     end
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonRoute53"},
                                                       {:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["Route53"] = stats[:datapoints][-1][:maximum].to_f
     end
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"SimpleDB"},
                                                       {:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["SimpleDB"] = stats[:datapoints][-1][:maximum].to_f
     end
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonSNS"},
                                                       {:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["SNS"] = stats[:datapoints][-1][:maximum].to_f
     end
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AWSDataTransfer"},
                                                       {:name=>"Currency", :value=>"USD"}])
-    if stats[:datapoints].length > 0
+    if stats != nil && stats[:datapoints].length > 0
       puts stats[:datapoints][-1][:maximum].to_f if @debug
       metrics["DataTransfer"] = stats[:datapoints][-1][:maximum].to_f
     end
@@ -344,7 +350,7 @@ return
 
   widgets = {}
 
-  # Create a widget  
+  # Create a widget
   widgetcfg = {}
   widgetcfg["type"] = "metric"
   widgetcfg["style"] = "both"
@@ -400,7 +406,7 @@ puts "Checking for existence of metric group for AWS"
 ce_metrics = CopperEgg::Metrics.new(apikey, @apihost)
 mgroup = ce_metrics.metric_group("aws_ec2")
 
-if !mgroup.nil?
+if mgroup.nil?
   # no metric group found - create one
   create_aws_metric_groups(apikey)
 end
