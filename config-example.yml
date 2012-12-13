@@ -1,5 +1,26 @@
 copperegg:
   apikey: [your api key here]
+  dashboard: "AWS Monitoring"
 aws:
   access_key_id: "YourAWSAccessKey"
   secret_access_key: "SuperSecretAWSKeyGoesHere"
+  services:
+    - elb
+    - rds
+    - ec2
+    - billing
+elb:
+  group_name: "AWSelb"
+  group_label: "ELB Metrics"
+
+rds:
+  group_name: "AWSrds"
+  group_label: "RDS Metrics"
+
+ec2:
+  group_name: "AWSec2"
+  group_label: "EC2 Metrics"
+
+billing:
+  group_name: "AWSbilling"
+  group_label: "AWS Billing"
