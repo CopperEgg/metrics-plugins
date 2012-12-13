@@ -108,8 +108,7 @@ Note that you can add widgets to the AWS dashboard which display data from any m
 
 Have a look at the CopperEgg Demo site, to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring here: <https://app.copperegg.com/demo>
 
-
-##6. Don't forget that you can set alerts and notifications based on the custom metrics being gathered from AWS, just as simply as setting up all of your CopperEgg system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
+Don't forget that you can set alerts and notifications based on the custom metrics being gathered from AWS, just as simply as setting up all of your CopperEgg system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
 
 
 
