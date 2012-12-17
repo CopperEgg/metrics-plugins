@@ -28,24 +28,22 @@ Note that the ruby developer packages need to be installed, as described below. 
 If you have any difficulties with the installation of Nokogiri, please refer to 'Installing Nokogiri' here: <http://nokogiri.org/tutorials/installing_nokogiri.html>
 
 
-If you have any difficulties with the installation of nokogiri, please see <
-
-
 On newer Debian/Ubuntu, run:
 
-    sudo apt-get -y install ruby rubygems ruby-bundler libopenssl-ruby unzip
-    sudo apt-get -y install ruby1.8-dev ri1.8 rdoc1.8 irb1.8
-    sudo apt-get -y install libreadline-ruby1.8 libruby1.8
-    sudo apt-get -y install libxslt-dev libxml2-dev
-    sudo gem install nokogiri
+    sudo apt-get -y install ruby rubygems ruby-bundler libopenssl-ruby unzip  # needed for ruby
+    sudo apt-get -y install ruby1.8-dev ri1.8 rdoc1.8 irb1.8  # ruby dev packages
+    sudo apt-get -y install libreadline-ruby1.8 libruby1.8  # ruby libs
+    sudo apt-get -y install libxslt-dev libxml2-dev build-essential # dependencies for aws gem
+    gem install nokogiri
+    bundle install
 
 On RedHat/Fedora/CentOS/Amazon Linux, run:
 
     sudo yum install -y ruby rubygems
     sudo yum install -y gcc g++ make automake autoconf curl-devel openssl-devel zlib-devel httpd-devel
     sudo yum install -y ruby-rdoc ruby-devel libxml2 libxml2-devel libxslt libxslt-devel
-    sudo yum update
     gem install bundler
+    bundle install
 
 On Mac OS X, we highly recommend installing RVM, the Ruby Version Manager. The most simple way to install and use RVM is to install JewelryBox, the official RVM GUI, found here: <http://unfiniti.com/software/mac/jewelrybox>
 RVM can also be used from the command line; please see the RVM website: <https://rvm.io>
@@ -60,11 +58,12 @@ RVM can also be used from the command line; please see the RVM website: <https:/
 
 Copy the example config into config.yml, and edit with your favorite editor:
 
-    cp config-example.yml config.yml; nano config.yml
+    cp config-example.yml config.yml
+    nano config.yml
 
-  - Enter your CopperEgg User API Key:  replace "[your api key here]" with your api key, found in the settings tab of app.copperegg.com.
-  - Enter your AWS access_key_id: replace "YourAWSAccessKey" with your aws access key id.
-  - Enter your AWS secret_access_key: replace "SuperSecretAWSKeyGoesHere" with your aws secret access key.
+  - Enter your CopperEgg User API Key:  replace "YOUR\_APIKEY" with your api key, found in the settings tab of app.copperegg.com.
+  - Enter your AWS access\_key\_id: replace "YourAWSAccessKey" with your aws access key id.
+  - Enter your AWS secret\_access\_key: replace "SuperSecretAWSKeyGoesHere" with your aws secret access key.
   - Optionally, change your custom dashboard name, by replacing "AWS Monitoring".
   - Optionally, remove any of the aws services that you do NOT want to monitor from the list:
     - elb
@@ -88,7 +87,7 @@ From the metrics-plugins directory:
 
 From the metrics-plugins directory:
 
-  ruby ./cloudwatch/cloudwatch.rb
+    ruby ./cloudwatch/cloudwatch.rb
 
 You should see some output saying that metric groups and a dashboard has been created, and services are being monitored.
 
