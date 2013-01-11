@@ -3,6 +3,7 @@
 # Copyright 2012 CopperEgg Corporation.  All rights reserved.
 #
 
+require 'rubygems'
 require 'getoptlong'
 require 'copperegg'
 require 'json'

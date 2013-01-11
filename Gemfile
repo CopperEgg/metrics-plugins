@@ -1,3 +1,3 @@
 source :rubygems
-gem "copperegg"
+gem "copperegg", '~> 0.5.3'
 gem "aws-sdk"

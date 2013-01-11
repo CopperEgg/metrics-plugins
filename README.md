@@ -34,16 +34,12 @@ On newer Debian/Ubuntu, run:
     sudo apt-get -y install ruby1.8-dev ri1.8 rdoc1.8 irb1.8  # ruby dev packages
     sudo apt-get -y install libreadline-ruby1.8 libruby1.8  # ruby libs
     sudo apt-get -y install libxslt-dev libxml2-dev build-essential # dependencies for aws gem
-    gem install nokogiri
-    bundle install
 
 On RedHat/Fedora/CentOS/Amazon Linux, run:
 
     sudo yum install -y ruby rubygems
     sudo yum install -y gcc g++ make automake autoconf curl-devel openssl-devel zlib-devel httpd-devel
     sudo yum install -y ruby-rdoc ruby-devel libxml2 libxml2-devel libxslt libxslt-devel
-    gem install bundler
-    bundle install
 
 On Mac OS X, we highly recommend installing RVM, the Ruby Version Manager. The most simple way to install and use RVM is to install JewelryBox, the official RVM GUI, found here: <http://unfiniti.com/software/mac/jewelrybox>
 RVM can also be used from the command line; please see the RVM website: <https://rvm.io>
@@ -80,8 +76,9 @@ And of course, save the file before closing your editor.
 Ensure that current ruby gems are installed.
 
 From the metrics-plugins directory:
-    sudo gem update
-    bundle install
+    gem install nokogiri --no-ri --no-rdoc
+    gem install aws-sdk --no-ri --no-rdoc
+    gem install copperegg -v 0.5.3 --no-ri --no-rdoc
 
 ##4. Run the agent
 
