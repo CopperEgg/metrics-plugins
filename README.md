@@ -78,7 +78,7 @@ Ensure that current ruby gems are installed.
 From the metrics-plugins directory:
     gem install nokogiri --no-ri --no-rdoc
     gem install aws-sdk --no-ri --no-rdoc
-    gem install copperegg -v 0.5.3 --no-ri --no-rdoc
+    gem install copperegg -v 0.6.0 --no-ri --no-rdoc
 
 ##4. Run the agent
 
