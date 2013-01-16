@@ -4,26 +4,35 @@ aws:
   access_key_id: "YourAWSAccessKey"
   secret_access_key: "SuperSecretAWSKeyGoesHere"
   services:
-    - elb
-    - rds
-    - ec2
-    - billing
+    - "elb"
+    - "rds"
+    - "ec2"
+    - "billing"
+  regions:
+    - "us-east-1"
+    #- "us-west-1"
+    #- "us-west-2"
+    #- "eu-west-1"
+    #- "sa-east-1"
+    #- "ap-northeast-1"
+    #- "ap-southeast-1"
+    #- "ap-southeast-2"
 elb:
-  group_name: "AWSelb"
+  group_name: "aws_elb"
   group_label: "ELB Metrics"
   dashboard: "AWS ELB"
 
 rds:
-  group_name: "AWSrds"
+  group_name: "aws_rds"
   group_label: "RDS Metrics"
   dashboard: "AWS RDS"
 
 ec2:
-  group_name: "AWSec2"
-  group_label: "EC2 Metrics"
+  group_name: "aws_ec2_counts"
+  group_label: "EC2 Counts"
   dashboard: "AWS EC2"
 
 billing:
-  group_name: "AWSbilling"
+  group_name: "aws_billing"
   group_label: "AWS Billing"
   dashboard: "AWS Billing"

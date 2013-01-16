@@ -66,6 +66,7 @@ Copy the example config into config.yml, and edit with your favorite editor:
     - rds
     - ec2
     - billing
+  - Optionally, uncomment (remove the #) any of the amazon regions that you use.
 
 Be sure to keep the same spacing supplied in the original file.
 And of course, save the file before closing your editor.
