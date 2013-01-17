@@ -65,7 +65,7 @@ apikey = nil
 @debug = false
 @freq = 60  # update frequency in seconds
 @interupted = false
-@supported_services = [ 'elb', 'rds', 'ec2', 'billing' ]
+@supported_services = [ 'ec2', 'elb', 'rds', 'billing' ]
 @worker_pids = []
 
 # Options and examples:
@@ -176,42 +176,54 @@ def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions, start_time
   return stats
 end
 
-def monitor_aws_rds(group_name)
-  log "Monitoring AWS RDS.."
 
-  while !@interupted do
+def monitor_aws_ec2(group_name)
+  log "Monitoring AWS EC2.."
+
+  while !@interrupted do
     return if @interrupted
-    rds ||= AWS::RDS.new()
+    total_ec2_counts = {}
+    total_ec2_counts['running'] = 0
+    total_ec2_counts['stopped'] = 0
+    total_ec2_counts['pending'] = 0
+    total_ec2_counts['shutting_down'] = 0
+    total_ec2_counts['terminated'] = 0
+    total_ec2_counts['stopping'] = 0
+    post_total = true
 
-    dbs = rds.db_instances()
-    dbs.each do |db|
-      return if @interrupted
-      metrics = {}
-      instance = db.db_instance_id
+    @regions.each do |region|
+      region_ec2_counts = {}
+      region_ec2_counts['running'] = 0
+      region_ec2_counts['stopped'] = 0
+      region_ec2_counts['pending'] = 0
+      region_ec2_counts['shutting_down'] = 0
+      region_ec2_counts['terminated'] = 0
+      region_ec2_counts['stopping'] = 0
 
-      stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
-        metrics["DiskQueueDepth"] = stats[:datapoints][0][:average].to_i
-      else
-        metrics["DiskQueueDepth"] = 0
+      begin
+        AWS.config({
+          :ec2_endpoint => "ec2.#{region}.amazonaws.com"
+        })
+        ec2 = AWS::EC2.new()
+
+        instances = ec2.instances
+        instances.each do |instance|
+          status = instance.status.to_s
+          region_ec2_counts[instance.status.to_s.downcase] += 1
+          total_ec2_counts[instance.status.to_s.downcase] += 1
+        end
+
+        log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @debug
+        CopperEgg::MetricSample.save(group_name, region, Time.now.to_i, region_ec2_counts)
+      rescue Exception => e
+        puts "Exception getting ec2 instances for region #{region}:\n#{e.to_s}.\nIgnoring and moving on"
+        p e if @debug
+        post_total = false  # don't post a possibly incorrect total
       end
 
-      stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
-        metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
-      end
-
-      stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
-        metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
-      end
-
-      log "rds: #{group_name} - #{instance} - #{metrics}" if @debug
-      CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
     end
+
+    CopperEgg::MetricSample.save(group_name, "total", Time.now.to_i, total_ec2_counts) if post_total
 
     sleep_until @freq
   end
@@ -260,6 +272,47 @@ def monitor_aws_elb(group_name)
       end
 
       log "elb: #{group_name} - #{instance} - #{metrics}" if @debug
+      CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
+    end
+
+    sleep_until @freq
+  end
+end
+
+def monitor_aws_rds(group_name)
+  log "Monitoring AWS RDS.."
+
+  while !@interupted do
+    return if @interrupted
+    rds ||= AWS::RDS.new()
+
+    dbs = rds.db_instances()
+    dbs.each do |db|
+      return if @interrupted
+      metrics = {}
+      instance = db.db_instance_id
+
+      stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
+      if stats != nil && stats[:datapoints].length > 0
+        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
+        metrics["DiskQueueDepth"] = stats[:datapoints][0][:average].to_i
+      else
+        metrics["DiskQueueDepth"] = 0
+      end
+
+      stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
+      if stats != nil && stats[:datapoints].length > 0
+        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
+        metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
+      end
+
+      stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
+      if stats != nil && stats[:datapoints].length > 0
+        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
+        metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
+      end
+
+      log "rds: #{group_name} - #{instance} - #{metrics}" if @debug
       CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
     end
 
@@ -353,56 +406,26 @@ def monitor_aws_billing(group_name)
   end
 end
 
-def monitor_aws_ec2(group_name)
-  log "Monitoring AWS EC2.."
 
-  while !@interrupted do
-    return if @interrupted
-    total_ec2_counts = {}
-    total_ec2_counts['running'] = 0
-    total_ec2_counts['stopped'] = 0
-    total_ec2_counts['pending'] = 0
-    total_ec2_counts['shutting_down'] = 0
-    total_ec2_counts['terminated'] = 0
-    total_ec2_counts['stopping'] = 0
-    post_total = true
-
-    @regions.each do |region|
-      region_ec2_counts = {}
-      region_ec2_counts['running'] = 0
-      region_ec2_counts['stopped'] = 0
-      region_ec2_counts['pending'] = 0
-      region_ec2_counts['shutting_down'] = 0
-      region_ec2_counts['terminated'] = 0
-      region_ec2_counts['stopping'] = 0
-
-      begin
-        AWS.config({
-          :ec2_endpoint => "ec2.#{region}.amazonaws.com"
-        })
-        ec2 = AWS::EC2.new()
-
-        instances = ec2.instances
-        instances.each do |instance|
-          status = instance.status.to_s
-          region_ec2_counts[instance.status.to_s.downcase] += 1
-          total_ec2_counts[instance.status.to_s.downcase] += 1
-        end
-
-        log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @debug
-        CopperEgg::MetricSample.save(group_name, region, Time.now.to_i, region_ec2_counts)
-      rescue Exception => e
-        puts "Exception getting ec2 instances for region #{region}:\n#{e.to_s}.\nIgnoring and moving on"
-        p e if @debug
-        post_total = false  # don't post a possibly incorrect total
-      end
-
-    end
-
-    CopperEgg::MetricSample.save(group_name, "total", Time.now.to_i, total_ec2_counts) if post_total
-
-    sleep_until @freq
+def ensure_ec2_metric_group(metric_group, group_name, group_label)
+  if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
+    log "Creating EC2 metric group"
+    metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
+  else
+    log "Updating EC2 metric group"
+    metric_group.frequency = @freq
+    #metric_group.is_hidden = false
   end
+
+  metric_group.metrics = []
+  metric_group.metrics << {:type => "ce_gauge",   :name => "running",        :unit => "Instances"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "stopped",        :unit => "Instances"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "pending",        :unit => "Instances"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "shutting_down",  :unit => "Instances"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "terminated",     :unit => "Instances"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "stopping",       :unit => "Instances"}
+  metric_group.save
+  metric_group
 end
 
 
@@ -440,28 +463,6 @@ def ensure_rds_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "DiskQueueDepth"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "ReadLatency",     :unit => "ms"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "WriteLatency",     :unit => "ms"}
-  metric_group.save
-  metric_group
-end
-
-
-def ensure_ec2_metric_group(metric_group, group_name, group_label)
-  if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating EC2 metric group"
-    metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
-  else
-    log "Updating EC2 metric group"
-    metric_group.frequency = @freq
-    #metric_group.is_hidden = false
-  end
-
-  metric_group.metrics = []
-  metric_group.metrics << {:type => "ce_gauge",   :name => "running",        :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "stopped",        :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "pending",        :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "shutting_down",  :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "terminated",     :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "stopping",       :unit => "Instances"}
   metric_group.save
   metric_group
 end
@@ -510,12 +511,12 @@ end
 ####################################################################
 
 def monitor_aws(service)
-  if service == "elb"
+  if service == "ec2"
+    monitor_aws_ec2(@config[service]["group_name"])
+  elsif service == "elb"
     monitor_aws_elb(@config[service]["group_name"])
   elsif service == "rds"
     monitor_aws_rds(@config[service]["group_name"])
-  elsif service == "ec2"
-    monitor_aws_ec2(@config[service]["group_name"])
   elsif service == "billing"
     monitor_aws_billing(@config[service]["group_name"])
   else
@@ -524,12 +525,12 @@ def monitor_aws(service)
 end
 
 def ensure_metric_group(metric_group, service)
-  if service == "elb"
+  if service == "ec2"
+    return ensure_ec2_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
+  elsif service == "elb"
     return ensure_elb_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
   elsif service == "rds"
     return ensure_rds_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
-  elsif service == "ec2"
-    return ensure_ec2_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
   elsif service == "billing"
     return ensure_billing_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
   else
