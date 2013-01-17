@@ -365,12 +365,9 @@ def monitor_aws_ec2(group_name)
     total_ec2_counts['shutting_down'] = 0
     total_ec2_counts['terminated'] = 0
     total_ec2_counts['stopping'] = 0
-    @regions.each do |region|
-      AWS.config({
-        :ec2_endpoint => "ec2.#{region}.amazonaws.com"
-      })
-      ec2 = AWS::EC2.new()
+    post_total = true
 
+    @regions.each do |region|
       region_ec2_counts = {}
       region_ec2_counts['running'] = 0
       region_ec2_counts['stopped'] = 0
@@ -379,18 +376,30 @@ def monitor_aws_ec2(group_name)
       region_ec2_counts['terminated'] = 0
       region_ec2_counts['stopping'] = 0
 
-      instances = ec2.instances
-      instances.each do |instance|
-        status = instance.status.to_s
-        region_ec2_counts[instance.status.to_s.downcase] += 1
-        total_ec2_counts[instance.status.to_s.downcase] += 1
+      begin
+        AWS.config({
+          :ec2_endpoint => "ec2.#{region}.amazonaws.com"
+        })
+        ec2 = AWS::EC2.new()
+
+        instances = ec2.instances
+        instances.each do |instance|
+          status = instance.status.to_s
+          region_ec2_counts[instance.status.to_s.downcase] += 1
+          total_ec2_counts[instance.status.to_s.downcase] += 1
+        end
+
+        log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @debug
+        CopperEgg::MetricSample.save(group_name, region, Time.now.to_i, region_ec2_counts)
+      rescue Exception => e
+        puts "Exception getting ec2 instances for region #{region}:\n#{e.to_s}.\nIgnoring and moving on"
+        p e if @debug
+        post_total = false  # don't post a possibly incorrect total
       end
 
-      log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @debug
-      CopperEgg::MetricSample.save(group_name, region, Time.now.to_i, region_ec2_counts)
-
     end
-    CopperEgg::MetricSample.save(group_name, "total", Time.now.to_i, total_ec2_counts)
+
+    CopperEgg::MetricSample.save(group_name, "total", Time.now.to_i, total_ec2_counts) if post_total
 
     sleep_until @freq
   end
