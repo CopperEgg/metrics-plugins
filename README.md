@@ -37,9 +37,9 @@ On newer Debian/Ubuntu, run:
 
 On RedHat/Fedora/CentOS/Amazon Linux, run:
 
-    sudo yum install -y ruby rubygems
+    sudo yum install -y ruby rubygems ruby-rdoc ruby-devel  # unless you use rvm
     sudo yum install -y gcc g++ make automake autoconf curl-devel openssl-devel zlib-devel httpd-devel
-    sudo yum install -y ruby-rdoc ruby-devel libxml2 libxml2-devel libxslt libxslt-devel
+    sudo yum install -y libxml2 libxml2-devel libxslt libxslt-devel
 
 On Mac OS X, we highly recommend installing RVM, the Ruby Version Manager. The most simple way to install and use RVM is to install JewelryBox, the official RVM GUI, found here: <http://unfiniti.com/software/mac/jewelrybox>
 RVM can also be used from the command line; please see the RVM website: <https://rvm.io>
@@ -77,6 +77,7 @@ And of course, save the file before closing your editor.
 Ensure that current ruby gems are installed.
 
 From the metrics-plugins directory:
+
     gem install nokogiri --no-ri --no-rdoc
     gem install aws-sdk --no-ri --no-rdoc
     gem install copperegg -v 0.6.0 --no-ri --no-rdoc

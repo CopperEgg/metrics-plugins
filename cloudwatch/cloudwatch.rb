@@ -484,7 +484,8 @@ end
 def ensure_aws_dashboard(service, metric_group, identifiers)
   dashboards = CopperEgg::CustomDashboard.find
   dashboard_name = @config[service]["dashboard"] || "AWS #{service}"
-  dashboard = dashboards.detect {|d| d.name == dashboard_name}
+  dashboard = nil
+  dashboard = dashboards.detect {|d| d.name == dashboard_name} if dashboards
   if !dashboard.nil?
     log "Dashboard #{dashboard_name} exists.  Skipping create"
     return
@@ -533,7 +534,6 @@ end
 # metric group check
 log "Checking for existence of AWS metric groups"
 
-metric_groups = CopperEgg::MetricGroup.find
 
 trap("INT") { parent_interrupt }
 trap("TERM") { parent_interrupt }
@@ -552,7 +552,9 @@ trap("TERM") { parent_interrupt }
     end
 
     # create/update metric group
-    metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]}
+    metric_groups = CopperEgg::MetricGroup.find
+    metric_group = nil
+    metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]} if metric_groups
     metric_group = ensure_metric_group(metric_group, service)
 
     # create dashboard
