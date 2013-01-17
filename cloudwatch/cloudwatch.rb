@@ -121,6 +121,11 @@ if @services.length == 0
   exit
 end
 
+@aws_config_default = { :access_key_id => @config["aws"]["access_key_id"],
+                       :secret_access_key => @config["aws"]["secret_access_key"],
+                       :max_retries => 2,
+                       :http_open_timeout => 5,
+                       :http_read_timeout => 10 }
 
 ####################################################################
 def child_interrupt
@@ -159,18 +164,24 @@ end
 ####################################################################
 def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions, start_time=(Time.now - @freq).iso8601)
 
-  @cl ||= AWS::CloudWatch::Client.new()
+  # need to create it fresh every time because we can switch regions arbitrarily
+  cl = AWS::CloudWatch::Client.new()
 
   begin
-    stats = @cl.get_metric_statistics( :namespace => namespace,
-                                    :metric_name => metric_name,
-                                    :dimensions => dimensions,
-                                    :start_time => start_time,
-                                    :end_time => Time.now.utc.iso8601,
-                                    :period => @freq,
-                                    :statistics => stats)
+    stats_hash = { :namespace => namespace,
+                   :metric_name => metric_name,
+                   :dimensions => dimensions,
+                   :start_time => start_time,
+                   :end_time => Time.now.utc.iso8601,
+                   :period => @freq,
+                   :statistics => stats }
+    stats = cl.get_metric_statistics(stats_hash)
+
   rescue Exception => e
     log "Error getting cloudwatch stats: #{metric_name} [skipping]"
+    log "Stats hash: #{stats_hash}" if @debug
+    log e.inspect if @debug
+    log e.backtrace.join("\n") if @debug
     stats = nil
   end
   return stats
@@ -201,9 +212,9 @@ def monitor_aws_ec2(group_name)
       region_ec2_counts['stopping'] = 0
 
       begin
-        AWS.config({
+        AWS.config(@aws_config_default.merge({
           :ec2_endpoint => "ec2.#{region}.amazonaws.com"
-        })
+        }))
         ec2 = AWS::EC2.new()
 
         instances = ec2.instances
@@ -216,8 +227,9 @@ def monitor_aws_ec2(group_name)
         log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @debug
         CopperEgg::MetricSample.save(group_name, region, Time.now.to_i, region_ec2_counts)
       rescue Exception => e
-        puts "Exception getting ec2 instances for region #{region}:\n#{e.to_s}.\nIgnoring and moving on"
-        p e if @debug
+        log "Exception getting ec2 instances for region #{region}: #{e.to_s}.\nIgnoring and moving on."
+        log e.inspect if @debug
+        log e.backtrace.join("\n") if @debug
         post_total = false  # don't post a possibly incorrect total
       end
 
@@ -234,45 +246,60 @@ def monitor_aws_elb(group_name)
 
   while !@interupted do
     return if @interrupted
-    elb ||= AWS::ELB.new()
 
-    lbs = elb.load_balancers()
-    lbs.each do |lb|
-      metrics = {}
-      instance = lb.name
+    @regions.each do |region|
+      begin
+        AWS.config(@aws_config_default.merge({
+          :elb_endpoint => "elasticloadbalancing.#{region}.amazonaws.com"
+        }))
+        elb = AWS::ELB.new()
 
-      stats = fetch_cloudwatch_stats("AWS/ELB", "Latency", ['Average'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "#{lb.name} : Latency : #{stats[:datapoints][0][:average]*1000} ms" if @debug
-        metrics["Latency"] = stats[:datapoints][0][:average]*1000
+        lbs = elb.load_balancers()
+        lbs.each do |lb|
+          metrics = {}
+          instance = lb.name
+
+          stats = fetch_cloudwatch_stats("AWS/ELB", "Latency", ['Average'], [{:name=>"LoadBalancerName", :value=>lb.name}])
+          if stats != nil && stats[:datapoints].length > 0
+            log "#{lb.name} : Latency : #{stats[:datapoints][0][:average]*1000} ms" if @debug
+            metrics["Latency"] = stats[:datapoints][0][:average]*1000
+          else
+            metrics["Latency"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/ELB", "RequestCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
+          if stats != nil && stats[:datapoints].length > 0
+            log "#{lb.name} : RequestCount : #{stats[:datapoints][0][:sum].to_i} requests" if @debug
+            metrics["RequestCount"] = stats[:datapoints][0][:sum].to_i
+          else
+            metrics["RequestCount"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_2XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
+          if stats != nil && stats[:datapoints].length > 0
+            log "#{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][0][:sum].to_i} Successes" if @debug
+            metrics["HTTPCode_Backend_2XX"] = stats[:datapoints][0][:sum].to_i
+          else
+            metrics["HTTPCode_Backend_2XX"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
+          if stats != nil && stats[:datapoints].length > 0
+            log "#{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][0][:sum].to_i} Errors" if @debug
+            metrics["HTTPCode_Backend_5XX"] = stats[:datapoints][0][:sum].to_i
+          else
+            metrics["HTTPCode_Backend_5XX"] = 0
+          end
+
+          log "elb: #{group_name} - #{instance} - #{metrics}" if @debug
+          CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
+        end
+
+      rescue Exception => e
+        log "Exception getting elb list for region #{region}:\n#{e.to_s}.\nIgnoring and moving on"
+        log e.inspect if @debug
+        log e.backtrace.join("\n") if @debug
       end
-
-      stats = fetch_cloudwatch_stats("AWS/ELB", "RequestCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "#{lb.name} : RequestCount : #{stats[:datapoints][0][:sum].to_i} requests" if @debug
-        metrics["RequestCount"] = stats[:datapoints][0][:sum].to_i
-      else
-        metrics["RequestCount"] = 0
-      end
-
-      stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_2XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "#{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][0][:sum].to_i} Successes" if @debug
-        metrics["HTTPCode_Backend_2XX"] = stats[:datapoints][0][:sum].to_i
-      else
-        metrics["HTTPCode_Backend_2XX"] = 0
-      end
-
-      stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "#{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][0][:sum].to_i} Errors" if @debug
-        metrics["HTTPCode_Backend_5XX"] = stats[:datapoints][0][:sum].to_i
-      else
-        metrics["HTTPCode_Backend_5XX"] = 0
-      end
-
-      log "elb: #{group_name} - #{instance} - #{metrics}" if @debug
-      CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
     end
 
     sleep_until @freq
@@ -284,36 +311,48 @@ def monitor_aws_rds(group_name)
 
   while !@interupted do
     return if @interrupted
-    rds ||= AWS::RDS.new()
+    @regions.each do |region|
+      begin
+        AWS.config(@aws_config_default.merge({
+          :rds_endpoint => "rds.#{region}.amazonaws.com"
+        }))
+        rds = AWS::RDS.new()
 
-    dbs = rds.db_instances()
-    dbs.each do |db|
-      return if @interrupted
-      metrics = {}
-      instance = db.db_instance_id
+        dbs = rds.db_instances()
+        dbs.each do |db|
+          return if @interrupted
+          metrics = {}
+          instance = db.db_instance_id
 
-      stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
-        metrics["DiskQueueDepth"] = stats[:datapoints][0][:average].to_i
-      else
-        metrics["DiskQueueDepth"] = 0
+          stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
+          if stats != nil && stats[:datapoints].length > 0
+            #log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
+            metrics["DiskQueueDepth"] = stats[:datapoints][0][:average].to_i
+          else
+            metrics["DiskQueueDepth"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
+          if stats != nil && stats[:datapoints].length > 0
+            #log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
+            metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
+          if stats != nil && stats[:datapoints].length > 0
+            #log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
+            metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
+          end
+
+          log "rds: #{group_name} - #{instance} - #{metrics}" if @debug
+          CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
+        end
+
+      rescue Exception => e
+        log "Exception getting rds list for region #{region}:\n#{e.to_s}.\nIgnoring and moving on"
+        log e.inspect if @debug
+        log e.backtrace.join("\n") if @debug
       end
-
-      stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
-        metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
-      end
-
-      stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
-      if stats != nil && stats[:datapoints].length > 0
-        log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
-        metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
-      end
-
-      log "rds: #{group_name} - #{instance} - #{metrics}" if @debug
-      CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
     end
 
     sleep_until @freq
@@ -573,16 +612,11 @@ trap("TERM") { parent_interrupt }
     child_pid = fork {
       trap("INT") { child_interrupt if !@interrupted }
       trap("TERM") { child_interrupt if !@interrupted }
-      AWS.config({
-        :access_key_id => @config["aws"]["access_key_id"],
-        :secret_access_key => @config["aws"]["secret_access_key"],
-        :max_retries => 2,
-        :http_open_timeout => 10,
-        :http_read_timeout => 15,
-      })
       monitor_aws(service)
     }
     @worker_pids.push child_pid
+
+    sleep 3  # Give aws api a little breathing space
 
   end
 end
