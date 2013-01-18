@@ -54,6 +54,7 @@ end
 opts = GetoptLong.new(
   ['--help',      '-h', GetoptLong::NO_ARGUMENT],
   ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
+  ['--verbose',   '-v', GetoptLong::NO_ARGUMENT],
   ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
   ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
@@ -63,6 +64,7 @@ config_file = "config.yml"
 apikey = nil
 @apihost = nil
 @debug = false
+@verbose = false
 @freq = 60  # update frequency in seconds
 @interupted = false
 @supported_services = [ 'ec2', 'elb', 'rds', 'billing' ]
@@ -76,6 +78,8 @@ opts.each do |opt, arg|
     exit
   when '--debug'
     @debug = true
+  when '--verbose'
+    @verbose = true
   when '--config'
     config_file = arg
   when '--apikey'
@@ -84,6 +88,8 @@ opts.each do |opt, arg|
     CopperEgg::Api.host = arg
   end
 end
+
+@verbose = true if @debug
 
 # Look for config file
 @config = YAML.load(File.open(config_file))
@@ -224,7 +230,7 @@ def monitor_aws_ec2(group_name)
           total_ec2_counts[instance.status.to_s.downcase] += 1
         end
 
-        log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @debug
+        log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @verbose
         CopperEgg::MetricSample.save(group_name, region, Time.now.to_i, region_ec2_counts)
       rescue Exception => e
         log "Exception getting ec2 instances for region #{region}: #{e.to_s}.\nIgnoring and moving on."
@@ -291,7 +297,7 @@ def monitor_aws_elb(group_name)
             metrics["HTTPCode_Backend_5XX"] = 0
           end
 
-          log "elb: #{group_name} - #{instance} - #{metrics}" if @debug
+          log "elb: #{group_name} - #{instance} - #{metrics}" if @verbose
           CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
         end
 
@@ -326,7 +332,7 @@ def monitor_aws_rds(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
           if stats != nil && stats[:datapoints].length > 0
-            #log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
             metrics["DiskQueueDepth"] = stats[:datapoints][0][:average].to_i
           else
             metrics["DiskQueueDepth"] = 0
@@ -334,17 +340,17 @@ def monitor_aws_rds(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
           if stats != nil && stats[:datapoints].length > 0
-            #log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
             metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
           end
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
           if stats != nil && stats[:datapoints].length > 0
-            #log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
             metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
           end
 
-          log "rds: #{group_name} - #{instance} - #{metrics}" if @debug
+          log "rds: #{group_name} - #{instance} - #{metrics}" if @verbose
           CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
         end
 
@@ -361,6 +367,7 @@ end
 
 def monitor_aws_billing(group_name)
   log "Monitoring AWS Billing.."
+  AWS.config(@aws_config_default) # don't need to update it every loop
 
   while !@interrupted do
     return if @interrupted
@@ -438,7 +445,7 @@ def monitor_aws_billing(group_name)
       metrics["DataTransfer"] = 0.0
     end
 
-    log "billing: #{group_name} - aws_charges - #{metrics}" if @debug
+    log "billing: #{group_name} - aws_charges - #{metrics}" if @verbose
     CopperEgg::MetricSample.save(group_name, "aws_charges", Time.now.to_i, metrics)
 
     sleep_until @freq
