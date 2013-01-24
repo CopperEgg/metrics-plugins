@@ -342,12 +342,16 @@ def monitor_aws_rds(group_name)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
             metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
+          else
+            metrics["ReadLatency"] = 0
           end
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}])
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
             metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
+          else
+            metrics["WriteLatency"] = 0
           end
 
           log "rds: #{group_name} - #{instance} - #{metrics}" if @verbose
@@ -376,8 +380,8 @@ def monitor_aws_billing(group_name)
 
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats[:datapoints].length > 0
-      log stats[:datapoints][-1][:maximum].to_f if @debug
-      metrics["Total"] = stats[:datapoints][-1][:maximum].to_f
+      log "Billing Total: #{stats[:datapoints]}" if @debug
+      metrics["Total"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["Total"] = 0.0
     end
@@ -385,8 +389,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonEC2"},
                                                       {:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats.datapoints.length > 0
-      log stats.datapoints[-1].maximum.to_f if @debug
-      metrics["EC2"] = stats.datapoints[-1].maximum.to_f
+      log "Billing EC2: #{stats[:datapoints]}" if @debug
+      metrics["EC2"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["EC2"] = 0.0
     end
@@ -394,8 +398,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonRDS"},
                                                       {:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats[:datapoints].length > 0
-      log stats[:datapoints][-1][:maximum].to_f if @debug
-      metrics["RDS"] = stats[:datapoints][-1][:maximum].to_f
+      log "Billing RDS: #{stats[:datapoints]}" if @debug
+      metrics["RDS"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["RDS"] = 0.0
     end
@@ -403,8 +407,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonS3"},
                                                       {:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats[:datapoints].length > 0
-      log stats[:datapoints][-1][:maximum].to_f if @debug
-      metrics["S3"] = stats[:datapoints][-1][:maximum].to_f
+      log "Billing S3: #{stats[:datapoints]}" if @debug
+      metrics["S3"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["S3"] = 0.0
     end
@@ -412,8 +416,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonRoute53"},
                                                       {:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats[:datapoints].length > 0
-      log stats[:datapoints][-1][:maximum].to_f if @debug
-      metrics["Route53"] = stats[:datapoints][-1][:maximum].to_f
+      log "Billing Route53: #{stats[:datapoints]}" if @debug
+      metrics["Route53"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["Route53"] = 0.0
     end
@@ -421,8 +425,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"SimpleDB"},
                                                       {:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats[:datapoints].length > 0
-      log stats[:datapoints][-1][:maximum].to_f if @debug
-      metrics["SimpleDB"] = stats[:datapoints][-1][:maximum].to_f
+      log "Billing SimpleDB: #{stats[:datapoints]}" if @debug
+      metrics["SimpleDB"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["SimpleDB"] = 0.0
     end
@@ -430,8 +434,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonSNS"},
                                                       {:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats[:datapoints].length > 0
-      log stats[:datapoints][-1][:maximum].to_f if @debug
-      metrics["SNS"] = stats[:datapoints][-1][:maximum].to_f
+      log "Billing SNS: #{stats[:datapoints]}" if @debug
+      metrics["SNS"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["SNS"] = 0.0
     end
@@ -439,8 +443,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AWSDataTransfer"},
                                                       {:name=>"Currency", :value=>"USD"}], (Time.now - (@freq*720)).iso8601)
     if stats != nil && stats[:datapoints].length > 0
-      log stats[:datapoints][-1][:maximum].to_f if @debug
-      metrics["DataTransfer"] = stats[:datapoints][-1][:maximum].to_f
+      log "Billing Total: #{stats[:datapoints]}" if @debug
+      metrics["DataTransfer"] = stats[:datapoints][0][:maximum].to_f
     else
       metrics["DataTransfer"] = 0.0
     end
