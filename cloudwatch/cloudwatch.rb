@@ -105,11 +105,11 @@ if !@config.nil?
   end
   if !@config["aws"].nil?
     @services = @config['aws']['services']
-    log "Reading config: services are " + @services.to_s + "\n"
+    log "Reading config: services are #{@services.inspect}\n"
 
     @regions = @config['aws']['regions']
     @regions = ['us-east-1'] if !@regions || @regions.length == 0
-    log "Reading config: regions are " + @regions.to_s + "\n"
+    log "Reading config: regions are #{@regions.inspect}\n"
   end
 else
   log "You need to have a config.yml to set your AWS credentials"
@@ -171,9 +171,9 @@ end
 def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions, start_time=(Time.now - @freq).iso8601)
 
   # need to create it fresh every time because we can switch regions arbitrarily
-  cl = AWS::CloudWatch::Client.new()
 
   begin
+    cl = AWS::CloudWatch::Client.new()
     stats_hash = { :namespace => namespace,
                    :metric_name => metric_name,
                    :dimensions => dimensions,
@@ -182,10 +182,13 @@ def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions, start_time
                    :period => @freq,
                    :statistics => stats }
     stats = cl.get_metric_statistics(stats_hash)
+    log "fetch_cl_st:  stats_hash (post):   #{stats_hash.inspect}" if @debug
+    log "fetch_cl_st:  stats     (reply):   #{stats.inspect}" if @debug
+    #log "fetch_cl_st:  cl:  #{cl.inspect}" if @debug
 
   rescue Exception => e
     log "Error getting cloudwatch stats: #{metric_name} [skipping]"
-    log "Stats hash: #{stats_hash}" if @debug
+    log "Stats hash: #{stats_hash.inspect}" if @debug
     log e.inspect if @debug
     log e.backtrace.join("\n") if @debug
     stats = nil
@@ -230,7 +233,7 @@ def monitor_aws_ec2(group_name)
           total_ec2_counts[instance.status.to_s.downcase] += 1
         end
 
-        log "ec2: #{group_name} - #{region} - #{region_ec2_counts}" if @verbose
+        log "ec2: #{group_name} - #{region} - #{region_ec2_counts.inspect}" if @verbose
         CopperEgg::MetricSample.save(group_name, region, Time.now.to_i, region_ec2_counts)
       rescue Exception => e
         log "Exception getting ec2 instances for region #{region}: #{e.to_s}.\nIgnoring and moving on."
@@ -241,7 +244,14 @@ def monitor_aws_ec2(group_name)
 
     end
 
-    CopperEgg::MetricSample.save(group_name, "total", Time.now.to_i, total_ec2_counts) if post_total
+    begin
+      log "ec2: #{group_name} - total - #{total_ec2_counts.inspect}" if @verbose
+      CopperEgg::MetricSample.save(group_name, "total", Time.now.to_i, total_ec2_counts) if post_total
+    rescue Exception => e
+      log "Exception posting ec2 instance data: #{e.to_s}.\nIgnoring and moving on."
+      log e.inspect if @debug
+      log e.backtrace.join("\n") if @debug
+    end
 
     sleep_until @freq
   end
@@ -267,7 +277,7 @@ def monitor_aws_elb(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "Latency", ['Average'], [{:name=>"LoadBalancerName", :value=>lb.name}])
           if stats != nil && stats[:datapoints].length > 0
-            log "#{lb.name} : Latency : #{stats[:datapoints][0][:average]*1000} ms" if @debug
+            log "elb stat: #{lb.name} : Latency : #{stats[:datapoints][0][:average]*1000} ms" if @debug
             metrics["Latency"] = stats[:datapoints][0][:average]*1000
           else
             metrics["Latency"] = 0
@@ -275,7 +285,7 @@ def monitor_aws_elb(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "RequestCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
           if stats != nil && stats[:datapoints].length > 0
-            log "#{lb.name} : RequestCount : #{stats[:datapoints][0][:sum].to_i} requests" if @debug
+            log "elb stat: #{lb.name} : RequestCount : #{stats[:datapoints][0][:sum].to_i} requests" if @debug
             metrics["RequestCount"] = stats[:datapoints][0][:sum].to_i
           else
             metrics["RequestCount"] = 0
@@ -283,7 +293,7 @@ def monitor_aws_elb(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_2XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
           if stats != nil && stats[:datapoints].length > 0
-            log "#{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][0][:sum].to_i} Successes" if @debug
+            log "elb stat: #{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][0][:sum].to_i} Successes" if @debug
             metrics["HTTPCode_Backend_2XX"] = stats[:datapoints][0][:sum].to_i
           else
             metrics["HTTPCode_Backend_2XX"] = 0
@@ -291,13 +301,13 @@ def monitor_aws_elb(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}])
           if stats != nil && stats[:datapoints].length > 0
-            log "#{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][0][:sum].to_i} Errors" if @debug
+            log "elb stat: #{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][0][:sum].to_i} Errors" if @debug
             metrics["HTTPCode_Backend_5XX"] = stats[:datapoints][0][:sum].to_i
           else
             metrics["HTTPCode_Backend_5XX"] = 0
           end
 
-          log "elb: #{group_name} - #{instance} - #{metrics}" if @verbose
+          log "elb: #{group_name} - #{instance} - #{metrics.inspect}" if @verbose
           CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
         end
 
@@ -354,7 +364,7 @@ def monitor_aws_rds(group_name)
             metrics["WriteLatency"] = 0
           end
 
-          log "rds: #{group_name} - #{instance} - #{metrics}" if @verbose
+          log "rds: #{group_name} - #{instance} - #{metrics.inspect}" if @verbose
           CopperEgg::MetricSample.save(group_name, instance, Time.now.to_i, metrics)
         end
 
@@ -449,8 +459,14 @@ def monitor_aws_billing(group_name)
       metrics["DataTransfer"] = 0.0
     end
 
-    log "billing: #{group_name} - aws_charges - #{metrics}" if @verbose
-    CopperEgg::MetricSample.save(group_name, "aws_charges", Time.now.to_i, metrics)
+    log "billing: #{group_name} - aws_charges - #{metrics.inspect}" if @verbose
+    begin
+      CopperEgg::MetricSample.save(group_name, "aws_charges", Time.now.to_i, metrics)
+    rescue Exception => e
+        log "Exception getting AWS Billing information: #{e.to_s}.\nIgnoring and moving on."
+        log e.inspect if @debug
+        log e.backtrace.join("\n") if @debug
+    end
 
     sleep_until @freq
   end
@@ -552,7 +568,7 @@ def ensure_aws_dashboard(service, metric_group, identifiers)
   end
 
   log "Creating new AWS Dashboard '#{dashboard_name}' for service #{service}"
-  log "  with metrics #{metric_group.metrics}" if @debug
+  log "  with metrics #{metric_group.metrics.inspect}" if @debug
 
   CopperEgg::CustomDashboard.create(metric_group, :name => dashboard_name, :identifiers => identifiers, :metrics => metric_group.metrics)
 end
