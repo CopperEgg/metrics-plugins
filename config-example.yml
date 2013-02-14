@@ -1,5 +1,6 @@
 copperegg:
   apikey: "YOUR_APIKEY"
+  frequency: 60
 aws:
   access_key_id: "YourAWSAccessKey"
   secret_access_key: "SuperSecretAWSKeyGoesHere"
