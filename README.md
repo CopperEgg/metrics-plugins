@@ -25,7 +25,7 @@ If you have a CopperEgg account, you may log in and use RevealMetrics at <https:
 This has been tested with both ruby 1.8.7 and 1.9.3.  We recommend 1.9.3+ if it's easy,
 but many operating systems still default to 1.8.7, so we'll use that here.
 Note that the ruby developer packages need to be installed, as described below. The reason for this is the aws-sdk gem requires nokogiri; nokogiri will attempt to build native extensions for the OS on which it is being installed.
-If you have any difficulties with the installation of Nokogiri, please refer to 'Installing Nokogiri' here: <http://nokogiri.org/tutorials/installing_nokogiri.html>
+If you have any difficulties with the installation of Nokogiri, please refer to [Installing Nokogiri](http://nokogiri.org/tutorials/installing_nokogiri.html).
 
 
 On newer Debian/Ubuntu, run:
@@ -41,8 +41,8 @@ On RedHat/Fedora/CentOS/Amazon Linux, run:
     sudo yum install -y gcc g++ make automake autoconf curl-devel openssl-devel zlib-devel httpd-devel
     sudo yum install -y libxml2 libxml2-devel libxslt libxslt-devel
 
-On Mac OS X, we highly recommend installing RVM, the Ruby Version Manager. The most simple way to install and use RVM is to install JewelryBox, the official RVM GUI, found here: <http://unfiniti.com/software/mac/jewelrybox>
-RVM can also be used from the command line; please see the RVM website: <https://rvm.io>
+On Mac OS X, we highly recommend installing RVM, the Ruby Version Manager. The most simple way to install and use RVM is to install [JewelryBox, the official RVM GUI](http://unfiniti.com/software/mac/jewelrybox)
+RVM can also be used from the command line per instructions on the [RVM website](https://rvm.io).
 
 ##2. Download and configure the agent
 
@@ -104,9 +104,14 @@ After a minute or a page refresh, "AWS Monitoring" will appear in the left nav o
 
 Note that you can add widgets to the AWS dashboard which display data from any metric groups, including system metrics gathered using the CopperEgg collector, and website monitoring metrics gathered by CopperEgg RevealUptime.
 
-Have a look at the CopperEgg Demo site, to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring here: <https://app.copperegg.com/demo>
+Have a look at the [CopperEgg Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
 
 Don't forget that you can set alerts and notifications based on the custom metrics being gathered from AWS, just as simply as setting up all of your CopperEgg system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
 
 
+#Troubleshooting
+
+If you have enabled Billing, you will need to [Turn on billing metrics in the AWS Console ](http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/monitor_estimated_charges_with_cloudwatch.html#turning_on_billing_metrics).
+
+If your system has a ruby version 1.8.6 or less, [Consider using RVM](https://rvm.io/) to install version 1.8.7 or 1.9.x.
 

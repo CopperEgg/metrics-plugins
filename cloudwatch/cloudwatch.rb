@@ -328,6 +328,7 @@ def monitor_aws_elb(group_name)
           end
 
           # FIXME: doesn't work right
+          # needs to fetch each az separately, eg :name=>"Availability-zone", :value=>us-east-1b
           #stats = fetch_cloudwatch_stats("AWS/ELB", "HealthyHostCount", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           #if stats != nil && stats[:datapoints].length > 0
             #log "elb stat: #{lb.name} : HealthyHostCount : #{stats[:datapoints][0][:maximum].to_i} Errors" if @debug
