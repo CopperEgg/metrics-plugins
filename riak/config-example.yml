@@ -1,0 +1,13 @@
+copperegg:
+  apikey: "YOUR_APIKEY"
+  frequency: 60
+  services:
+  - riak
+riak:
+  group_name: "riak-001"
+  group_label: "Riak Metrics"
+  dashboard: "Riak Dashboard"
+  servers:
+  -
+    name: "riak-cluster-01"
+    url: "http://localhost:8098"
