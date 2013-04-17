@@ -294,7 +294,7 @@ def monitor_aws_elb(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "Latency", ['Average'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "elb stat: #{lb.name} : Latency : #{stats[:datapoints]} (sec)" if @debug
+            log "elb stat: #{lb.name} : Latency : #{stats[:datapoints][-1][:average]*1000} ms" if @debug
             metrics["Latency"] = stats[:datapoints][-1][:average]*1000
           else
             metrics["Latency"] = 0
@@ -412,7 +412,6 @@ def monitor_aws_rds(group_name)
           end
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "CPUUtilization", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
-          p stats
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} CPUUtilization" if @debug
             metrics["CPUUtilization"] = stats[:datapoints][-1][:average]
