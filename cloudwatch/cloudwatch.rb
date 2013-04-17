@@ -174,10 +174,11 @@ def parent_interrupt
 end
 
 ####################################################################
-def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions, cl=nil, freq=@freq)
+def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions, cl=nil, duration=@freq*4)
 
+  duration = 300 if duration < 300
   # need to create it fresh every time because we can switch regions arbitrarily
-  start_time = (Time.now - freq).iso8601
+  start_time = (Time.now - duration).iso8601
 
   begin
     cl ||= AWS::CloudWatch::Client.new()
@@ -186,9 +187,13 @@ def fetch_cloudwatch_stats(namespace, metric_name, stats, dimensions, cl=nil, fr
                    :dimensions => dimensions,
                    :start_time => start_time,
                    :end_time => Time.now.utc.iso8601,
-                   :period => freq,
+                   :period => @freq,
                    :statistics => stats }
     stats = cl.get_metric_statistics(stats_hash)
+    if stats && stats[:datapoints] && stats[:datapoints][0] && stats[:datapoints][0][:timestamp]
+      # Cloudwatch doesn't necessarily sort the values.  Ensure that they are.
+      stats[:datapoints].sort!{|a,b| a[:timestamp] <=> b[:timestamp]}
+    end
     log "fetch_cl_st:  cl               : #{cl.inspect}" if @debug
     log "fetch_cl_st:  stats_hash (post):    #{stats_hash.inspect}" if @debug
     log "fetch_cl_st:  stats     (reply):    #{stats.inspect}" if @debug
@@ -289,40 +294,40 @@ def monitor_aws_elb(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "Latency", ['Average'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "elb stat: #{lb.name} : Latency : #{stats[:datapoints][0][:average]*1000} ms" if @debug
-            metrics["Latency"] = stats[:datapoints][0][:average]*1000
+            log "elb stat: #{lb.name} : Latency : #{stats[:datapoints]} (sec)" if @debug
+            metrics["Latency"] = stats[:datapoints][-1][:average]*1000
           else
             metrics["Latency"] = 0
           end
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "RequestCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "elb stat: #{lb.name} : RequestCount : #{stats[:datapoints][0][:sum].to_i} requests" if @debug
-            metrics["RequestCount"] = stats[:datapoints][0][:sum].to_i
+            log "elb stat: #{lb.name} : RequestCount : #{stats[:datapoints][-1][:sum].to_i} requests" if @debug
+            metrics["RequestCount"] = stats[:datapoints][-1][:sum].to_i
           else
             metrics["RequestCount"] = 0
           end
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_2XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "elb stat: #{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][0][:sum].to_i} Successes" if @debug
-            metrics["HTTPCode_Backend_2XX"] = stats[:datapoints][0][:sum].to_i
+            log "elb stat: #{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][-1][:sum].to_i} Successes" if @debug
+            metrics["HTTPCode_Backend_2XX"] = stats[:datapoints][-1][:sum].to_i
           else
             metrics["HTTPCode_Backend_2XX"] = 0
           end
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "elb stat: #{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][0][:sum].to_i} Errors" if @debug
-            metrics["HTTPCode_Backend_5XX"] = stats[:datapoints][0][:sum].to_i
+            log "elb stat: #{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
+            metrics["HTTPCode_Backend_5XX"] = stats[:datapoints][-1][:sum].to_i
           else
             metrics["HTTPCode_Backend_5XX"] = 0
           end
 
           stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_ELB_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "elb stat: #{lb.name} : HTTPCode_ELB_5XX : #{stats[:datapoints][0][:sum].to_i} Errors" if @debug
-            metrics["HTTPCode_ELB_5XX"] = stats[:datapoints][0][:sum].to_i
+            log "elb stat: #{lb.name} : HTTPCode_ELB_5XX : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
+            metrics["HTTPCode_ELB_5XX"] = stats[:datapoints][-1][:sum].to_i
           else
             metrics["HTTPCode_ELB_5XX"] = 0
           end
@@ -331,8 +336,8 @@ def monitor_aws_elb(group_name)
           # needs to fetch each az separately, eg :name=>"Availability-zone", :value=>us-east-1b
           #stats = fetch_cloudwatch_stats("AWS/ELB", "HealthyHostCount", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           #if stats != nil && stats[:datapoints].length > 0
-            #log "elb stat: #{lb.name} : HealthyHostCount : #{stats[:datapoints][0][:maximum].to_i} Errors" if @debug
-            #metrics["HealthyHostCount"] = stats[:datapoints][0][:maximum].to_i
+            #log "elb stat: #{lb.name} : HealthyHostCount : #{stats[:datapoints][-1][:maximum].to_i} Errors" if @debug
+            #metrics["HealthyHostCount"] = stats[:datapoints][-1][:maximum].to_i
           #else
             #metrics["HealthyHostCount"] = 0
           #end
@@ -340,8 +345,8 @@ def monitor_aws_elb(group_name)
           # FIXME: doesn't work right
           #stats = fetch_cloudwatch_stats("AWS/ELB", "UnHealthyHostCount", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
           #if stats != nil && stats[:datapoints].length > 0
-            #log "elb stat: #{lb.name} : UnHealthyHostCount : #{stats[:datapoints][0][:maximum].to_i} Errors" if @debug
-            #metrics["UnHealthyHostCount"] = stats[:datapoints][0][:maximum].to_i
+            #log "elb stat: #{lb.name} : UnHealthyHostCount : #{stats[:datapoints][-1][:maximum].to_i} Errors" if @debug
+            #metrics["UnHealthyHostCount"] = stats[:datapoints][-1][:maximum].to_i
           #else
             #metrics["UnHealthyHostCount"] = 0
           #end
@@ -384,26 +389,43 @@ def monitor_aws_rds(group_name)
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]} queue depth" if @debug
-            metrics["DiskQueueDepth"] = stats[:datapoints][0][:average].to_i
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} queue depth" if @debug
+            metrics["DiskQueueDepth"] = stats[:datapoints][-1][:average].to_i
           else
             metrics["DiskQueueDepth"] = 0
           end
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} read latency (ms)" if @debug
-            metrics["ReadLatency"] = stats[:datapoints][0][:average]*1000
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]*1000} read latency (ms)" if @debug
+            metrics["ReadLatency"] = stats[:datapoints][-1][:average]*1000
           else
             metrics["ReadLatency"] = 0
           end
 
           stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
-            log "RDS: #{db.db_instance_id} #{stats[:datapoints][0][:average]*1000} write latency (ms)" if @debug
-            metrics["WriteLatency"] = stats[:datapoints][0][:average]*1000
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]*1000} write latency (ms)" if @debug
+            metrics["WriteLatency"] = stats[:datapoints][-1][:average]*1000
           else
             metrics["WriteLatency"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/RDS", "CPUUtilization", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          p stats
+          if stats != nil && stats[:datapoints].length > 0
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} CPUUtilization" if @debug
+            metrics["CPUUtilization"] = stats[:datapoints][-1][:average]
+          else
+            metrics["CPUUtilization"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/RDS", "FreeableMemory", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          if stats != nil && stats[:datapoints].length > 0
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]/1048576} FreeableMemory" if @debug
+            metrics["FreeableMemory"] = stats[:datapoints][-1][:average]/1048576
+          else
+            metrics["FreeableMemory"] = 0
           end
 
           log "rds: #{group_name} - #{instance} - #{metrics.inspect}" if @verbose
@@ -433,7 +455,7 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing Total: #{stats[:datapoints]}" if @debug
-      metrics["Total"] = stats[:datapoints][0][:maximum].to_f
+      metrics["Total"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["Total"] = 0.0
     end
@@ -442,7 +464,7 @@ def monitor_aws_billing(group_name)
                                                       {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats.datapoints.length > 0
       log "Billing EC2: #{stats[:datapoints]}" if @debug
-      metrics["EC2"] = stats[:datapoints][0][:maximum].to_f
+      metrics["EC2"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["EC2"] = 0.0
     end
@@ -451,7 +473,7 @@ def monitor_aws_billing(group_name)
                                                       {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing RDS: #{stats[:datapoints]}" if @debug
-      metrics["RDS"] = stats[:datapoints][0][:maximum].to_f
+      metrics["RDS"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["RDS"] = 0.0
     end
@@ -460,7 +482,7 @@ def monitor_aws_billing(group_name)
                                                       {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing S3: #{stats[:datapoints]}" if @debug
-      metrics["S3"] = stats[:datapoints][0][:maximum].to_f
+      metrics["S3"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["S3"] = 0.0
     end
@@ -469,7 +491,7 @@ def monitor_aws_billing(group_name)
                                                       {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing Route53: #{stats[:datapoints]}" if @debug
-      metrics["Route53"] = stats[:datapoints][0][:maximum].to_f
+      metrics["Route53"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["Route53"] = 0.0
     end
@@ -478,7 +500,7 @@ def monitor_aws_billing(group_name)
                                                       {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing SimpleDB: #{stats[:datapoints]}" if @debug
-      metrics["SimpleDB"] = stats[:datapoints][0][:maximum].to_f
+      metrics["SimpleDB"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["SimpleDB"] = 0.0
     end
@@ -487,7 +509,7 @@ def monitor_aws_billing(group_name)
                                                       {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing SNS: #{stats[:datapoints]}" if @debug
-      metrics["SNS"] = stats[:datapoints][0][:maximum].to_f
+      metrics["SNS"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["SNS"] = 0.0
     end
@@ -495,8 +517,8 @@ def monitor_aws_billing(group_name)
     stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AWSDataTransfer"},
                                                       {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
-      log "Billing Total: #{stats[:datapoints]}" if @debug
-      metrics["DataTransfer"] = stats[:datapoints][0][:maximum].to_f
+      log "Billing AWSDataTransfer: #{stats[:datapoints]}" if @debug
+      metrics["DataTransfer"] = stats[:datapoints][-1][:maximum].to_f
     else
       metrics["DataTransfer"] = 0.0
     end
@@ -577,6 +599,8 @@ def ensure_rds_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "DiskQueueDepth"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "ReadLatency",     :unit => "ms"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "WriteLatency",     :unit => "ms"}
+  metric_group.metrics << {:type => "ce_gauge_f",   :name => "CPUUtilization",     :unit => "%"}
+  metric_group.metrics << {:type => "ce_gauge_f",   :name => "FreeableMemory",     :unit => "MB"}
   metric_group.save
   metric_group
 end
