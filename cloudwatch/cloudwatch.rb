@@ -427,6 +427,15 @@ def monitor_aws_rds(group_name)
             metrics["FreeableMemory"] = 0
           end
 
+          stats = fetch_cloudwatch_stats("AWS/RDS", "FreeableSpace", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          if stats != nil && stats[:datapoints].length > 0
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]/1048576} FreeableSpace" if @debug
+            metrics["FreeableSpace"] = stats[:datapoints][-1][:average]/1048576
+          else
+            metrics["FreeableSpace"] = 0
+          end
+
+
           stats = fetch_cloudwatch_stats("AWS/RDS", "DatabaseConnections", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} DatabaseConnections" if @debug
