@@ -1,0 +1,37 @@
+copperegg:
+  apikey:  'YOUR_APIKEY'
+  frequency: 60
+  services:
+  - mongo_dbadmin
+  - mongodb
+mongo_dbadmin:
+  group_name: "Mongo_Server_Metrics"
+  group_label: "Mongo Server Metrics"
+  dashboard: "MongoDB Admin"
+  servers:
+  -
+    name: "mongo-server-03"
+    hostname: 'localhost'
+    username:
+    password:
+    port: 27017
+    database: 'admin'
+
+mongodb:
+  group_name: "Mongo_DB_Metrics"
+  group_label: "Mongo DB Metrics"
+  dashboard: "MongoDB Databases"
+  servers:
+  -
+    name: "mongo-server-03"
+    hostname: 'localhost'
+    port: 27017
+    databases:
+    -
+      name: "test"
+      username:
+      password:
+    -
+      name: "test1"
+      username:
+      password: 

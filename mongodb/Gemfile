@@ -1,0 +1,6 @@
+source 'http://rubygems.org'
+ruby '1.9.3'
+gem 'copperegg', '~> 0.6.0'
+gem 'json_pure', '~> 1.7.6'
+gem 'bson', '~> 1.8.5'
+gem 'mongo', '~> 1.8.5'
