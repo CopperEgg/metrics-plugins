@@ -17,16 +17,16 @@ If you do not have a CopperEgg account, you may create one at <https://copperegg
 
 If you have a CopperEgg account, you may log in and get started at <https://app.copperegg.com/login>
 
-#Getting Started with the postgresql.rb Ruby script
+##Getting Started with the postgresql.rb Ruby script
 
-##1. Install dependencies
+###1. Install dependencies
 
 This plugin requires the 'pg' gem, AKA the ruby-pg gem. It will be installed during the bundle process.
 
 This has been tested with ruby 1.9.3. You will need to install and set up Ruby on your system, you can find documentation on how to do that on the Ruby site, or anywhere else Google takes you.
 
 
-##2. Download and configure the agent to you PostgreSQL server
+###2. Download the agent to your PostgreSQL server, and configure it
 
     git clone git://github.com/CopperEgg/metrics-plugins.git
     cd metrics-plugins/postgresql
@@ -42,13 +42,13 @@ Copy the example config into config.yml, and edit with your favorite editor:
 
 When editing the config.yml file, be sure to keep the same spacing supplied in the original file.
 
-##3. Bundle and Install gems
+###3. Bundle and Install gems
 
 Ensure that current ruby gems are installed.
 
     bundle install
 
-##4. Run the agent
+###4. Run the agent
 
     ruby ./postgresql.rb
 
@@ -61,7 +61,7 @@ To run the process in the background, you may use:
 And it will run in the background, and log to /tmp/copperegg-postgresql.log
 
 
-##5. Enjoy your new PostgreSQL Dashboards
+###5. Enjoy your new PostgreSQL Dashboards
 
 It may take up to a minute for the dashboard to automatically appear, once created.
 After a minute or a page refresh, "PostgreSQL" will appear in the left nav of the Dashboards tab.  Enjoy!
