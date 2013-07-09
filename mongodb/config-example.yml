@@ -9,8 +9,7 @@ mongo_dbadmin:
   group_label: "Mongo Server Metrics"
   dashboard: "MongoDB Admin"
   servers:
-  -
-    name: "mongo-server-03"
+  - name: "mongo-server-03"
     hostname: 'localhost'
     username:
     password:
@@ -22,16 +21,13 @@ mongodb:
   group_label: "Mongo DB Metrics"
   dashboard: "MongoDB Databases"
   servers:
-  -
-    name: "mongo-server-03"
+  - name: "mongo-server-03"
     hostname: 'localhost'
     port: 27017
     databases:
-    -
-      name: "test"
+    - name: "test"
       username:
       password:
-    -
-      name: "test1"
+    - name: "test1"
       username:
       password: 

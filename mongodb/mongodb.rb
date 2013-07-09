@@ -161,7 +161,8 @@ def connect_to_mongo(hostname, port, user, pw, db)
   mongo = connection.db(db)
   begin 
     mongo.authenticate(user,pw) unless pw.nil?
-  rescue CopperEggAgentError.new("Unable to connect to Mongo database #{db}")
+  rescue Exception => e
+    log "Error connecting to mongodb #{db}, on #{hostname}:#{port}"
     return nil
   end
   return  mongo
@@ -413,7 +414,8 @@ end
         monitor_service(service, metric_group)
       rescue => e
         log "Error monitoring #{service}.  Retying (#{retries}) more times..."
-        raise e   #if @debug
+        # updated 7-9-2013, removed the # before if @debug
+        raise e   if @debug
         sleep 2
         retries -= 1
         last_failure = Time.now.to_i
