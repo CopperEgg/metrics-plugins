@@ -23,7 +23,7 @@ If you have a CopperEgg account, you may log in and get started at <https://app.
 
 This plugin requires the 'pg' gem, AKA the ruby-pg gem. It will be installed during the bundle process.
 
-This has been tested with ruby 1.9.3. You will need to install and set up Ruby on your system, you can find documentation on how to do that on the Ruby site, or anywhere else Google takes you.
+This has been tested with ruby 1.9.3 and with Ruby-1.8.7 on Ubuntu 12.04. You will need to install and set up Ruby on your system, you can find documentation on how to do that on the Ruby site, or anywhere else Google takes you.
 
 
 ###2. Download the agent to your PostgreSQL server, and configure it
@@ -35,7 +35,7 @@ Copy the example config into config.yml, and edit with your favorite editor:
 
   - Enter your CopperEgg User API Key:  replace 'YOUR_APIKEY' with your API key, found in the settings tab of http://app.copperegg.com.
 
-  - You will find one defined service ; 'postgresql' The postgresql service monitors all of the postgre databases specified in the config.yml. It must be edited to specify the correct postgresql server hostname, port and username / password of each of the databases specified.
+  - You will find one defined service ; 'postgresql' The postgresql service monitors all of the postgresql databases specified in the config.yml. It must be edited to specify the correct postgresql server hostname, port and username / password of each of the databases specified.
 
   - A custom dashboard will be created to display these metrics for all databases. The name of the custom dashboard will be PostgreSQL; you may optionally choose a different dashboard name.
 

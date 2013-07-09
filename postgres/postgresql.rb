@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 #
-# CopperEgg postgresql monitoring  postgres.rb
+# CopperEgg postgresql monitoring  postgresql.rb
 #
 # Copyright 2013 CopperEgg Corporation.  All rights reserved.
 #
@@ -166,9 +166,10 @@ def connect_to_postgresql(hostname, port, user, pw, db, sslmode)
       :password => pw,
       :sslmode  => sslmode
     )
-  rescue CopperEggAgentError.new("Unable to connect to postgresql at #{hostname}:#{port}")
-    return nil
-  end
+    rescue Exception => e
+        log "Error connecting to postgresql database #{db}, on #{hostname}:#{port}"
+        return nil
+    end
   return @cxn
 end
 
@@ -228,7 +229,7 @@ def monitor_postgresql(pg_servers, group_name)
         if pgcxn == nil
           pgcxn = connect_to_postgresql(mhost["hostname"], mhost["port"].to_i, db["username"], db["password"], db["name"], mhost["sslmode"])
           if pgcxn == nil
-            log "Error connecting to #{mhost['hostname']}, #{db['name']} [skipping]"
+            log "[skipping]"
             next
           end
           thishash[db['name']] = pgcxn
@@ -376,7 +377,8 @@ end
         monitor_service(service, metric_group)
       rescue => e
         log "Error monitoring #{service}.  Retying (#{retries}) more times..."
-        raise e   #if @debug
+        # updated 7-9-2013, removed the # before if @debug
+        raise e   if @debug
         sleep 2
         retries -= 1
         last_failure = Time.now.to_i

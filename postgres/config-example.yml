@@ -2,9 +2,9 @@ copperegg:
   apikey:  'YOUR_APIKEY'
   frequency: 60
   services:
-  - postgres
+  - postgresql
 
-postgres:
+postgresql:
   group_name: "pg_metrics"
   group_label: "PostgreSQl Metrics"
   dashboard: "PostgreSQL"
@@ -15,6 +15,6 @@ postgres:
     sslmode: 'disable'
     databases:
     - name: "test"
-      username:
-      password:
+      username: 'YOUR USERNAME'
+      password: 'YOUR PASSWORD'
 
