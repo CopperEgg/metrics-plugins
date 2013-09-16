@@ -374,18 +374,20 @@ end
 
 MAX_RETRIES = 30
 last_failure = 0
+
+MAX_SETUP_RETRIES = 5
+setup_retries = MAX_SETUP_RETRIES
+
 begin
-  # reset retries counter if last failure was more than 10 minutes ago
-  retries = MAX_RETRIES if Time.now.to_i - last_failure > 600
   dashboards = CopperEgg::CustomDashboard.find
   metric_groups = CopperEgg::MetricGroup.find
 rescue => e
-  log "Error connecting to server.  Retying (#{retries}) more times..."
+  log "Error connecting to server.  Retying (#{setup_retries}) more times..."
   raise e if @debug
   sleep 2
-  retries -= 1
-  last_failure = Time.now.to_i
-  retry if retries > 0
+  setup_retries -= 1
+  retry if setup_retries > 0
+  # If we can't succeed with setup on the servcies, let's just error out
   raise e
 end
 
@@ -404,13 +406,13 @@ end
       log e.message
       next
     end
+
     child_pid = fork {
       trap("INT") { child_interrupt if !@interrupted }
       trap("TERM") { child_interrupt if !@interrupted }
       last_failure = 0
+      retries = MAX_RETRIES
       begin
-        # reset retries counter if last failure was more than 10 minutes ago
-        retries = MAX_RETRIES if Time.now.to_i - last_failure > 600
         monitor_service(service, metric_group)
       rescue => e
         log "Error monitoring #{service}.  Retying (#{retries}) more times..."
@@ -418,6 +420,8 @@ end
         raise e   if @debug
         sleep 2
         retries -= 1
+        # reset retries counter if last failure was more than 10 minutes ago
+        retries = MAX_RETRIES if Time.now.to_i - last_failure > 600
         last_failure = Time.now.to_i
       retry if retries > 0
         raise e
