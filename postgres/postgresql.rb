@@ -257,7 +257,7 @@ def monitor_postgresql(pg_servers, group_name)
         metrics['locks']         = curr_stats['locks'].to_i
 
         puts "#{group_name} - #{mhost['name']} - #{db['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
-        rslt = CopperEgg::MetricSample.save(group_name, db['name'], Time.now.to_i, metrics)
+        rslt = CopperEgg::MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i, metrics)
       end
     end
     interruptible_sleep @freq
