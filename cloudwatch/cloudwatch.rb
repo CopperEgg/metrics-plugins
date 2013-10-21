@@ -730,6 +730,11 @@ log "Checking for existence of AWS metric groups"
 
 trap("INT") { parent_interrupt }
 trap("TERM") { parent_interrupt }
+MAX_RETRIES = 30
+last_failure = 0
+
+MAX_SETUP_RETRIES = 5
+setup_retries = MAX_SETUP_RETRIES
 
 @services.each do |service|
   if @config[service] && @config[service]["group_name"] && @config[service]["group_label"]
@@ -745,18 +750,45 @@ trap("TERM") { parent_interrupt }
     end
 
     # create/update metric group
-    metric_groups = CopperEgg::MetricGroup.find
-    metric_group = nil
-    metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]} if metric_groups
-    metric_group = ensure_metric_group(metric_group, service)
+    setup_retries = MAX_SETUP_RETRIES
+    begin
+      metric_groups = CopperEgg::MetricGroup.find
+      metric_group = nil
+      metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]} if metric_groups
+      metric_group = ensure_metric_group(metric_group, service)
 
-    # create dashboard
-    dashboard = ensure_aws_dashboard(service, metric_group, identifiers)
+      # create dashboard
+      dashboard = ensure_aws_dashboard(service, metric_group, identifiers)
+    rescue => e
+      log "Error updating metric groups / dashboards.  Retrying (#{setup_retries}) more times..."
+      raise e if @debug
+      sleep 2
+      setup_retries -= 1
+    retry if setup_retries > 0
+      # If we can't succeed with setup on any one of the servcies, let's just error out
+      raise e
+    end
+
 
     child_pid = fork {
       trap("INT") { child_interrupt if !@interrupted }
       trap("TERM") { child_interrupt if !@interrupted }
-      monitor_aws(service)
+      last_failure = 0
+      retries = MAX_RETRIES
+      begin
+        monitor_aws(service)
+      rescue => e
+        puts "Error monitoring #{service}.  Retying (#{retries}) more times..."
+        log "#{e.inspect}"
+        log e.backtrace[0..30].join("\n") if @debug
+        raise e if @debug
+        sleep 2
+        retries -= 1
+        retries = MAX_RETRIES if Time.now.to_i - last_failure > 600
+        last_failure = Time.now.to_i
+        retry if retries > 0
+        raise e
+      end
     }
     @worker_pids.push child_pid
 
