@@ -1,0 +1,15 @@
+copperegg:
+  apikey: "YOUR_APIKEY"
+  frequency: 60
+  services:
+  - couchdb 
+couchdb:
+  group_name: "couchdb-001"
+  group_label: "CouchDB Metrics"
+  dashboard: "CouchDB Dashboard"
+  servers:
+  -
+    name: "couchdb-local-01"
+    url: "http://localhost:5984"
+    user: "my user"
+    password: "my password"
