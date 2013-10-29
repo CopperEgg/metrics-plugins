@@ -140,6 +140,9 @@ if @services.length == 0
 end
 
 @freq = 60 if ![5, 15, 60, 300, 900, 3600, 21600].include?(@freq)
+@status_codes = ["200", "201", "202", "301", "304", "400", "401", "403", "404", "405", "409", "412", "500"]
+@http_methods = ["COPY", "DELETE", "GET", "HEAD", "POST", "PUT"]
+
 log "Update frequency set to #{@freq}s."
 
 ####################################################################
@@ -156,7 +159,7 @@ def monitor_couchdb(couchdb_servers, group_name)
 
       begin
         uri = URI.parse("#{rhost['url']}/_stats?range=60")
-        
+
         if rhost['user'] and rhost['password']
             request = Net::HTTP::Get.new(uri.request_uri)
             request.basic_auth(rhost['user'], rhost['password'])
@@ -181,7 +184,7 @@ def monitor_couchdb(couchdb_servers, group_name)
 
       #Database Metrics
       metrics["db_reads"]       = rstats["couchdb"]["database_reads"]["current"].to_i
-      metrics["db_writes"]      = rstats["couchdb"]["database_writes"]["current"].to_i 
+      metrics["db_writes"]      = rstats["couchdb"]["database_writes"]["current"].to_i
       metrics["open_databases"] = rstats["couchdb"]["open_databases"]["current"].to_i
       metrics["open_files"]     = rstats["couchdb"]["open_os_files"]["current"].to_i
       metrics["request_time"]   = rstats["couchdb"]["request_time"]["current"].to_f
@@ -193,33 +196,14 @@ def monitor_couchdb(couchdb_servers, group_name)
       metrics["view_reads"]            = rstats["httpd"]["view_reads"]["current"].to_i
 
       #httpd_request_methods Metrics
-      metrics["COPY"]   = rstats["httpd_request_methods"]["COPY"]["current"].to_i
-      metrics["DELETE"] = rstats["httpd_request_methods"]["DELETE"]["current"].to_i
-      metrics["GET"]    = rstats["httpd_request_methods"]["GET"]["current"].to_i
-      metrics["HEAD"]   = rstats["httpd_request_methods"]["HEAD"]["current"].to_i
-      metrics["POST"]   = rstats["httpd_request_methods"]["POST"]["current"].to_i
-      metrics["PUT"]    = rstats["httpd_request_methods"]["PUT"]["current"].to_i
+      @http_methods.each do |method|
+        metrics[method] = rstats["httpd_request_methods"][method]["current"].to_i
+      end
 
       #httpd_status_codes Metrics
-      metrics["200"]   = rstats["httpd_status_codes"]["200"]["current"].to_i
-      metrics["201"]   = rstats["httpd_status_codes"]["201"]["current"].to_i
-      metrics["202"]   = rstats["httpd_status_codes"]["202"]["current"].to_i
-      metrics["301"]   = rstats["httpd_status_codes"]["301"]["current"].to_i
-      metrics["304"]   = rstats["httpd_status_codes"]["304"]["current"].to_i
-      metrics["400"]   = rstats["httpd_status_codes"]["400"]["current"].to_i
-      metrics["401"]   = rstats["httpd_status_codes"]["401"]["current"].to_i
-      metrics["403"]   = rstats["httpd_status_codes"]["403"]["current"].to_i
-      metrics["405"]   = rstats["httpd_status_codes"]["405"]["current"].to_i
-      metrics["409"]   = rstats["httpd_status_codes"]["409"]["current"].to_i
-      metrics["412"]   = rstats["httpd_status_codes"]["412"]["current"].to_i
-      metrics["500"]   = rstats["httpd_status_codes"]["500"]["current"].to_i
-
-
-      #httpd Metrics
-      #http_methods = ["COPY", "DELETE", "GET", "HEAD", "POST", "PUT"]
-      #http_status_codes = ["200","201","202","301","304","400","401","403","405","409","412","500"]
-      
-
+      @status_codes.each do |status_code|
+        metrics[status_code] = rstats["httpd_status_codes"][status_code]["current"].to_i
+      end
 
       puts "#{group_name} - #{rhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
       CopperEgg::MetricSample.save(group_name, rhost["name"], Time.now.to_i, metrics)
@@ -252,33 +236,15 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << {:type => "ce_gauge", :name => "temporary_view_reads", :label => "Requests/Temporary View",  :unit => "Requests"}
   metric_group.metrics << {:type => "ce_gauge", :name => "view_reads",           :label => "Requests/View",            :unit => "Requests"}
 
-  #httpd Metrics
-  metric_group.metrics << {:type => "ce_gauge", :name => "bulk_requests",        :label => "Requests/Bulk Requests",   :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "requests",             :label => "Requests/Velocity",        :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "temporary_view_reads", :label => "Requests/Temporary View",  :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "view_reads",           :label => "Requests/View",            :unit => "Requests"}
-
   #httpd_request_methods Metrics
-  metric_group.metrics << {:type => "ce_gauge", :name => "COPY",   :label => "Requests/Method/COPY",   :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "DELETE", :label => "Requests/Method/DELETE", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "GET",    :label => "Requests/Method/GET",    :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "HEAD",   :label => "Requests/Method/HEAD",   :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "POST",   :label => "Requests/Method/POST",   :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "PUT",    :label => "Requests/Method/PUT",    :unit => "Requests"}
+  @http_methods.each do |method|
+    metric_group.metrics << {:type => "ce_gauge", :name => method, :label => "Methods/#{method}", :unit => "# Requests"}
+  end
 
   #httpd_status_codes Metrics
-  metric_group.metrics << {:type => "ce_gauge", :name => "200", :label => "Requests/Response/200", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "201", :label => "Requests/Response/201", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "202", :label => "Requests/Response/202", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "301", :label => "Requests/Response/301", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "304", :label => "Requests/Response/304", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "400", :label => "Requests/Response/400", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "401", :label => "Requests/Response/401", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "404", :label => "Requests/Response/404", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "405", :label => "Requests/Response/405", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "409", :label => "Requests/Response/409", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "412", :label => "Requests/Response/412", :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "500", :label => "Requests/Response/500", :unit => "Requests"}
+  @status_codes.each do |status_code|
+    metric_group.metrics << {:type => "ce_gauge", :name => status_code, :label => "Responses/#{status_code}", :unit => "# Requests"}
+  end
 
   metric_group.save
   metric_group
@@ -287,7 +253,7 @@ end
 def create_couchdb_dashboard(metric_group, name, server_list)
   log "Creating new CouchDB Dashboard"
   servers = server_list.map {|server_entry| server_entry["name"]}
-  metrics = metric_group.metrics.map {|metric| metric["name"]}
+  metrics = metric_group.metrics.map { |metric| metric["name"] }
   # Create a dashboard for all identifiers:
   CopperEgg::CustomDashboard.create(metric_group, :name => name, :identifiers => nil, :metrics => metrics)
 end
