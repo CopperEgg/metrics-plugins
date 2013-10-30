@@ -249,7 +249,7 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label)
 
   #httpd_status_codes Metrics
   @status_codes.each do |status_code|
-    metric_group.metrics << {:type => "ce_gauge", :name => status_code, :label => "Number of HTTP #{status_codes} requests", :unit => "number"}
+    metric_group.metrics << {:type => "ce_gauge", :name => status_code, :label => "Number of HTTP #{status_code} requests", :unit => "number"}
   end
 
   metric_group.save
