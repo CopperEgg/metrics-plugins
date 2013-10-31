@@ -427,6 +427,15 @@ def monitor_aws_rds(group_name)
             metrics["FreeableMemory"] = 0
           end
 
+          stats = fetch_cloudwatch_stats("AWS/RDS", "FreeStorageSpace", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          if stats != nil && stats[:datapoints].length > 0
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]/1048576} FreeStorageSpace" if @debug
+            metrics["FreeStorageSpace"] = stats[:datapoints][-1][:average]/1048576
+          else
+            metrics["FreeStorageSpace"] = 0
+          end
+
+
           stats = fetch_cloudwatch_stats("AWS/RDS", "DatabaseConnections", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} DatabaseConnections" if @debug
@@ -449,6 +458,14 @@ def monitor_aws_rds(group_name)
             metrics["WriteIOPS"] = stats[:datapoints][-1][:average]
           else
             metrics["WriteIOPS"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/RDS", "ReplicaLag", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          if stats != nil && stats[:datapoints].length > 0
+            log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} ReplicaLag" if @debug
+            metrics["ReplicaLag"] = stats[:datapoints][-1][:average]
+          else
+            metrics["ReplicaLag"] = 0
           end
 
           log "rds: #{group_name} - #{instance} - #{metrics.inspect}" if @verbose
@@ -624,9 +641,11 @@ def ensure_rds_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "WriteLatency",     :unit => "ms"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "CPUUtilization",     :unit => "%"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "FreeableMemory",     :unit => "MB"}
+  metric_group.metrics << {:type => "ce_gauge_f",   :name => "FreeStorageSpace",     :unit => "MB"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "DatabaseConnections"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "ReadIOPS",     :unit => "IO/s"}
   metric_group.metrics << {:type => "ce_gauge_f",   :name => "WriteIOPS",     :unit => "IO/s"}
+  metric_group.metrics << {:type => "ce_gauge_f",   :name => "ReplicaLag",     :unit => "s"}
   metric_group.save
   metric_group
 end
