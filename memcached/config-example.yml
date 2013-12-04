@@ -1,0 +1,20 @@
+copperegg:
+  apikey:  'YOUR_API_KEY_HERE'
+  frequency: 60
+  services:
+  - memcached
+
+memcached:
+  group_name: "memcached_stats"
+  group_label: "memcached Stats"
+  dashboard: "memcached"
+  servers:
+  - name: "memcached-01.prod"
+    hostname: 'memcached-01.prod.company.com'
+    port: 11211
+  - name: "memcached-02.prod"
+    hostname: 'memcached-02.prod.company.com'
+    port: 11211
+  - name: "memcached-03.prod"
+    hostname: 'memcached-03.prod.company.com'
+    port: 11211
