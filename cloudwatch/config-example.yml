@@ -37,3 +37,9 @@ billing:
   group_name: "aws_billing"
   group_label: "AWS Billing"
   dashboard: "AWS Billing"
+
+sqs:
+  group_name: "aws_sqs"
+  group_label: "SQS Metrics"
+  dashboard: "AWS SQS"
+  filter: "substring"
