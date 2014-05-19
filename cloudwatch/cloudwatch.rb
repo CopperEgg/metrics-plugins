@@ -67,7 +67,7 @@ apikey = nil
 @verbose = false
 @freq = 60  # update frequency in seconds
 @interupted = false
-@supported_services = [ 'ec2', 'elb', 'rds', 'billing' ]
+@supported_services = [ 'ec2', 'elb', 'rds', 'billing', 'sqs' ]
 @worker_pids = []
 
 # Options and examples:
@@ -576,6 +576,86 @@ def monitor_aws_billing(group_name)
   end
 end
 
+def monitor_aws_sqs(group_name)
+  log 'Monitoring AWS SQS..'
+  AWS.config(@aws_config_default)
+
+  while !@interrupted do
+    return if @interrupted
+    @regions.each do |region|
+      begin
+        AWS.config(@aws_config_default.merge({
+                                                 :sqs_endpoint => "sqs.#{region}.amazonaws.com",
+                                                 :cloud_watch_endpoint => "monitoring.#{region}.amazonaws.com"
+                                             }))
+        sqsclient = AWS::SQS.new()
+        cl = AWS::CloudWatch::Client.new()
+
+        sqsqueues = sqsclient.queues()
+
+        sqsqueues.each do |sqsqueue|
+          name = sqsqueue.url.split("/").last
+          filter = @config['sqs']['filter']
+          if !filter || name.include?(filter)
+            metrics = {}
+            #"NumberOfMessagesSent":0,
+            #"NumberOfMessagesReceived":0,
+            #"NumberOfMessagesDeleted":0,
+            #"NumberOfEmptyReceives":0,
+            metrics["NumberOfMessagesSent"] = 0
+            metrics["NumberOfMessagesReceived"] = 0
+            metrics["NumberOfMessagesDeleted"] = 0
+            metrics["NumberOfEmptyReceives"] = 0
+            metrics["ApproximateNumberOfMessagesVisible"] = sqsqueue.approximate_number_of_messages()
+            metrics["ApproximateNumberOfMessagesNotVisible"] = sqsqueue.approximate_number_of_messages_not_visible()
+            metrics["ApproximateNumberOfMessagesDelayed"] = sqsqueue.approximate_number_of_messages_delayed()
+
+
+            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfMessagesSent", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+
+            if stats != nil && stats[:datapoints].length > 0
+              log "sqs stat: #{name} : NumberOfMessagesSent : #{stats[:datapoints][-1][:maximum]}" if @debug
+              metrics["NumberOfMessagesSent"] = stats[:datapoints][-1][:maximum]
+            end
+
+            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfMessagesReceived", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+
+            if stats != nil && stats[:datapoints].length > 0
+              log "sqs stat: #{name} : NumberOfMessagesReceived : #{stats[:datapoints][-1][:maximum]}" if @debug
+              metrics["NumberOfMessagesReceived"] = stats[:datapoints][-1][:maximum]
+            end
+
+            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfMessagesDeleted", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+
+            if stats != nil && stats[:datapoints].length > 0
+              log "sqs stat: #{name} : NumberOfMessagesDeleted : #{stats[:datapoints][-1][:maximum]}" if @debug
+              metrics["NumberOfMessagesDeleted"] = stats[:datapoints][-1][:maximum]
+            end
+
+            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfEmptyReceives", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+
+            if stats != nil && stats[:datapoints].length > 0
+              log "sqs stat: #{name} : NumberOfEmptyReceives : #{stats[:datapoints][-1][:maximum]}" if @debug
+              metrics["NumberOfEmptyReceives"] = stats[:datapoints][-1][:maximum]
+            end
+
+            #log "sqs: #{group_name} -  - #{stats.inspect}" if @verbose
+            begin
+              CopperEgg::MetricSample.save(group_name, name, Time.now.to_i, metrics)
+            rescue Exception => e
+              log "Exception getting SQS information: #{e.to_s}.\nIgnoring and moving on."
+              log e.inspect if @debug
+              log e.backtrace.join("\n") if @debug
+            end
+          end
+        end
+      end
+    end
+
+
+    sleep_until @freq
+  end
+end
 
 def ensure_ec2_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
@@ -674,6 +754,29 @@ def ensure_billing_metric_group(metric_group, group_name, group_label)
   metric_group
 end
 
+def ensure_sqs_metric_group(metric_group, group_name, group_label)
+  if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
+    log "Creating SQS metric group"
+    metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
+  else
+    log "Updating SQS metric group"
+    metric_group.frequency = @freq
+  end
+
+  metric_group.metrics = []
+  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfMessagesSent", :unit => "Count"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfMessagesReceived", :unit => "Count"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfMessagesDeleted", :unit => "Count"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfEmptyReceives", :unit => "Count"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "ApproximateNumberOfMessagesVisible", :unit => "Count"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "ApproximateNumberOfMessagesNotVisible", :unit => "Count"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "ApproximateNumberOfMessagesDelayed", :unit => "Count"}
+
+  metric_group.save
+  metric_group
+end
+
+
 def ensure_aws_dashboard(service, metric_group, identifiers)
   dashboards = CopperEgg::CustomDashboard.find
   dashboard_name = @config[service]["dashboard"] || "AWS #{service}"
@@ -702,6 +805,8 @@ def monitor_aws(service)
     monitor_aws_rds(@config[service]["group_name"])
   elsif service == "billing"
     monitor_aws_billing(@config[service]["group_name"])
+  elsif service == "sqs"
+    monitor_aws_sqs(@config[service]["group_name"])
   else
     log "Service #{service} not recognized"
   end
@@ -716,6 +821,8 @@ def ensure_metric_group(metric_group, service)
     return ensure_rds_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
   elsif service == "billing"
     return ensure_billing_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
+  elsif service == "sqs"
+    return ensure_sqs_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
   else
     log "Service #{service} not recognized"
   end
