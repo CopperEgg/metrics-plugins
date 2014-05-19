@@ -332,6 +332,30 @@ def monitor_aws_elb(group_name)
             metrics["HTTPCode_ELB_5XX"] = 0
           end
 
+          stats = fetch_cloudwatch_stats("AWS/ELB", "BackendConnectionErrors", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          if stats != nil && stats[:datapoints].length > 0
+            log "elb stat: #{lb.name} : BackendConnectionErrors : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
+            metrics["BackendConnectionErrors"] = stats[:datapoints][-1][:sum].to_i
+          else
+            metrics["BackendConnectionErrors"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/ELB", "SurgeQueueLength", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          if stats != nil && stats[:datapoints].length > 0
+            log "elb stat: #{lb.name} : SurgeQueueLength : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
+            metrics["SurgeQueueLength"] = stats[:datapoints][-1][:sum].to_i
+          else
+            metrics["SurgeQueueLength"] = 0
+          end
+
+          stats = fetch_cloudwatch_stats("AWS/ELB", "SpilloverCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          if stats != nil && stats[:datapoints].length > 0
+            log "elb stat: #{lb.name} : SpilloverCount : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
+            metrics["SpilloverCount"] = stats[:datapoints][-1][:sum].to_i
+          else
+            metrics["SpilloverCount"] = 0
+          end
+
           # FIXME: doesn't work right
           # needs to fetch each az separately, eg :name=>"Availability-zone", :value=>us-east-1b
           #stats = fetch_cloudwatch_stats("AWS/ELB", "HealthyHostCount", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
@@ -695,6 +719,9 @@ def ensure_elb_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << {:type => "ce_gauge",   :name => "HTTPCode_Backend_2XX", :unit => "Responses"}
   metric_group.metrics << {:type => "ce_gauge",   :name => "HTTPCode_Backend_5XX", :unit => "Responses"}
   metric_group.metrics << {:type => "ce_gauge",   :name => "HTTPCode_ELB_5XX",     :unit => "Responses"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "BackendConnectionErrors", :unit => "Errors"}
+  metric_group.metrics << {:type => "ce_gauge_f",   :name => "SurgeQueueLength",     :unit => "Requests"}
+  metric_group.metrics << {:type => "ce_gauge_f",   :name => "SpilloverCount",       :unit => "Requests"}
 
   # FIXME: doesn't work right
   #metric_group.metrics << {:type => "ce_gauge",   :name => "HealthyHostCount",     :unit => "Hosts"}
