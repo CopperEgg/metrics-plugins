@@ -193,9 +193,9 @@ def monitor_mongodb(mongo_servers, group_name)
           metrics = {}
           metrics['db_objects']            = dbstats['objects'].to_i
           metrics['db_indexes']            = dbstats['indexes'].to_i
-          metrics['db_datasize']           = (dbstats['datasize'].to_f/(1024*1024).to_f)
-          metrics['db_storage_size']       = (dbstats['storage_size'].to_f/(1024*1024).to_f)
-          metrics['db_index_size']         = (dbstats['index_size'].to_f/(1024*1024).to_f)
+          metrics['db_datasize']           = (dbstats['dataSize'].to_f/(1024*1024).to_f)
+          metrics['db_storage_size']       = (dbstats['storageSize'].to_f/(1024*1024).to_f)
+          metrics['db_index_size']         = (dbstats['indexSize'].to_f/(1024*1024).to_f)
         end
 
         oname = mhost['name'] + '-' + dbname['name']
