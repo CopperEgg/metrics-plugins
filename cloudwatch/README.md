@@ -110,3 +110,20 @@ If you have enabled Billing, you will need to [Turn on billing metrics in the AW
 
 If your system has a ruby version 1.8.6 or less, [Consider using RVM](https://rvm.io/) to install version 1.8.7 or 1.9.x.
 
+At present, "aws-sdk" V2 is present as default. If there are any issues, reverting to V1 (i.e.) installing the Cloudwatch ELB custom-metrics by using "aws-sdk-v1" gems, can be done using these steps:
+
+    // Steps for using "aws-sdk-v1" gems
+    sudo yum install -y gcc g++ make automake autoconf curl-devel openssl-devel zlib-devel httpd-devel libxml2 libxml2-devel libxslt libxslt-devel
+    // install rvm so I can use ruby v1.9.3
+    curl -L get.rvm.io | bash -s stable
+    source /etc/profile.d/rvm.sh
+    rvm install 1.9.3
+    rvm use 1.9.3
+    // install gems
+    gem install json --no-ri --no-rdoc
+    gem install nokogiri --no-ri --no-rdoc
+    gem install bson_ext --no-ri --no-rdoc
+    gem install aws-sdk-v1 --no-ri --no-rdoc
+    gem install copperegg -v 0.6.0
+    git clone https://github.com/CopperEgg/metrics-plugins.git
+    // then create/edit my config.yml and run cloudwatch.rb
