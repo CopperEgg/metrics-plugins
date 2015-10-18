@@ -9,9 +9,9 @@ Just add a few entries to a config.yml file, run the cloudwatch script, and
 
 The script gathers quite a bit of information from AWS Cloudwatch; the example script only creates widgets for a subset of the data that is gathered.
 
-If you do not have a CopperEgg account, you may create one at <https://copperegg.com/copperegg-signup/>
+If you do not have a Uptime Cloud Monitor account, you may create one at <https://www.idera.com/infrastructure-monitoring-as-a-service/freetrialsubscriptionform>
 
-If you have a CopperEgg account, you may log in and use RevealMetrics at <https://app.copperegg.com/login>
+If you have a Uptime Cloud Monitor account, you may log in and use RevealMetrics at <https://app.copperegg.com/login>
 
 #Getting Started with the cloudwatch.rb Ruby script
 
@@ -52,7 +52,7 @@ Copy the example config into config.yml, and edit with your favorite editor:
     cp config-example.yml config.yml
     nano config.yml
 
-  - Enter your CopperEgg User API Key:  replace "YOUR\_APIKEY" with your api key, found in the settings tab of app.copperegg.com.
+  - Enter your Uptime Cloud Monitor User API Key:  replace "YOUR\_APIKEY" with your api key, found in the settings tab of app.copperegg.com.
   - Enter your AWS access\_key\_id: replace "YourAWSAccessKey" with your aws access key id.
   - Enter your AWS secret\_access\_key: replace "SuperSecretAWSKeyGoesHere" with your aws secret access key.
   - Optionally, change your custom dashboard name, by replacing "AWS Monitoring".
@@ -97,11 +97,11 @@ And it will run in the background, and log to /tmp/copperegg-cloudwatch.log
 It may take up to a minute for the dashboard to automatically appear, once created.
 After a minute or a page refresh, "AWS Monitoring" will appear in the left nav of the RevealMetrics tab.  Enjoy!
 
-Note that you can add widgets to the AWS dashboard which display data from any metric groups, including system metrics gathered using the CopperEgg collector, and website monitoring metrics gathered by CopperEgg RevealUptime.
+Note that you can add widgets to the AWS dashboard which display data from any metric groups, including system metrics gathered using the Uptime Cloud Monitor collector, and website monitoring metrics gathered by Uptime Cloud Monitor RevealUptime.
 
-Have a look at the [CopperEgg Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
+Have a look at the [Uptime Cloud Monitor Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
 
-Don't forget that you can set alerts and notifications based on the custom metrics being gathered from AWS, just as simply as setting up all of your CopperEgg system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
+Don't forget that you can set alerts and notifications based on the custom metrics being gathered from AWS, just as simply as setting up all of your Uptime Cloud Monitor system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
 
 
 #Troubleshooting

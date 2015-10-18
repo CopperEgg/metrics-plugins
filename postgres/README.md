@@ -1,7 +1,7 @@
-PostgreSQL Monitoring with CopperEgg
+PostgreSQL Monitoring with Uptime Cloud Monitor
 ===========================
 
-A Ruby script to gather performance metrics from PostgreSQL, and send them to CopperEgg.
+A Ruby script to gather performance metrics from PostgreSQL, and send them to Uptime Cloud Monitor.
 
 
 postgresql.rb
@@ -13,9 +13,9 @@ Just add a few entries to a config.yml file, run the  script, and
   - a custom dashboard will be generated, visible from the Dashboards tab, and
   - the gathered metrics will be displayed in a series of widgets on your new dashboard.
 
-If you do not have a CopperEgg account, you may create one at <https://copperegg.com/copperegg-signup/>
+If you do not have a Uptime Cloud Monitor account, you may create one at <https://www.idera.com/infrastructure-monitoring-as-a-service/freetrialsubscriptionform>
 
-If you have a CopperEgg account, you may log in and get started at <https://app.copperegg.com/login>
+If you have a Uptime Cloud Monitor account, you may log in and get started at <https://app.copperegg.com/login>
 
 ##Getting Started with the postgresql.rb Ruby script
 
@@ -33,7 +33,7 @@ This has been tested with ruby 1.9.3 and with Ruby-1.8.7 on Ubuntu 12.04. You wi
 
 Copy the example config into config.yml, and edit with your favorite editor:
 
-  - Enter your CopperEgg User API Key:  replace 'YOUR_APIKEY' with your API key, found in the settings tab of http://app.copperegg.com.
+  - Enter your Uptime Cloud Monitor User API Key:  replace 'YOUR_APIKEY' with your API key, found in the settings tab of http://app.copperegg.com.
 
   - You will find one defined service ; 'postgresql' The postgresql service monitors all of the postgresql databases specified in the config.yml. It must be edited to specify the correct postgresql server hostname, port and username / password of each of the databases specified.
 
@@ -66,10 +66,10 @@ And it will run in the background, and log to /tmp/copperegg-postgresql.log
 It may take up to a minute for the dashboard to automatically appear, once created.
 After a minute or a page refresh, "PostgreSQL" will appear in the left nav of the Dashboards tab.  Enjoy!
 
-Note that you can add widgets to the PostgreSQL Dashboard which display data from any metric groups, including system metrics gathered using any of CopperEgg's services. We recommend that you also install the CopperEgg collector on you PostgreSQL server, so that you can correlate PostgreSQL performance with the underlying system metrics.
+Note that you can add widgets to the PostgreSQL Dashboard which display data from any metric groups, including system metrics gathered using any of Uptime Cloud Monitor's services. We recommend that you also install the Uptime Cloud Monitor collector on you PostgreSQL server, so that you can correlate PostgreSQL performance with the underlying system metrics.
 
 
-Have a look at the [CopperEgg Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
+Have a look at the [Uptime Cloud Monitor Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
 
-Don't forget that you can set alerts and notifications based on the custom metrics being gathered from postgresql, just as simply as setting up all of your CopperEgg system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
+Don't forget that you can set alerts and notifications based on the custom metrics being gathered from postgresql, just as simply as setting up all of your Uptime Cloud Monitor system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
 

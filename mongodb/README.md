@@ -1,7 +1,7 @@
-MongoDB Monitoring with CopperEgg
+MongoDB Monitoring with Uptime Cloud Monitor
 ===========================
 
-Example scripts to gather stats and metrics from MongoDB, and send to CopperEgg.
+Example scripts to gather stats and metrics from MongoDB, and send to Uptime Cloud Monitor.
 
 
 mongodb.rb
@@ -13,9 +13,9 @@ Just add a few entries to a config.yml file, run the mongodb script, and
   - a custom dashboard will be generated, visible from the Dashboards tab, and
   - the gathered metrics will be displayed in a series of widgets on your new dashboard.
 
-If you do not have a CopperEgg account, you may create one at <https://copperegg.com/copperegg-signup/>
+If you do not have a Uptime Cloud Monitor account, you may create one at <https://www.idera.com/infrastructure-monitoring-as-a-service/freetrialsubscriptionform/>
 
-If you have a CopperEgg account, you may log in and get started at <https://app.copperegg.com/login>
+If you have a Uptime Cloud Monitor account, you may log in and get started at <https://app.copperegg.com/login>
 
 #Getting Started with the mongodb.rb Ruby script
 
@@ -30,7 +30,7 @@ This has been tested with ruby 1.9.3. You will need to install and set up Ruby o
 
 Copy the example config into config.yml, and edit with your favorite editor:
 
-  - Enter your CopperEgg User API Key:  replace 'YOUR_APIKEY' with your API key, found in the settings tab of http://app.copperegg.com.
+  - Enter your Uptime Cloud Monitor User API Key:  replace 'YOUR_APIKEY' with your API key, found in the settings tab of http://app.copperegg.com.
   - You will find two services, 'mongo_dbadmin' and 'mongodb'
   - The mongo_dbadmin service monitors the privelaged 'admin' database; it must be edited to include the correct mongodb server hostname, port and username / password of the mogodb admin.
     The database 'admin' should not be changed; you can apply any name you choose for the server 'name.'
@@ -67,9 +67,9 @@ And it will run in the background, and log to /tmp/copperegg-mongodb.log
 It may take up to a minute for the dashboard to automatically appear, once created.
 After a minute or a page refresh, "MongoDB Databases" and MongoDB Admin" will appear in the left nav of the Dashboards tab.  Enjoy!
 
-Note that you can add widgets to the Mongodb Dashboard which display data from any metric groups, including system metrics gathered using any of CopperEgg's services.
+Note that you can add widgets to the Mongodb Dashboard which display data from any metric groups, including system metrics gathered using any of Uptime Cloud Monitor's services.
 
-Have a look at the [CopperEgg Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
+Have a look at the [Uptime Cloud Monitor Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
 
-Don't forget that you can set alerts and notifications based on the custom metrics being gathered from mongodb, just as simply as setting up all of your CopperEgg system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
+Don't forget that you can set alerts and notifications based on the custom metrics being gathered from mongodb, just as simply as setting up all of your Uptime Cloud Monitor system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
 
