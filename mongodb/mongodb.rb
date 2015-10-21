@@ -2,7 +2,7 @@
 #
 # CopperEgg mongodb monitoring    mongodb.rb
 #
-# Copyright 2013 CopperEgg Corporation.  All rights reserved.
+# Copyright 2013 IDERA.  All rights reserved.
 #
 # License:: MIT License
 #

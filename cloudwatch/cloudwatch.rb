@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 #
-# Copyright 2012 CopperEgg Corporation.  All rights reserved.
+# Copyright 2012 IDERA.  All rights reserved.
 #
 
 require 'rubygems'
