@@ -160,7 +160,7 @@ def monitor_couchdb(couchdb_servers, group_name)
       begin
         uri = URI.parse("#{rhost['url']}/_stats?range=60")
 
-        if rhost['user'] and rhost['password']
+        if !rhost['user'].empty? and !rhost['password'].empty?
             request = Net::HTTP::Get.new(uri.request_uri)
             request.basic_auth(rhost['user'], rhost['password'])
             response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
@@ -227,29 +227,29 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label)
   metric_group.metrics = []
 
   #Database Metrics
-  metric_group.metrics << {:type => "ce_gauge", :name => "auth_cache_hits", :label => "Number of authentication cache hits", :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "auth_cache_misses", :label => "Number of authentication cache misses", :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "db_reads",      :label => "Number of times a document was read from a database",  :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "db_writes",     :label => "Number of times a database was changed", :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "open_databases",:label => "Number of open databases",      :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "open_files",    :label => "Number of file descriptors CouchDB has open",         :unit => "number"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "auth_cache_hits", :label => "Number of authentication cache hits", :unit => "Hits"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "auth_cache_misses", :label => "Number of authentication cache misses", :unit => "Misses"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "db_reads",      :label => "Number of times a document was read from a database",  :unit => "Reads"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "db_writes",     :label => "Number of times a database was changed", :unit => "Writes"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "open_databases",:label => "Number of open databases",      :unit => "Databases"}
+  metric_group.metrics << {:type => "ce_gauge",   :name => "open_files",    :label => "Number of file descriptors CouchDB has open",         :unit => "Files"}
   metric_group.metrics << {:type => "ce_gauge_f", :name => "request_time",  :label => "Length of a request inside CouchDB without MochiWeb",:unit => "Milliseconds"}
 
   #httpd Metrics
-  metric_group.metrics << {:type => "ce_gauge", :name => "bulk_requests",        :label => "Number of bulk requests",   :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "requests",             :label => "Number of HTTP requests",        :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "temporary_view_reads", :label => "Number of temporary view reads",  :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "view_reads",           :label => "Number of view reads",            :unit => "number"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "clients_requesting_changes", :label => "Number of clients for continuous _changes", :unit => "number"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "bulk_requests",        :label => "Number of bulk requests",   :unit => "Requests"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "requests",             :label => "Number of HTTP requests",        :unit => "Requests"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "temporary_view_reads", :label => "Number of temporary view reads",  :unit => "Reads"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "view_reads",           :label => "Number of view reads",            :unit => "Reads"}
+  metric_group.metrics << {:type => "ce_gauge", :name => "clients_requesting_changes", :label => "Number of clients for continuous changes", :unit => "Clients"}
 
   #httpd_request_methods Metrics
   @http_methods.each do |method|
-    metric_group.metrics << {:type => "ce_gauge", :name => method, :label => "Number of HTTP #{method} responses", :unit => "number"}
+    metric_group.metrics << {:type => "ce_gauge", :name => method, :label => "Number of HTTP #{method} responses", :unit => "Responses"}
   end
 
   #httpd_status_codes Metrics
   @status_codes.each do |status_code|
-    metric_group.metrics << {:type => "ce_gauge", :name => status_code, :label => "Number of HTTP #{status_code} requests", :unit => "number"}
+    metric_group.metrics << {:type => "ce_gauge", :name => status_code, :label => "Number of HTTP #{status_code} requests", :unit => "Requests"}
   end
 
   metric_group.save
