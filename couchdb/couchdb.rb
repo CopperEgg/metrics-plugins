@@ -81,7 +81,7 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-config_file = "config.yml"
+config_file = "/usr/local/ucm/ucm-metrics/couchdb/config.yml"
 @apihost = nil
 @debug = false
 @verbose = false
@@ -177,6 +177,7 @@ def monitor_couchdb(couchdb_servers, group_name)
 
       rescue Exception => e
         log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
+        log "More information : #{e.inspect}"
         next
       end
 
@@ -319,15 +320,16 @@ end
   if @config[service] && @config[service]["servers"].length > 0
     begin
       log "Checking for existence of metric group for #{service}"
-      metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]}
+      metric_group = (metric_group == nil)? nil: metric_groups.detect {|m| m.name == @config[service]["group_name"]}
       metric_group = ensure_metric_group(metric_group, service)
       raise "Could not create a metric group for #{service}" if metric_group.nil?
 
       log "Checking for existence of #{service} Dashboard"
-      dashboard = dashboards.detect {|d| d.name == @config[service]["dashboard"]} || create_dashboard(service, metric_group)
+      dashboard = (dashboards == nil)? nil : dashboards.detect {|d| d.name == @config[service]["dashboard"]} || create_dashboard(service, metric_group)
       log "Could not create a dashboard for #{service}" if dashboard.nil?
     rescue => e
-      log e.message
+      log "Message : #{e.message.inspect}\nTrace : "
+      log e.backtrace[0..30].join("\n")
       next
     end
 
