@@ -318,7 +318,7 @@ fi
 # Add more services here and call its respective script
 MONITOR_COUCHDB="`echo $MON_LIST | egrep -o 'couchdb'`"
 
-export $COPPEREGG_USER $COPPEREGG_GROUP
+export COPPEREGG_USER COPPEREGG_GROUP
 if [ -n "$MONITOR_COUCHDB" ]; then
     bash "couchdb/couchdb_installer.sh"
 fi
