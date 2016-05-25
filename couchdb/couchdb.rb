@@ -81,7 +81,7 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-config_file = "/usr/local/ucm/ucm-metrics/couchdb/config.yml"
+config_file = "/usr/local/ucm/couchdb/config.yml"
 @apihost = nil
 @debug = false
 @verbose = false
@@ -118,7 +118,7 @@ if !@config.nil?
   # load config
   if !@config["copperegg"].nil?
     CopperEgg::Api.apikey = @config["copperegg"]["apikey"] if !@config["copperegg"]["apikey"].nil? && CopperEgg::Api.apikey.nil?
-    CopperEgg::Api.host = @config["copperegg"]["host"] if !@config["copperegg"]["host"].nil?
+    CopperEgg::Api.host = @config["copperegg"]["apihost"] if !@config["copperegg"]["apihost"].nil?
     @freq = @config["copperegg"]["frequency"] if !@config["copperegg"]["frequency"].nil?
     @services = @config['copperegg']['services']
   else
