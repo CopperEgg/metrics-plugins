@@ -31,7 +31,7 @@ def log(str)
       puts "#{Time.now.strftime(TIME_STRING)} pid:#{Process.pid}> #{string}"
     end
     $stdout.flush
-  rescue StandardError => e
+  rescue StandardError
     # do nothing -- just catches unimportant errors when we kill the process
     # and it's in the middle of logging or flushing.
   end
@@ -81,7 +81,7 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-base_path = '/usr/local/ucm/couchdb'
+base_path = '/usr/local/copperegg/ucm-metrics/couchdb'
 config_file = "#{base_path}/config.yml"
 @apihost = nil
 @debug = false
@@ -169,7 +169,7 @@ def monitor_couchdb(couchdb_servers, group_name)
           response = Net::HTTP.get_response(uri)
         end
 
-        return nil if response.code != '200'
+        return nil unless response.code == '200'
 
         # Parse json reply
         rstats = JSON.parse(response.body)

@@ -74,11 +74,11 @@ setup_couchdb()
 
     echo
     if [ -z $USER_NAME ]; then
-        echo "Testing with command: curl $URL:$PORT/_stats"
-        curl "$URL:$PORT/_stats" > /tmp/couchdb_stats.txt
+        echo "Testing with command: curl --connect-timeout 30 $URL:$PORT/_stats"
+        curl --connect-timeout 30 "$URL:$PORT/_stats" > /tmp/couchdb_stats.txt
     else
-        echo "Testing with command: curl -u $USER_NAME:$PASSWORD $URL:$PORT/_stats"
-        curl -u $USER_NAME:$PASSWORD "$URL:$PORT/_stats" > /tmp/couchdb_stats.txt
+        echo "Testing with command: curl --connect-timeout 30 -u $USER_NAME:$PASSWORD $URL:$PORT/_stats"
+        curl --connect-timeout 30 -u $USER_NAME:$PASSWORD "$URL:$PORT/_stats" > /tmp/couchdb_stats.txt
     fi
 
     # grep any one metric from the output file
@@ -128,10 +128,10 @@ setup_upstart_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/ucm/log/revealmetrics_couchdb.log] "
+            echo -n "log file: [/usr/local/copperegg/log/couchdb_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                    LOGFILE="/usr/local/ucm/log/revealmetrics_couchdb.log"
+                    LOGFILE="/usr/local/copperegg/log/couchdb_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -177,7 +177,7 @@ ENDINIT
 
     if [ -n "$CREATED_INIT" ]; then
         echo
-        echo "Thank you for setting up the CopperEgg Metrics Agent."
+        echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
         echo "You may use 'sudo [start|stop] `basename $INIT_FILE .conf` to start/stop the agent"
         echo
         start `basename $INIT_FILE .conf`
@@ -206,10 +206,10 @@ setup_standard_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/ucm/log/revealmetrics_couchdb.log] "
+            echo -n "log file: [/usr/local/copperegg/log/revealmetrics_couchdb.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                LOGFILE="/usr/local/ucm/log/revealmetrics_couchdb.log"
+                LOGFILE="/usr/local/copperegg/log/revealmetrics_couchdb.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -340,7 +340,7 @@ ENDINIT
 
 create_exe_file()
 {
-    LAUNCHER_FILE="/usr/local/ucm/revealmetrics_couchdb_launcher.sh"
+    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_couchdb_launcher.sh"
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
@@ -373,11 +373,6 @@ ENDINIT
 ###############################################################
 ###############################################################
 
-
-# Remove previous installation of couchdb and copy couchdb directory one step above parent directory
-rm -rf /usr/local/ucm/couchdb
-cp -R /usr/local/ucm/ucm-metrics/couchdb /usr/local/ucm/
-
 if [ -z "$FREQ" -o -z "`echo $FREQ | egrep -o '^[0-9]$'`" ]; then
     # FREQ is an empty string or not a number.  Ask for it
     echo
@@ -402,7 +397,6 @@ fi
 echo "Monitoring frequency set to one sample per $FREQ seconds."
 
 echo
-
 for THIS_GEM in `cat couchdb/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
     echo "Installing gem $THIS_GEM..."
     if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
@@ -436,8 +430,8 @@ echo
 echo "------------------------------------------------------------------"
 echo
 
-CONFIG_FILE="/usr/local/ucm/couchdb/config.yml"
-AGENT_FILE="/usr/local/ucm/couchdb/couchdb.rb"
+CONFIG_FILE="/usr/local/copperegg/ucm-metrics/couchdb/config.yml"
+AGENT_FILE="/usr/local/copperegg/ucm-metrics/couchdb/couchdb.rb"
 
 echo
 echo "Creating config.yml.  Press enter to use the default [in brackets]"
@@ -469,7 +463,7 @@ while true; do
     setup_couchdb "" "" "5984"
 done
 
-chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/ucm/*
+chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/copperegg/ucm-metrics/*
 
 echo
 echo

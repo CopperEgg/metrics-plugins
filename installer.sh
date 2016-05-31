@@ -1,51 +1,13 @@
 #!/bin/bash
 
-print_notes()
-{
-    TYPE=$1
-    case "$TYPE" in
-    "couchdb")
-        echo
-        echo "CouchDB notes:"
-        echo "Please ensure that this sytem is able to access the couchdb databases"
-    esac
-}
-
-###############################################################
-###############################################################
-##   End Functions, start main code
-###############################################################
-###############################################################
-
 echo
 echo "For yes/no questions, type 'y' for yes, 'n' for no."
 echo "Or press Enter to use the default answer."
 
 echo
 
-# Add more services here
-SUPPORTED_TYPES="couchdb"
-
-if [ -z "$MON_LIST" ]; then
-    # if user didn't set the env var, ask them
-    MON_LIST=""
-    for CONFIG_TYPE in $SUPPORTED_TYPES; do
-        echo -n "Configure $CONFIG_TYPE monitoring? [yN] "
-        read yn
-        if [ -n "`echo $yn | egrep -io '^y'`" ]; then
-            MON_LIST="$CONFIG_TYPE $MON_LIST"
-            print_notes $CONFIG_TYPE
-        fi
-    done
-fi
-
-if [ -z "$MON_LIST" ]; then
-    echo
-    echo "No monitoring selected.  Please re-run and select (type 'yes' for) at least one thing to monitor."
-    echo "Exiting."
-    echo
-    exit 1
-fi
+# we send one service at a time from main installer script (reveal repo).
+# and then this installer calls specific installer for that service (say couchdb)
 
 if [ -n "`which useradd 2>/dev/null`" ]; then
     COPPEREGG_USER="copperegg"
@@ -70,29 +32,11 @@ if [ -f "/usr/local/rvm/scripts/rvm" ]; then
     export RVM_SCRIPT
     . $RVM_SCRIPT
     echo "Detected system-level rvm install."
+    echo "Using this ruby : "
     echo "Ruby path = `which ruby 2>/dev/null`"
     echo "Ruby version = `ruby --version`"
-    echo -n "Is this correct? 'Yes' if unsure. [Yn] "
-    read yn
-    if [ -z "`echo $yn | egrep -io '^n'`" ]; then
-        INSTALL_RVM=""
-        RVM_TYPE="system"
-        echo "Ok, using existing rvm"
-    else
-        USE_RUBY="`rvm list default string`"
-        echo "Detected rvm rubies: `rvm list string`"
-        echo -n "Which ruby version should I use? [$USE_RUBY]"
-        read RUBY_TMP
-        if [ -z "$RUBY_TMP" ]; then
-            # do nothing, just keep USE_RUBY as is
-            echo
-        elif [ -z "`rvm list string | egrep $RUBY_TMP`" ]; then
-            echo "Invalid ruby $RUBY_TMP."
-        elif [ -n "$RUBY_TMP" ]; then
-            USE_RUBY=$RUBY_TMP
-        fi
-        echo "Using $USE_RUBY"
-    fi
+    INSTALL_RVM=""
+    RVM_TYPE="system"
 elif [ -f "$HOME/.rvm/scripts/rvm" ]; then
     # skip for now
     break #FIXME: we should be able to use a user-land rvm install
@@ -322,10 +266,6 @@ export COPPEREGG_USER COPPEREGG_GROUP
 if [ -n "$MONITOR_COUCHDB" ]; then
     bash "couchdb/couchdb_installer.sh"
 fi
-
-# cleanup downloaded tar and extracted directory
-rm -f /usr/local/ucm/*.tar.gz
-rm -rf /usr/local/ucm/ucm-metrics
 
 echo
 echo "Install complete!"
