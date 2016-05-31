@@ -244,12 +244,12 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label)
 
   # httpd_request_methods Metrics
   @http_methods.each do |method|
-    metric_group.metrics << { type: 'ce_gauge', name: method, label: 'HTTP #{method} Responses', unit: 'Responses' }
+    metric_group.metrics << { type: 'ce_gauge', name: method, label: "HTTP #{method} Responses", unit: 'Responses' }
   end
 
   # httpd_status_codes Metrics
   @status_codes.each do |status_code|
-    metric_group.metrics << { type: 'ce_gauge', name: status_code, label: 'HTTP #{status_code} Requests', unit: 'Requests' }
+    metric_group.metrics << { type: 'ce_gauge', name: status_code, label: "HTTP #{status_code} Requests", unit: 'Requests' }
   end
 
   metric_group.save
