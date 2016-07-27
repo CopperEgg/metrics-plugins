@@ -1,0 +1,20 @@
+copperegg:
+  apikey: "YOUR_APIKEY"
+  frequency: 60
+  services:
+  - postgresql
+postgresql:
+  group_name: "pg_metrics"
+  group_label: "PostgreSQL Metrics"
+  dashboard: "PostgreSQL Dashboard"
+  servers:
+  - name: "postgre-server2"
+    hostname: "http://localhost"
+    port: 5432
+    sslmode: "disable"
+    databases:
+    - name: "mydb"
+      username: "my_user"
+      password: "my_password"
+
+
