@@ -442,6 +442,45 @@ if [ -z "$FREQ" -o -z "`echo $FREQ | egrep -o '^[0-9]$'`" ]; then
 fi
 echo "Monitoring frequency set to one sample per $FREQ seconds."
 
+if [ -n "`which dpkg 2>/dev/null`" ]; then
+    HAS_PGDEV="`dpkg --list | egrep 'libpq-dev'`"
+elif [ -n "`which yum 2>/dev/null`" ]; then
+    HAS_PGDEV="`yum list installed | egrep postgresql-devel`"
+fi
+
+if [ -z "$HAS_PGDEV" ]; then
+    echo
+    echo -n "Postgres Development package is not installed. May I install it for you? [Yn] "
+    read yn
+    if [ -z "`echo $yn | egrep -io '^n'`" ]; then
+        install_rc=0
+        if [ -n "`which apt-get 2>/dev/null`" ]; then
+            echo "Installing Postgres Development Package with apt-get.  This may take a few minutes..."
+            apt-get update >> $PKG_INST_OUT 2>&1
+            apt-get -y install libpq-dev >> $PKG_INST_OUT 2>&1
+            install_rc=$?
+        elif [ -n "`which yum 2>/dev/null`" ]; then
+            echo "Installing Postgres Development Package with yum.  This may take a few minutes..."
+            yum -y install postgresql-devel >> $PKG_INST_OUT 2>&1
+            install_rc=$?
+        else
+            # This should not happen, but if it does just warn
+            echo "Warn: could not install Postgres Development"
+        fi
+        if [ $install_rc -ne 0 ]; then
+            echo
+            echo "ERROR: Could not install Postgres Development.  Please report this to support-uptimecm@idera.com"
+            echo "  and include all this output, plus the file: $PKG_INST_OUT"
+            echo
+            exit 1
+        fi
+    else
+        echo "Postgres Development package is required for installing pg module. Please install it manually or allow this script to."
+        exit 1
+    fi
+fi
+
+
 echo
 for THIS_GEM in `cat postgresql/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
     echo "Installing gem $THIS_GEM..."
