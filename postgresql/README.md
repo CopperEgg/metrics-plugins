@@ -19,14 +19,13 @@ If you have a Uptime Cloud Monitor account, you may log in and get started at <h
 
 ##Getting Started with the postgresql.rb Ruby script
 
-###1. Install dependencies
+##1. Install dependencies
 
 This plugin requires the 'pg' gem, AKA the ruby-pg gem. It will be installed during the bundle process.
 
 This has been tested with ruby 1.9.3 and with Ruby-1.8.7 on Ubuntu 12.04. You will need to install and set up Ruby on your system, you can find documentation on how to do that on the Ruby site, or anywhere else Google takes you.
 
-
-###2. Download the agent to your PostgreSQL server, and configure it
+##2. Download and configure the agent
 
     git clone git://github.com/CopperEgg/metrics-plugins.git
     cd metrics-plugins/postgresql
@@ -35,20 +34,19 @@ Copy the example config into config.yml, and edit with your favorite editor:
 
   - Enter your Uptime Cloud Monitor User API Key:  replace 'YOUR_APIKEY' with your API key, found in the settings tab of http://app.copperegg.com.
 
-  - You will find one defined service ; 'postgresql' The postgresql service monitors all of the postgresql databases specified in the config.yml. It must be edited to specify the correct postgresql server hostname, port and username / password of each of the databases specified.
+  - You will find one defined service : 'postgresql'. The postgresql service monitors all of the postgresql databases specified in the config.yml. It must be edited to specify the correct postgresql server hostname, port and username / password of each of the databases specified.
 
-  - A custom dashboard will be created to display these metrics for all databases. The name of the custom dashboard will be PostgreSQL; you may optionally choose a different dashboard name.
-
+  - A custom dashboard will be created to display these metrics for all databases. The name of the custom dashboard will be PostgreSQL. You may optionally choose a different dashboard name.
 
 When editing the config.yml file, be sure to keep the same spacing supplied in the original file.
 
-###3. Bundle and Install gems
+##3. Bundle and Install gems
 
 Ensure that current ruby gems are installed.
 
     bundle install
 
-###4. Run the agent
+##4. Run the agent
 
     ruby ./postgresql.rb
 

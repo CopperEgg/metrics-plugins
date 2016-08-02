@@ -86,7 +86,7 @@ if [ -n "$SUGGEST_RVM" -a -z "$RVM_TYPE" ]; then
 fi
 
 if [ -z "$RVM_TYPE" ]; then
-    echo -n "Do you have a custom ruby install (eg ree/rvm)? 'No' if unsure. [yN] "
+    echo -n "Do you have a custom ruby install (>=1.9.3) (eg ree/rvm)? 'No' if unsure. [yN] "
     read yn
     if [ -n "`echo $yn | egrep -io '^y'`" ]; then
         echo -n "What is the path to your ruby? [`which ruby 2>/dev/null`] "
@@ -261,10 +261,14 @@ fi
 
 # Add more services here and call its respective script
 MONITOR_COUCHDB="`echo $MON_LIST | egrep -o 'couchdb'`"
+MONITOR_POSTGRESQL="`echo $MON_LIST | egrep -o 'postgresql'`"
 
 export COPPEREGG_USER COPPEREGG_GROUP
 if [ -n "$MONITOR_COUCHDB" ]; then
     bash "couchdb/couchdb_installer.sh"
+fi
+if [ -n "$MONITOR_POSTGRESQL" ]; then
+    bash "postgresql/postgresql_installer.sh"
 fi
 
 echo
