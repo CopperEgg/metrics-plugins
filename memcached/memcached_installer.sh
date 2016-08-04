@@ -69,7 +69,7 @@ setup_memcached()
     echo
     echo "Testing with command: echo 'stats' | nc $URL $PORT"
     echo "stats" | nc $URL $PORT > /tmp/memcached_stats.txt
-    
+
     # grep any one metric from the output file
     if [ -z "`grep 'uptime' /tmp/memcached_stats.txt`" ]; then
         echo
@@ -194,10 +194,10 @@ setup_standard_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/revealmetrics_memcached.log] "
+            echo -n "log file: [/usr/local/copperegg/log/memcached_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                LOGFILE="/usr/local/copperegg/log/revealmetrics_memcached.log"
+                LOGFILE="/usr/local/copperegg/log/memcached_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
