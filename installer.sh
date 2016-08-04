@@ -262,13 +262,15 @@ fi
 # Add more services here and call its respective script
 MONITOR_COUCHDB="`echo $MON_LIST | egrep -o 'couchdb'`"
 MONITOR_POSTGRESQL="`echo $MON_LIST | egrep -o 'postgresql'`"
+MONITOR_MEMCACHED="`echo $MON_LIST | egrep -o 'memcached'`"
 
 export COPPEREGG_USER COPPEREGG_GROUP
 if [ -n "$MONITOR_COUCHDB" ]; then
     bash "couchdb/couchdb_installer.sh"
-fi
-if [ -n "$MONITOR_POSTGRESQL" ]; then
+elif [ -n "$MONITOR_POSTGRESQL" ]; then
     bash "postgresql/postgresql_installer.sh"
+elif [ -n "$MONITOR_MEMCACHED" ]; then
+    bash "memcached/memcached_installer.sh"
 fi
 
 echo

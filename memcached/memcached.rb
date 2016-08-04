@@ -5,8 +5,6 @@
 # Copyright 2013 Chris Snell <chris.snell@revinate.com>
 #
 # License:: MIT License
-#
-# Derived from CopperEgg's PostgreSQL monitoring agent
 
 require 'rubygems'
 require 'getoptlong'
@@ -17,151 +15,67 @@ require 'socket'
 
 class CopperEggAgentError < Exception; end
 
-####################################################################
-
+####################################################################################################
 def help
-  puts "usage: $0 args"
-  puts "Examples:"
-  puts "  -c config.yml"
-  puts "  -f 60                 (for 60s updates. Valid values: 5, 15, 60, 300, 900, 3600)"
-  puts "  -k hcd7273hrejh712    (your APIKEY from the UI dashboard settings)"
-  puts "  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])"
+  puts 'usage: $0 args'
+  puts 'Examples:'
+  puts '  -c config.yml'
+  puts '  -f 60                 (for 60s updates. Valid values: 5, 15, 60, 300, 900, 3600)'
+  puts '  -k hcd7273hrejh712    (your APIKEY from the UI dashboard settings)'
+  puts '  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])'
 end
 
-TIME_STRING='%Y/%m/%d %H:%M:%S'
-##########
-# Used to prefix the log message with a date.
 def log(str)
   begin
-    str.split("\n").each do |str|
-      puts "#{Time.now.strftime(TIME_STRING)} pid:#{Process.pid}> #{str}"
+    str.split("\n").each do |s|
+      puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')} pid:#{Process.pid}> #{s}"
     end
     $stdout.flush
-  rescue Exception => e
+  rescue StandardError
     # do nothing -- just catches unimportant errors when we kill the process
-    # and it's in the middle of logging or flushing.
   end
 end
 
 def interruptible_sleep(seconds)
-  seconds.times {|i| sleep 1 if !@interrupted}
+  seconds.times { sleep 1 unless @interrupted }
 end
 
 def child_interrupt
-  # do child clean-up here
   @interrupted = true
   log "Exiting pid #{Process.pid}"
 end
 
 def parent_interrupt
-  log "INTERRUPTED"
-  # parent clean-up
+  log 'INTERRUPTED'
   @interrupted = true
 
   @worker_pids.each do |pid|
     Process.kill 'TERM', pid
   end
 
-  log "Waiting for all workers to exit"
+  log 'Waiting for all workers to exit'
   Process.waitall
 
   if @monitor_thread
-    log "Waiting for monitor thread to exit"
+    log 'Waiting for monitor thread to exit'
     @monitor_thread.join
   end
 
-  log "Exiting cleanly"
+  log 'Exiting cleanly'
   exit
 end
-
-####################################################################
-
-# get options
-opts = GetoptLong.new(
-  ['--help',      '-h', GetoptLong::NO_ARGUMENT],
-  ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
-  ['--verbose',   '-v', GetoptLong::NO_ARGUMENT],
-  ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
-  ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
-  ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
-  ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
-)
-
-config_file = "config.yml"
-@apihost = nil
-@debug = false
-@verbose = false
-@freq = 60  # update frequency in seconds
-@interupted = false
-@worker_pids = []
-@services = []
-
-# Options and examples:
-opts.each do |opt, arg|
-  case opt
-  when '--help'
-    help
-    exit
-  when '--debug'
-    @debug = true
-  when '--verbose'
-    @verbose = true
-  when '--config'
-    config_file = arg
-  when '--apikey'
-    CopperEgg::Api.apikey = arg
-  when '--frequency'
-    @freq = arg.to_i
-  when '--apihost'
-    CopperEgg::Api.host = arg
-  end
-end
-
-# Look for config file
-@config = YAML.load(File.open(config_file))
-
-if !@config.nil?
-  # load config
-  if !@config["copperegg"].nil?
-    CopperEgg::Api.apikey = @config["copperegg"]["apikey"] if !@config["copperegg"]["apikey"].nil? && CopperEgg::Api.apikey.nil?
-    CopperEgg::Api.host = @config["copperegg"]["host"] if !@config["copperegg"]["host"].nil?
-    @freq = @config["copperegg"]["frequency"] if !@config["copperegg"]["frequency"].nil?
-    @services = @config['copperegg']['services']
-  else
-    log "You have no copperegg entry in your config.yml!"
-    log "Edit your config.yml and restart."
-    exit
-  end
-end
-
-if CopperEgg::Api.apikey.nil?
-  log "You need to supply an apikey with the -k option or in the config.yml."
-  exit
-end
-
-if @services.length == 0
-  log "No services listed in the config file."
-  log "Nothing will be monitored!"
-  exit
-end
-
-@freq = 60 if ![5, 15, 60, 300, 900, 3600, 21600].include?(@freq)
-log "Update frequency set to #{@freq}s."
-
-
-####################################################################
 
 def connect_to_memcached(hostname, port)
-
   begin
     @cxn = TCPSocket.open(hostname, port)
-    rescue Exception => e
-        log "Error connecting to memcached on #{hostname}:#{port}"
-        return nil
-    end
+  rescue StandardError => e
+    log "Error connecting to memcached on #{hostname}:#{port}"
+    log "Error string : #{e.message}" if @debug
+    log e.backtrace[0..30].join("\n") if @debug
+    return nil
+  end
   return @cxn
 end
-
 
 def get_stats(mccxn)
   mccxn.send("stats\r\n", 0)
@@ -169,7 +83,7 @@ def get_stats(mccxn)
   statistics = []
   loop do
     data = mccxn.recv(4096)
-    if !data || data.length == 0
+    if !data || data.empty?
       break
     end
     statistics << data
@@ -189,25 +103,24 @@ def get_stats(mccxn)
   return stat_hash
 end
 
-
 def monitor_memcached(mc_servers, group_name)
-  log "Monitoring memcached: "
+  log 'Monitoring memcached: '
 
-  while !@interupted do
+  until @interupted do
     return if @interrupted
 
     mc_servers.each do |mchost|
       return if @interrupted
 
-      mccxn = connect_to_memcached(mchost["hostname"], mchost["port"].to_i)
-      if mccxn == nil
-        log "[skipping]"
+      mccxn = connect_to_memcached(mchost['hostname'], mchost['port'].to_i)
+      if mccxn.nil?
+        log '[skipping]'
         next
       end
       begin
         curr_stats = get_stats(mccxn)
-      rescue Exception => e
-        log "Error getting memcached stats from: #{mchost['hostname']}, #{mchost['port']} [skipping]"
+      rescue StandardError
+        log "Error getting stats from: #{mchost['hostname']}, #{mchost['port']} [skipping]"
         next
       end
 
@@ -255,111 +168,212 @@ def monitor_memcached(mc_servers, group_name)
       metrics['evictions']             = curr_stats['evictions'].to_i
       metrics['reclaimed']             = curr_stats['reclaimed'].to_i
 
-      puts "#{group_name} - #{mchost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
-      rslt = CopperEgg::MetricSample.save(group_name, "#{mchost['name']}", Time.now.to_i, metrics)
+      log "#{group_name} - #{mchost['name']} - #{Time.now.to_i} \n #{metrics.inspect}" if @verbose
+      CopperEgg::MetricSample.save(group_name, mchost['name'], Time.now.to_i, metrics)
     end
     interruptible_sleep @freq
   end
 end
 
-
 def ensure_memcached_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating memcached metric group"
-    metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
+    log 'Creating memcached metric group'
+    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
+                                              frequency: @freq)
   else
-    log "Updating memcached metric group"
+    log 'Updating memcached metric group'
     metric_group.frequency = @freq
   end
 
   metric_group.metrics = []
-  metric_group.metrics << { :type => "ce_counter", :name => "uptime", :position => 0, :label => "uptime", "unit"=> "s"}
-  metric_group.metrics << { :type => "ce_counter_f", :name => "rusage_user", :position => 1, :label => "rusage_user"}
-  metric_group.metrics << { :type => "ce_counter_f", :name => "rusage_system", :position => 2, :label => "rusage_system"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "curr_connections", :position => 3, :label => "curr_connections"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "total_connections", :position => 4, :label => "total_connections"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "connection_structures", :position => 5, :label => "connection_structures"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "reserved_fds", :position => 6, :label => "reserved_fds"}
-  metric_group.metrics << { :type => "ce_counter", :name => "cmd_get", :position => 7, :label => "cmd_get"}
-  metric_group.metrics << { :type => "ce_counter", :name => "cmd_set", :position => 8, :label => "cmd_set"}
-  metric_group.metrics << { :type => "ce_counter", :name => "cmd_flush", :position => 9, :label => "cmd_flush"}
-  metric_group.metrics << { :type => "ce_counter", :name => "cmd_touch", :position => 10, :label => "cmd_touch"}
-  metric_group.metrics << { :type => "ce_counter", :name => "get_hits", :position => 11, :label => "get_hits"}
-  metric_group.metrics << { :type => "ce_counter", :name => "get_misses", :position => 12, :label => "get_misses"}
-  metric_group.metrics << { :type => "ce_counter", :name => "delete_misses", :position => 13, :label => "delete_misses"}
-  metric_group.metrics << { :type => "ce_counter", :name => "delete_hits", :position => 14, :label => "delete_hits"}
-  metric_group.metrics << { :type => "ce_counter", :name => "incr_misses", :position => 15, :label => "incr_misses"}
-  metric_group.metrics << { :type => "ce_counter", :name => "incr_hits", :position => 16, :label => "incr_hits"}
-  metric_group.metrics << { :type => "ce_counter", :name => "decr_misses", :position => 17, :label => "decr_misses"}
-  metric_group.metrics << { :type => "ce_counter", :name => "decr_hits", :position => 18, :label => "decr_hits"}
-  metric_group.metrics << { :type => "ce_counter", :name => "cas_misses", :position => 19, :label => "cas_misses"}
-  metric_group.metrics << { :type => "ce_counter", :name => "cas_hits", :position => 20, :label => "cas_hits"}
-  metric_group.metrics << { :type => "ce_counter", :name => "cas_badval", :position => 21, :label => "cas_badval"}
-  metric_group.metrics << { :type => "ce_counter", :name => "touch_hits", :position => 22, :label => "touch_hits"}
-  metric_group.metrics << { :type => "ce_counter", :name => "touch_misses", :position => 23, :label => "touch_misses"}
-  metric_group.metrics << { :type => "ce_counter", :name => "auth_cmds", :position => 24, :label => "auth_cmds"}
-  metric_group.metrics << { :type => "ce_counter", :name => "auth_errors", :position => 25, :label => "auth_errors"}
-  metric_group.metrics << { :type => "ce_counter", :name => "bytes_read", :position => 26, :label => "bytes_read", "unit"=> "b"}
-  metric_group.metrics << { :type => "ce_counter", :name => "bytes_written", :position => 27, :label => "bytes_written", "unit"=> "b"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "limit_maxbytes", :position => 28, :label => "limit_maxbytes", "unit"=> "b"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "accepting_conns", :position => 29, :label => "accepting_conns"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "threads", :position => 30, :label => "threads"}
-  metric_group.metrics << { :type => "ce_counter", :name => "conn_yields", :position => 31, :label => "conn_yields"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "hash_power_level", :position => 32, :label => "hash_power_level"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "hash_bytes", :position => 33, :label => "hash_bytes", "unit"=> "b"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "hash_is_expanding", :position => 34, :label => "hash_is_expanding"}
-  metric_group.metrics << { :type => "ce_counter", :name => "expired_unfetched", :position => 35, :label => "expired_unfetched"}
-  metric_group.metrics << { :type => "ce_counter", :name => "evicted_unfetched", :position => 36, :label => "evicted_unfetched"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "bytes", :position => 37, :label => "bytes", "unit"=> "b"}
-  metric_group.metrics << { :type => "ce_gauge", :name => "curr_items", :position => 38, :label => "curr_items"}
-  metric_group.metrics << { :type => "ce_counter", :name => "total_items", :position => 39, :label => "total_items"}
-  metric_group.metrics << { :type => "ce_counter", :name => "evictions", :position => 40, :label => "evictions"}
-  metric_group.metrics << { :type => "ce_counter", :name => "reclaimed", :position => 41, :label => "reclaimed"}
+  metric_group.metrics << { type: 'ce_counter', name: 'uptime', position: 0,
+                            label: 'Uptime', unit: 'Seconds' }
+  metric_group.metrics << { type: 'ce_counter_f', name: 'rusage_user', position: 1,
+                            label: 'Accumulated user time', unit: 'Seconds' }
+  metric_group.metrics << { type: 'ce_counter_f', name: 'rusage_system', position: 2,
+                            label: 'Accumulated system time', unit: 'Seconds' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'curr_connections', position: 3,
+                            label: 'Open connections', unit: 'Connections' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'total_connections', position: 4,
+                            label: 'Total connections', unit: 'Connections' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'connection_structures', position: 5,
+                            label: 'Connection structures', unit: 'Structures' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'reserved_fds', position: 6,
+                            label: 'Misc fds used internally', unit: 'FDs' }
+  metric_group.metrics << { type: 'ce_counter', name: 'cmd_get', position: 7,
+                            label: 'Retrieval requests', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'cmd_set', position: 8,
+                            label: 'Storage requests', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'cmd_flush', position: 9,
+                            label: 'Flush requests', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'cmd_touch', position: 10,
+                            label: 'Touch requests', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'get_hits', position: 11,
+                            label: 'Keys requested and found present', unit: 'Keys' }
+  metric_group.metrics << { type: 'ce_counter', name: 'get_misses', position: 12,
+                            label: 'Keys requested and found missing', unit: 'Keys' }
+  metric_group.metrics << { type: 'ce_counter', name: 'delete_misses', position: 13,
+                            label: 'Deletion requests for missing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'delete_hits', position: 14,
+                            label: 'Deletion requests for existing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'incr_misses', position: 15,
+                            label: 'Incr requests against missing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'incr_hits', position: 16,
+                            label: 'Incr requests against existing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'decr_misses', position: 17,
+                            label: 'Decr requests against missing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'decr_hits', position: 18,
+                            label: 'Decr requests against existing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'cas_misses', position: 19,
+                            label: 'CAS requests against missing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'cas_hits', position: 20,
+                            label: 'CAS requests against existing keys', unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'cas_badval', position: 21,
+                            label: 'CAS requests for existing key & bad CAS value',
+                            unit: 'Requests' }
+  metric_group.metrics << { type: 'ce_counter', name: 'touch_hits', position: 22,
+                            label: 'Keys touched with new expiration time', unit: 'Hits' }
+  metric_group.metrics << { type: 'ce_counter', name: 'touch_misses', position: 23,
+                            label: 'Keys touched and not found', unit: 'Misses' }
+  metric_group.metrics << { type: 'ce_counter', name: 'auth_cmds', position: 24,
+                            label: 'Auth commands handled', unit: 'Commands' }
+  metric_group.metrics << { type: 'ce_counter', name: 'auth_errors', position: 25,
+                            label: 'Failed authentications', unit: 'Authentications' }
+  metric_group.metrics << { type: 'ce_counter', name: 'bytes_read', position: 26,
+                            label: 'Bytes read', unit: 'Bytes' }
+  metric_group.metrics << { type: 'ce_counter', name: 'bytes_written', position: 27,
+                            label: 'Bytes written', unit: 'Bytes' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'limit_maxbytes', position: 28,
+                            label: 'Bytes allowed for storage', unit: 'Bytes' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'accepting_conns', position: 29,
+                            label: 'Check if server is accepting connections' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'threads', position: 30,
+                            label: 'Worker threads requested', unit: 'Threads' }
+  metric_group.metrics << { type: 'ce_counter', name: 'conn_yields', position: 31,
+                            label: 'Connections yielded to hit limit', unit: 'Connections' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'hash_power_level', position: 32,
+                            label: 'Current size multiplier for hash table' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'hash_bytes', position: 33,
+                            label: 'Bytes used by hash tables', unit: 'Bytes' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'hash_is_expanding', position: 34,
+                            label: 'Indicates if hash table is expanding' }
+  metric_group.metrics << { type: 'ce_counter', name: 'expired_unfetched', position: 35,
+                            label: 'Items pulled from LRU never used before expiring',
+                            unit: 'Items' }
+  metric_group.metrics << { type: 'ce_counter', name: 'evicted_unfetched', position: 36,
+                            label: 'Items evicted from LRU that were never touched',
+                            unit: 'Items' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'bytes', position: 37,
+                            label: 'Bytes used', unit: 'Bytes' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'curr_items', position: 38,
+                            label: 'Current items stored', unit: 'Items' }
+  metric_group.metrics << { type: 'ce_counter', name: 'total_items', position: 39,
+                            label: 'Total items stored', unit: 'Items' }
+  metric_group.metrics << { type: 'ce_counter', name: 'evictions', position: 40,
+                            label: 'Items removed from cache to free memory', unit: 'Items' }
+  metric_group.metrics << { type: 'ce_counter', name: 'reclaimed', position: 41,
+                            label: 'No. of times entry stored using memory from expired entry' }
   metric_group.save
   metric_group
 end
 
-def create_memcached_dashboard(metric_group, name, server_list)
-  log "Creating new memcached Dashboard"
+def create_memcached_dashboard(metric_group, name)
+  log 'Creating new memcached Dashboard'
   metrics = metric_group.metrics || []
 
-  # Create a dashboard for all identifiers:
-  CopperEgg::CustomDashboard.create(metric_group, :name => name, :identifiers => nil, :metrics => metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics)
 end
 
-####################################################################
-
-# init - check apikey? make sure site is valid, and apikey is ok
-trap("INT") { parent_interrupt }
-trap("TERM") { parent_interrupt }
-
-#################################
-
 def ensure_metric_group(metric_group, service)
-  if service == 'memcached'
-    return ensure_memcached_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
-  else
-    raise CopperEggAgentError.new("Service #{service} not recognized")
-  end
+  return ensure_memcached_metric_group(metric_group, @config[service]['group_name'],
+                                         @config[service]['group_label'])
 end
 
 def create_dashboard(service, metric_group)
-  if service == 'memcached'
-    create_memcached_dashboard(metric_group, @config[service]["dashboard"], @config[service]["servers"])
-  else
-    raise CopperEggAgentError.new("Service #{service} not recognized")
-  end
+  create_memcached_dashboard(metric_group, @config[service]['dashboard'])
 end
 
 def monitor_service(service, metric_group)
-  if service == 'memcached'
-    monitor_memcached(@config[service]["servers"], metric_group.name)
-  else
-    raise CopperEggAgentError.new("Service #{service} not recognized")
+  monitor_memcached(@config[service]['servers'], metric_group.name)
+end
+
+####################################################################################################
+
+opts = GetoptLong.new(
+  ['--help',      '-h', GetoptLong::NO_ARGUMENT],
+  ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
+  ['--verbose',   '-v', GetoptLong::NO_ARGUMENT],
+  ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
+  ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
+  ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
+  ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
+)
+
+base_path = '/home/cuegg/OtherRepos/metrics-plugins/memcached'
+config_file = "#{base_path}/config.yml"
+
+@apihost = nil
+@debug = false
+@verbose = false
+@freq = 60
+@interupted = false
+@worker_pids = []
+@services = []
+
+# Options and examples:
+opts.each do |opt, arg|
+  case opt
+    when '--help'
+      help
+      exit
+    when '--debug'
+      @debug = true
+    when '--verbose'
+      @verbose = true
+    when '--config'
+      config_file = arg
+    when '--apikey'
+      CopperEgg::Api.apikey = arg
+    when '--frequency'
+      @freq = arg.to_i
+    when '--apihost'
+      CopperEgg::Api.host = arg
   end
 end
 
-#################################
+# Look for config file
+@config = YAML.load(File.open(config_file))
+
+unless @config.nil?
+  # load config
+  unless @config['copperegg'].nil?
+    CopperEgg::Api.apikey = @config['copperegg']['apikey'] unless @config['copperegg']['apikey'].nil?
+    CopperEgg::Api.host = @config['copperegg']['host'] unless @config['copperegg']['host'].nil?
+    @freq = @config['copperegg']['frequency'] unless @config['copperegg']['frequency'].nil?
+    @services = @config['copperegg']['services']
+  else
+    log 'You have no copperegg entry in your config.yml!'
+    log 'Edit your config.yml and restart.'
+    exit
+  end
+end
+
+unless CopperEgg::Api.apikey
+  log 'You need to supply an apikey with the -k option or in the config.yml.'
+  exit
+end
+
+if @services.empty?
+  log 'No services listed in the config file.'
+  log 'Nothing will be monitored!'
+  exit
+end
+
+@freq = 60 unless [15, 60, 300, 900, 3600, 21_600].include?(@freq)
+log "Update frequency set to #{@freq}s."
+
+trap('INT') { parent_interrupt }
+trap('TERM') { parent_interrupt }
 
 MAX_RETRIES = 30
 last_failure = 0
@@ -375,46 +389,60 @@ rescue => e
   raise e if @debug
   sleep 2
   setup_retries -= 1
-retry if setup_retries > 0
- # If we can't succeed with setup on the servcies, let's just error out
+  retry if setup_retries > 0
+  # If we can't succeed with setup on the services, let's just error out
   raise e
 end
 
 
 @services.each do |service|
-  if @config[service] && @config[service]["servers"].length > 0
+  raise CopperEggAgentError.new("Service #{service} not recognized") unless service == 'memcached'
+
+  if @config[service] && !@config[service]['servers'].empty?
     begin
-      log "Checking for existence of metric group for #{1}"
-      metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]}
-      metric_group = ensure_metric_group(metric_group, service)
+      log "Checking for existence of metric group for #{service}"
+      if metric_groups.nil?
+        metric_group = metric_groups.detect { |m| m.name == @config[service]['group_name'] }
+      else
+        metric_group = ensure_metric_group(metric_group, service)
+      end
       raise "Could not create a metric group for #{service}" if metric_group.nil?
+
       log "Checking for existence of #{@config[service]['dashboard']}"
-      dashboard = dashboards.detect {|d| d.name == @config[service]["dashboard"]} || create_dashboard(service, metric_group)
+
+      if dashboards.nil?
+        dashboard = dashboards.detect { |d| d.name == @config[service]['dashboard'] }
+      else
+        create_dashboard(service, metric_group)
+      end
+
       log "Could not create a dashboard for #{service}" if dashboard.nil?
     rescue => e
-      log e.message
+      log 'Error while creating Metric group/dashboard'
+      log e.inspect if @debug
+      log e.backtrace[0..30].join("\n") if @debug
       next
     end
 
     child_pid = fork {
-      trap("INT") { child_interrupt if !@interrupted }
-      trap("TERM") { child_interrupt if !@interrupted }
+      trap('INT') { child_interrupt unless @interrupted }
+      trap('TERM') { child_interrupt unless @interrupted }
       last_failure = 0
       retries = MAX_RETRIES
       begin
         monitor_service(service, metric_group)
       rescue => e
         log "Error monitoring #{service}.  Retrying (#{retries}) more times..."
-        log "#{e.inspect}"
+        log e.inspect if @debug
         log e.backtrace[0..30].join("\n") if @debug
-        # updated 7-9-2013, removed the # before if @debug
-        raise e   if @debug
+        raise e if @debug
         sleep 2
         retries -= 1
+
         # reset retries counter if last failure was more than 10 minutes ago
         retries = MAX_RETRIES if Time.now.to_i - last_failure > 600
         last_failure = Time.now.to_i
-      retry if retries > 0
+        retry if retries > 0
         raise e
       end
     }
@@ -422,7 +450,4 @@ end
   end
 end
 
-# ... wait for all processes to exit ...
 p Process.waitall
-
-
