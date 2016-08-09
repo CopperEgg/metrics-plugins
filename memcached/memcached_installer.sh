@@ -26,11 +26,11 @@ setup_base_group()
         DASHBOARD="$TYPE_UPPER"
     fi
 
-    echo "$TYPE_LOWER:" >> $CONFIG_FILE
-    echo "  group_name: \"$GROUP_NAME\"" >> $CONFIG_FILE
-    echo "  group_label: \"$GROUP_LABEL\"" >> $CONFIG_FILE
-    echo "  dashboard: \"$DASHBOARD\"" >> $CONFIG_FILE
-    echo "  servers:" >> $CONFIG_FILE
+    echo "$TYPE_LOWER:"
+  group_name: \"$GROUP_NAME\""
+  group_label: \"$GROUP_LABEL\""
+  dashboard: \"$DASHBOARD\""
+  servers:" >> $CONFIG_FILE
 }
 
 setup_memcached()
@@ -386,9 +386,29 @@ echo "Monitoring frequency set to one sample per $FREQ seconds."
 
 echo
 
-#
-# NO GEMS INSTALLATION REQUIRED FOR MEMCACHED
-#
+for THIS_GEM in `cat memcached/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
+    echo "Installing gem $THIS_GEM..."
+    if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
+        # install prerelease gems if "$PRE" is not null, but only for copperegg
+        gem install --no-ri --no-rdoc $THIS_GEM --pre --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
+    else
+        gem install --no-ri --no-rdoc $THIS_GEM --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
+    fi
+    install_rc=$?
+    if [ $install_rc -ne 0 ]; then
+        echo
+        echo "********************************************************"
+        echo "********************************************************"
+        echo "*** "
+        echo "*** WARNING: gem $THIS_GEM did not install properly!"
+        echo "*** Please contact support-uptimecm@idera.com if you are"
+        echo "*** unable to run 'gem install $THIS_GEM' manually."
+        echo "*** "
+        echo "********************************************************"
+        echo "********************************************************"
+        echo
+    fi
+done
 
 #
 # create config.yml
