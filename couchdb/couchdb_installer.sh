@@ -206,10 +206,10 @@ setup_standard_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/revealmetrics_couchdb.log] "
+            echo -n "log file: [/usr/local/copperegg/log/couchdb_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                LOGFILE="/usr/local/copperegg/log/revealmetrics_couchdb.log"
+                LOGFILE="/usr/local/copperegg/log/couchdb_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
