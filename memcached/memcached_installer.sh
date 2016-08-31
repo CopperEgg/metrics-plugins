@@ -26,11 +26,11 @@ setup_base_group()
         DASHBOARD="$TYPE_UPPER"
     fi
 
-    echo "$TYPE_LOWER:"
-  group_name: \"$GROUP_NAME\""
-  group_label: \"$GROUP_LABEL\""
-  dashboard: \"$DASHBOARD\""
-  servers:" >> $CONFIG_FILE
+    echo "$TYPE_LOWER:" >> $CONFIG_FILE
+    echo "  group_name: \"$GROUP_NAME\"" >> $CONFIG_FILE
+    echo "  group_label: \"$GROUP_LABEL\"" >> $CONFIG_FILE
+    echo "  dashboard: \"$DASHBOARD\"" >> $CONFIG_FILE
+    echo "  servers:" >> $CONFIG_FILE
 }
 
 setup_memcached()

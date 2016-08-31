@@ -309,7 +309,7 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-base_path = 'usr/local/copperegg/ucm-metrics/memcached'
+base_path = '/usr/local/copperegg/ucm-metrics/memcached'
 config_file = "#{base_path}/config.yml"
 
 @apihost = nil
