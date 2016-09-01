@@ -272,7 +272,7 @@ case $MON_LIST in
     bash "memcached/memcached_installer.sh"
     ;;
 "cassandra")
-    bash "memcached/cassandra_installer.sh"
+    bash "cassandra/cassandra_installer.sh"
     ;;
 esac
 

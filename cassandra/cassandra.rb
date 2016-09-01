@@ -11,6 +11,17 @@ require 'yaml'
 
 class CopperEggAgentError < Exception; end
 
+TIME_STRING = '%Y/%m/%d %H:%M:%S'.freeze
+UNITS_FACTOR = {
+    'bytes' => 1,
+    'KB' => 1024,
+    'MB' => 1024**2,
+    'GB' => 1024**3,
+    'TB' => 1024**4
+}
+MAX_RETRIES = 30
+MAX_SETUP_RETRIES = 5
+
 ####################################################################
 
 def help
@@ -22,7 +33,6 @@ def help
   puts '  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])'
 end
 
-TIME_STRING = '%Y/%m/%d %H:%M:%S'.freeze
 ##########
 # Used to prefix the log message with a date.
 def log(str)
@@ -68,18 +78,16 @@ end
 opts = GetoptLong.new(
     ['--help',      '-h', GetoptLong::NO_ARGUMENT],
     ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
-    ['--verbose',   '-v', GetoptLong::NO_ARGUMENT],
     ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
     ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
     ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
     ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-base_path = '/home/ubuntu/projects/cassandra'
+base_path = '/home/cuegg/metrics-plugins/cassandra'
 config_file = "#{base_path}/config.yml"
 @apihost = nil
 @debug = false
-@verbose = false
 @freq = 60
 @interrupted = false
 @worker_pids = []
@@ -93,8 +101,6 @@ opts.each do |opt, arg|
     exit
   when '--debug'
     @debug = true
-  when '--verbose'
-    @verbose = true
   when '--config'
     config_file = arg
   when '--apikey'
@@ -141,13 +147,6 @@ log "Update frequency set to #{@freq}s."
 
 ######################################################################
 
-UNITS_FACTOR = {
-    'bytes' => 1,
-    'KB' => 1024,
-    'MB' => 1024**2,
-    'GB' => 1024**3,
-    'TB' => 1024**4
-}
 
 def convert_to_bytes(size, unit)
   size.to_f * UNITS_FACTOR[unit]
@@ -497,10 +496,7 @@ end
 
 ##########################################################################
 
-MAX_RETRIES = 30
 last_failure = 0
-
-MAX_SETUP_RETRIES = 5
 setup_retries = MAX_SETUP_RETRIES
 
 begin
