@@ -271,6 +271,9 @@ case $MON_LIST in
 "memcached")
     bash "memcached/memcached_installer.sh"
     ;;
+"common_metrics")
+    bash "common_metrics/common_metrics_installer.sh"
+    ;;
 esac
 
 echo
