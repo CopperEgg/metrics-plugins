@@ -793,7 +793,7 @@ else
         fi
     fi
     echo
-    for THIS_GEM in `cat Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
+    for THIS_GEM in `cat common_metrics/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
         if [ -n "`echo $THIS_GEM | egrep mysql`" -a -z "$MONITOR_MYSQL" ]; then
             # skip installing mysql gem if user doesn't need it
             continue
