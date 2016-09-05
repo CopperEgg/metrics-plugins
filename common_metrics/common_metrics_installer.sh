@@ -644,27 +644,22 @@ MONITOR_NGINX="`echo $MON_LIST | egrep -o 'nginx'`"
 if [ -z "$FREQ" -o -z "`echo $FREQ | egrep -o '^[0-9]$'`" ]; then
     # FREQ is an empty string or not a number.  Ask for it
     echo
-    echo "Monitoring frequency (sample rate) can be one sample per: 5, 15, 60, 300, 900 seconds."
+    echo "Monitoring frequency (sample rate) can be one sample per: 15, 60, 300, 900, 3600 seconds."
     echo -n "What frequency would you like? [60] "
     read FREQ
     if [ -z "`echo $FREQ | egrep -o '^[0-9]+$'`" ]; then
         # freq is not a number. default to 60
         FREQ=60
-    elif [ $FREQ -le 5 ]; then
-        # round up to 5 if specified < 5
-        FREQ=5
     elif [ $FREQ -le 15 ]; then
-        # round up to 15 if specified btwn 6 and 15
         FREQ=15
     elif [ $FREQ -le 60 ]; then
-        # you get the idea
         FREQ=60
     elif [ $FREQ -le 300 ]; then
-        # ditto
         FREQ=300
-    else
-        # they gave a big number.  call it 15m
+    elif [ $FREQ -le 900 ]; then
         FREQ=900
+    else
+        FREQ=3600
     fi
 fi
 echo "Monitoring frequency set to one sample per $FREQ seconds."
