@@ -613,6 +613,7 @@ print_notes()
 
 echo
 SUPPORTED_TYPES="mysql redis apache nginx"
+MON_LIST=""
 if [ -z "$MON_LIST" ]; then
     # if user didn't set the env var, ask them
     MON_LIST=""
