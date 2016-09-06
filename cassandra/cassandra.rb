@@ -84,7 +84,7 @@ opts = GetoptLong.new(
     ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-base_path = '/home/cuegg/metrics-plugins/cassandra'
+base_path = '/usr/local/copperegg/ucm-metrics/cassandra'
 config_file = "#{base_path}/config.yml"
 @apihost = nil
 @debug = false
@@ -142,7 +142,7 @@ if @services.empty?
   exit
 end
 
-@freq = 60 unless [5, 15, 60, 300, 900, 3600, 21_600].include?(@freq)
+@freq = 60 unless [15, 60, 300, 900, 3600].include?(@freq)
 log "Update frequency set to #{@freq}s."
 
 ######################################################################
@@ -154,7 +154,8 @@ end
 
 ####################################################################
 
-def parse_info_stats(stats, hash = {})
+def parse_info_stats(stats)
+  hash = {}
   if stats
     stats.each_line do |line|
       if (m = line.match(/^Exceptions\s*:\s+([0-9]+)$/))
@@ -182,11 +183,14 @@ def parse_info_stats(stats, hash = {})
       end
     end
   end
+  hash
 rescue
-  log 'Unable to parse info stats'
+  log 'Unable to parse info stats' if @debug
+  return {}
 end
 
-def parse_table_stats(stats, hash = {})
+def parse_table_stats(stats)
+  hash = {}
   if stats
     temp_hash = {}
     temp_hash['read_count'] = 0
@@ -269,11 +273,14 @@ def parse_table_stats(stats, hash = {})
     hash['max_row_size'] = temp_hash['max_row_size']
     hash['mean_row_size'] = temp_hash['mean_row_size'][:value] / temp_hash['mean_row_size'][:count]
   end
+  hash
 rescue
-  log 'Unable to parse table stats'
+  log 'Unable to parse table stats' if @debug
+  return {}
 end
 
-def parse_tp_stats(stats, hash = {})
+def parse_tp_stats(stats)
+  hash = {}
   if stats
     temp_hash = {}
     temp_hash['active'] = 0
@@ -306,23 +313,22 @@ def parse_tp_stats(stats, hash = {})
     hash['currently_blocked_tasks'] = temp_hash['currently_blocked']
     hash['total_blocked_tasks'] = temp_hash['blocked']
   end
+  hash
 rescue
-  log 'Unable to parse tp stats'
+  log 'Unable to parse tp stats' if @debug
+  return {}
 end
 
 #########################################################################
 
 def get_cassandra_stats(host = 'localhost', port = '7199', user = nil, pw = nil)
   metrics = {}
-  if user && pw
-    metrics['info'] = `nodetool -h #{host} -p #{port} -u#{user} -pw#{pw} info`
-    metrics['table_stats'] = `nodetool -h #{host} -p #{port} -u#{user} -pw#{pw} tablestats`
-    metrics['tp_stats'] = `nodetool -h #{host} -p #{port} -u#{user} -pw#{pw} tpstats`
-  else
-    metrics['info'] = `nodetool -h #{host} -p #{port} info`
-    metrics['table_stats'] = `nodetool -h #{host} -p #{port} tablestats`
-    metrics['tp_stats'] = `nodetool -h #{host} -p #{port} tpstats`
-  end
+  user_info = user && pw ? "-u#{user} -pw#{pw}" : ''
+
+  metrics['info'] = `nodetool -h #{host} -p #{port} #{user_info} info`
+  metrics['table_stats'] = `nodetool -h #{host} -p #{port} #{user_info} tablestats`
+  metrics['tp_stats'] = `nodetool -h #{host} -p #{port} #{user_info} tpstats`
+
   metrics
 rescue
   log "Unable to connect to Cassandra nodetool at #{hostname}:#{port}"
@@ -330,12 +336,14 @@ rescue
 end
 
 
-def parse_cassandra_stats(stats, hash = {})
+def parse_cassandra_stats(stats)
+  hash = {}
   if stats
-    parse_info_stats(stats['info'], hash) if stats['info']
-    parse_table_stats(stats['table_stats'], hash) if stats['table_stats']
-    parse_tp_stats(stats['tp_stats'], hash) if stats['tp_stats']
+    hash.merge!(parse_info_stats(stats['info'])) if stats['info']
+    hash.merge!(parse_table_stats(stats['table_stats'])) if stats['table_stats']
+    hash.merge!(parse_tp_stats(stats['tp_stats'])) if stats['tp_stats']
   end
+  hash
 end
 
 #########################################################################
@@ -349,9 +357,8 @@ def monitor_cassandra(cassandra_cluster, group_name)
 
     cassandra_cluster.each do |mhost|
       return if @interrupted
-      hash = {}
-      parse_cassandra_stats(get_cassandra_stats(mhost['hostname'], mhost['port'], mhost['username'],
-                                                mhost['password']), hash)
+      hash = parse_cassandra_stats(get_cassandra_stats(mhost['hostname'], mhost['port'],
+                                                       mhost['username'], mhost['password']))
 
       metrics = {}
       metrics['exceptions']                           = hash['exceptions']

@@ -316,23 +316,23 @@ ENDINIT
         chmod 755 $INIT_FILE
 
         if [ -d "/etc/rc1.d" ]; then
-            rm -f /etc/rc*.d/*copperegg-metrics
-            ln -s $INIT_FILE /etc/rc0.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc1.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc2.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc3.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc4.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc5.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc6.d/K99copperegg-metrics
+            rm -f /etc/rc*.d/*revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc0.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc1.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc2.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc3.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc4.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc5.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc6.d/K99revealmetrics_cassandra
         elif [ -d "/etc/init.d/rc1.d" ]; then
-            rm -f /etc/init.d/rc*.d/*copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc1.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc2.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc3.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc4.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc5.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc6.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rcS.d/S99copperegg-metrics
+            rm -f /etc/init.d/rc*.d/*revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc1.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc2.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc3.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc4.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc5.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc6.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rcS.d/S99revealmetrics_cassandra
         fi
 
         echo
