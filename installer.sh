@@ -259,6 +259,8 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
+export COPPEREGG_USER
+
 # Add more services here and call its respective script
 export COPPEREGG_USER COPPEREGG_GROUP
 case $MON_LIST in
@@ -270,6 +272,9 @@ case $MON_LIST in
     ;;
 "memcached")
     bash "memcached/memcached_installer.sh"
+    ;;
+"dns")
+    bash "dns/dns_installer.sh"
     ;;
 esac
 

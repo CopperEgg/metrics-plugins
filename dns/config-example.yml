@@ -1,0 +1,27 @@
+copperegg:
+  apikey: 'YOUR_APIKEY'
+  apihost: 'api.copperegg.com'
+  frequency: 60
+  services:
+  - dns
+
+dns:
+  group_name: 'DNS Monitoring'
+  group_label: 'DNS Metrics'
+  dashboard: 'DNS Dashboard'
+  servers:
+  - name: 'Label for metric object1'
+    query: 'subdomain.domain.com'
+    type: 'A'
+    timeout: 3
+    match: 'ec2.abcd.xyz.amazonaws.com'
+    nameservers:
+      - ns1.somenameserver.com
+      - ns2.somenameserver.com
+  - name: 'Label for metric obejct2'
+    query: 'subdomain2.domain.com'
+    type: 'CNAME'
+    timeout: 5
+    match: # leave blank if you don't want to match it with anything
+    nameservers: # can be left blank
+
