@@ -262,6 +262,7 @@ fi
 # Add more services here and call its respective script
 MONITOR_COUCHDB="`echo $MON_LIST | egrep -o 'couchdb'`"
 MONITOR_POSTGRESQL="`echo $MON_LIST | egrep -o 'postgresql'`"
+MONITOR_MONGODB="`echo $MON_LIST | egrep -o 'mongodb'`"
 
 export COPPEREGG_USER COPPEREGG_GROUP
 if [ -n "$MONITOR_COUCHDB" ]; then
@@ -269,6 +270,9 @@ if [ -n "$MONITOR_COUCHDB" ]; then
 fi
 if [ -n "$MONITOR_POSTGRESQL" ]; then
     bash "postgresql/postgresql_installer.sh"
+fi
+if [ -n "$MONITOR_MONGODB" ]; then
+    bash "mongodb/mongodb_installer.sh"
 fi
 
 echo
