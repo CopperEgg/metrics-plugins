@@ -83,7 +83,7 @@ setup_mongodb()
     fi
 
     # grep any one metric from the output file
-    if [ -z "`grep 'couldn\'t connect to' /tmp/mongodb_stats.txt`" ]; then
+    if [ -z "`grep 't connect to' /tmp/mongodb_stats.txt`" ]; then
         echo
         echo "WARNING: Could not connect to mongodb Server with $URL, "
         echo "  username $USER_NAME, password $PASSWORD and port $PORT to get status."
