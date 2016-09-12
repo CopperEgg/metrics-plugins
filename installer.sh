@@ -259,21 +259,26 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
-# Add more services here and call its respective script
-MONITOR_COUCHDB="`echo $MON_LIST | egrep -o 'couchdb'`"
-MONITOR_POSTGRESQL="`echo $MON_LIST | egrep -o 'postgresql'`"
-MONITOR_MONGODB="`echo $MON_LIST | egrep -o 'mongodb'`"
 
+# Add more services here and call its respective script
 export COPPEREGG_USER COPPEREGG_GROUP
-if [ -n "$MONITOR_COUCHDB" ]; then
+case $MON_LIST in
+"couchdb")
     bash "couchdb/couchdb_installer.sh"
-fi
-if [ -n "$MONITOR_POSTGRESQL" ]; then
+    ;;
+"postgresql")
     bash "postgresql/postgresql_installer.sh"
-fi
-if [ -n "$MONITOR_MONGODB" ]; then
+    ;;
+"memcached")
+    bash "memcached/memcached_installer.sh"
+    ;;
+"dns")
+    bash "dns/dns_installer.sh"
+    ;;
+"mongodb")
     bash "mongodb/mongodb_installer.sh"
-fi
+    ;;
+esac
 
 echo
 echo "Install complete!"

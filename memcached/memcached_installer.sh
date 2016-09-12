@@ -33,77 +33,11 @@ setup_base_group()
     echo "  servers:" >> $CONFIG_FILE
 }
 
-setup_database()
-{
-    LABEL="$1"
-    URL="$2"
-    PORT="$3"
-    SSLMODE="$4"
-    DEFAULT_DBNAME="$5"
-    INITIAL_CHECK="$6"
-
-    echo -n "Databse Name: [postgres]"
-    read DBNAME
-    if [ -z "$DBNAME" ]; then
-        DBNAME="$DEFAULT_DBNAME"
-    fi
-
-    echo -n "Username: "
-    read USER_NAME
-
-    echo -n "Password: "
-    read PASSWORD
-
-    echo
-    if [ -z $USER_NAME ]; then
-        echo "Testing with command: psql -h $URL -p $PORT -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        psql -h $URL -p $PORT -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    else
-        echo "Testing with command: PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    fi
-
-    # grep any one metric from the output file
-    if [ $? -ne 0 ]; then
-        echo
-        echo "WARNING: Could not connect to PostgreSQL Server with $URL, "
-        echo "  username $USER_NAME, password $PASSWORD and port $PORT."
-        echo "  If you keep this setting, you can edit it later in the config file:"
-        echo "  $CONFIG_FILE"
-        echo -n "  Keep setting and use this server anyway? [Yn]"
-        read yn
-        if [ -n "`echo $yn | egrep -io '^n'`" ]; then
-            # just return 1, loop will re-run
-            return 1
-        fi
-        echo
-
-    else
-        echo "SUCCESS!"
-        echo
-    fi
-
-    if [ "$INITIAL_CHECK" == "initial" ]; then
-        echo "  -" >> $CONFIG_FILE
-        echo "    name: \"$LABEL\""               >> $CONFIG_FILE
-        echo "    hostname: \"$URL\"" >> $CONFIG_FILE
-        echo "    port: \"$PORT\"" >> $CONFIG_FILE
-        echo "    sslmode: \"$SSLMODE\""       >> $CONFIG_FILE
-        echo "    databases:"        >> $CONFIG_FILE
-    fi
-    echo "    -"        >> $CONFIG_FILE
-    echo "      name: \"$DBNAME\""        >> $CONFIG_FILE
-    echo "      username: \"$USER_NAME\""        >> $CONFIG_FILE
-    echo "      password: \"$PASSWORD\""        >> $CONFIG_FILE
-
-}
-
-setup_postgresql()
+setup_memcached()
 {
     DEFAULT_LABEL="$1"
     DEFAULT_URL="$2"
     DEFAULT_PORT="$3"
-    DEFAULT_SSLMODE="$4"
 
     echo -n "Unique_id: [$DEFAULT_LABEL] "
     read LABEL
@@ -126,40 +60,46 @@ setup_postgresql()
         URL="$DEFAULT_URL"
     fi
 
-    echo -n "Port: [5432]"
+    echo -n "Port: [11211]"
     read PORT
     if [ -z "$PORT" ]; then
         PORT="$DEFAULT_PORT"
     fi
 
-    echo -n "SSL MODE: [disable]"
-    read SSLMODE
-    if [ -z "$SSLMODE" ]; then
-        SSLMODE="$DEFAULT_SSLMODE"
+    echo
+    echo "Testing with command: echo 'stats' | nc $URL $PORT"
+    echo "stats" | nc $URL $PORT > /tmp/memcached_stats.txt
+
+    # grep any one metric from the output file
+    if [ -z "`grep 'uptime' /tmp/memcached_stats.txt`" ]; then
+        echo
+        echo "WARNING: Could not connect to Memcached Server with $URL, "
+        echo "  username $USER_NAME, password $PASSWORD and port $PORT to get status."
+        echo "  If you keep this setting, you can edit it later in the config file:"
+        echo "  $CONFIG_FILE"
+        echo -n "  Keep setting and use this server anyway? [Yn]"
+        read yn
+        if [ -n "`echo $yn | egrep -io '^n'`" ]; then
+            # just return 1, loop will re-run
+            return 1
+        fi
+        echo
+
+    else
+        echo "SUCCESS!"
+        echo
     fi
 
-    lc=1
-    while [ $lc -ne 0 ]; do
-      # loop with defaults until they get it right
-      echo "Configuring first PostgreSQL Database (required)"
-      setup_database $LABEL $URL $PORT $SSLMODE "postgres" "initial"
-      lc=$?
-    done
-
-    while true; do
-      echo -n "Add another Databse for PostgreSQL server? [Yn] "
-      read yn
-      if [ -n "`echo $yn | egrep -io '^n'`" ]; then
-        break
-      fi
-      setup_database $LABEL $URL $PORT $SSLMODE "postgres" ""
-    done
+    echo "  -" >> $CONFIG_FILE
+    echo "    name: \"$LABEL\""   >> $CONFIG_FILE
+    echo "    hostname: \"$URL\"" >> $CONFIG_FILE
+    echo "    port: \"$PORT\""    >> $CONFIG_FILE
 }
 
 
 setup_upstart_init()
 {
-    INIT_FILE="/etc/init/revealmetrics_postgresql.conf"
+    INIT_FILE="/etc/init/revealmetrics_memcached.conf"
     if [ -e "$INIT_FILE" ]; then
         stop `basename $INIT_FILE .conf` >/dev/null 2>&1
         rm $INIT_FILE
@@ -176,10 +116,10 @@ setup_upstart_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/postgresql_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/memcached_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                    LOGFILE="/usr/local/copperegg/log/postgresql_metrics.log"
+                    LOGFILE="/usr/local/copperegg/log/memcached_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -235,10 +175,10 @@ ENDINIT
 
 setup_standard_init()
 {
-    /etc/init.d/copperegg-agent stop >/dev/null 2>&1 # old-named init file.
-    rm -f /etc/init.d/copperegg-agent                # just blast it away.
+    /etc/init.d/revealmetrics_memcached stop >/dev/null 2>&1 # old-named init file.
+    rm -f /etc/init.d/revealmetrics_memcached            # just blast it away.
 
-    INIT_FILE="/etc/init.d/copperegg-metrics"
+    INIT_FILE="/etc/init.d/revealmetrics_memcached"
     if [ -e "$INIT_FILE" ]; then
         $INIT_FILE stop >/dev/null 2>&1
         rm $INIT_FILE
@@ -254,10 +194,10 @@ setup_standard_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/postgresql_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/memcached_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                LOGFILE="/usr/local/copperegg/log/postgresql_metrics.log"
+                LOGFILE="/usr/local/copperegg/log/memcached_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -358,23 +298,23 @@ ENDINIT
         chmod 755 $INIT_FILE
 
         if [ -d "/etc/rc1.d" ]; then
-            rm -f /etc/rc*.d/*copperegg-metrics
-            ln -s $INIT_FILE /etc/rc0.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc1.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc2.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc3.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc4.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc5.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc6.d/K99copperegg-metrics
+            rm -f /etc/rc*.d/*revealmetrics_memcached
+            ln -s $INIT_FILE /etc/rc0.d/K99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/rc1.d/K99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/rc2.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/rc3.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/rc4.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/rc5.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/rc6.d/K99revealmetrics_memcached
         elif [ -d "/etc/init.d/rc1.d" ]; then
-            rm -f /etc/init.d/rc*.d/*copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc1.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc2.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc3.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc4.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc5.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc6.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rcS.d/S99copperegg-metrics
+            rm -f /etc/init.d/rc*.d/*revealmetrics_memcached
+            ln -s $INIT_FILE /etc/init.d/rc1.d/K99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/init.d/rc2.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/init.d/rc3.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/init.d/rc4.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/init.d/rc5.d/S99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/init.d/rc6.d/K99revealmetrics_memcached
+            ln -s $INIT_FILE /etc/init.d/rcS.d/S99revealmetrics_memcached
         fi
 
         echo
@@ -388,11 +328,13 @@ ENDINIT
 
 create_exe_file()
 {
-    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_postgresql_launcher.sh"
+    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_memcached_launcher.sh"
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
+DIRNAME="`dirname \$0`"
 . $RVM_SCRIPT
+cd \$DIRNAME
 $AGENT_FILE \$*
 ENDINIT
         EXE_FILE=$LAUNCHER_FILE
@@ -442,47 +384,9 @@ if [ -z "$FREQ" -o -z "`echo $FREQ | egrep -o '^[0-9]$'`" ]; then
 fi
 echo "Monitoring frequency set to one sample per $FREQ seconds."
 
-if [ -n "`which dpkg 2>/dev/null`" ]; then
-    HAS_PGDEV="`dpkg --list | egrep 'libpq-dev'`"
-elif [ -n "`which yum 2>/dev/null`" ]; then
-    HAS_PGDEV="`yum list installed | egrep postgresql-devel`"
-fi
-
-if [ -z "$HAS_PGDEV" ]; then
-    echo
-    echo -n "Postgres Development package is not installed. May I install it for you? [Yn] "
-    read yn
-    if [ -z "`echo $yn | egrep -io '^n'`" ]; then
-        install_rc=0
-        if [ -n "`which apt-get 2>/dev/null`" ]; then
-            echo "Installing Postgres Development Package with apt-get.  This may take a few minutes..."
-            apt-get update >> $PKG_INST_OUT 2>&1
-            apt-get -y install libpq-dev >> $PKG_INST_OUT 2>&1
-            install_rc=$?
-        elif [ -n "`which yum 2>/dev/null`" ]; then
-            echo "Installing Postgres Development Package with yum.  This may take a few minutes..."
-            yum -y install postgresql-devel >> $PKG_INST_OUT 2>&1
-            install_rc=$?
-        else
-            # This should not happen, but if it does just warn
-            echo "Warn: could not install Postgres Development"
-        fi
-        if [ $install_rc -ne 0 ]; then
-            echo
-            echo "ERROR: Could not install Postgres Development.  Please report this to support-uptimecm@idera.com"
-            echo "  and include all this output, plus the file: $PKG_INST_OUT"
-            echo
-            exit 1
-        fi
-    else
-        echo "Postgres Development package is required for installing pg module. Please install it manually or allow this script to."
-        exit 1
-    fi
-fi
-
-
 echo
-for THIS_GEM in `cat postgresql/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
+
+for THIS_GEM in `cat memcached/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
     echo "Installing gem $THIS_GEM..."
     if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
         # install prerelease gems if "$PRE" is not null, but only for copperegg
@@ -506,7 +410,6 @@ for THIS_GEM in `cat postgresql/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed
     fi
 done
 
-
 #
 # create config.yml
 #
@@ -515,11 +418,11 @@ echo
 echo "------------------------------------------------------------------"
 echo
 
-CONFIG_FILE="/usr/local/copperegg/ucm-metrics/postgresql/config.yml"
-AGENT_FILE="/usr/local/copperegg/ucm-metrics/postgresql/postgresql.rb"
+CONFIG_FILE="/usr/local/copperegg/ucm-metrics/memcached/config.yml"
+AGENT_FILE="/usr/local/copperegg/ucm-metrics/memcached/memcached.rb"
 
 echo
-echo "Creating config.yml."
+echo "Creating config.yml.  Press enter to use the default [in brackets]"
 echo
 
 echo "copperegg:" > $CONFIG_FILE
@@ -527,25 +430,25 @@ echo "  apikey: \"$API_KEY\"" >> $CONFIG_FILE
 echo "  apihost: \"$API_HOST\"" >> $CONFIG_FILE
 echo "  frequency: $FREQ" >> $CONFIG_FILE
 echo "  services:" >> $CONFIG_FILE
-echo "  - postgresql" >> $CONFIG_FILE
+echo "  - memcached" >> $CONFIG_FILE
 
 
-setup_base_group "postgresql" "PostgreSQL"
+setup_base_group "memcached" "Memcached"
 rc=1
 while [ $rc -ne 0 ]; do
     # loop with defaults until they get it right
-    echo "Configuring first PostgreSQL server (required)"
-    setup_postgresql "`hostname | sed 's/ /_/g'`-postgresql" "localhost" "5432" "disable"
+    echo "Configuring first Memcached server (required)"
+    setup_memcached "`hostname | sed 's/ /_/g'`-memcached" "localhost" "11211"
     rc=$?
 done
 
 while true; do
-    echo -n "Add another PostgreSQL server? [Yn] "
+    echo -n "Add another Memcached server? [Yn] "
     read yn
     if [ -n "`echo $yn | egrep -io '^n'`" ]; then
         break
     fi
-    setup_postgresql "" "" "5432" "disable"
+    setup_memcached "" "" "11211"
 done
 
 chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/copperegg/ucm-metrics/*
@@ -574,7 +477,7 @@ if [ -z "$CREATED_INIT" ]; then
     echo
     echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
     echo "You may run it using the following command:"
-    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_postgresql.log 2>&1 &"
+    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_memcached.log 2>&1 &"
     echo
 fi
 

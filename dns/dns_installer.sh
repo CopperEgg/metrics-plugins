@@ -33,133 +33,126 @@ setup_base_group()
     echo "  servers:" >> $CONFIG_FILE
 }
 
-setup_database()
+setup_dns()
 {
-    LABEL="$1"
-    URL="$2"
-    PORT="$3"
-    SSLMODE="$4"
-    DEFAULT_DBNAME="$5"
-    INITIAL_CHECK="$6"
-
-    echo -n "Databse Name: [postgres]"
-    read DBNAME
-    if [ -z "$DBNAME" ]; then
-        DBNAME="$DEFAULT_DBNAME"
-    fi
-
-    echo -n "Username: "
-    read USER_NAME
-
-    echo -n "Password: "
-    read PASSWORD
+    DEFAULT_TYPE="A"
+    DEFAULT_TIMEOUT="5"
+    NAMESERVERS_INDEX=0
 
     echo
-    if [ -z $USER_NAME ]; then
-        echo "Testing with command: psql -h $URL -p $PORT -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        psql -h $URL -p $PORT -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    else
-        echo "Testing with command: PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    fi
-
-    # grep any one metric from the output file
-    if [ $? -ne 0 ]; then
-        echo
-        echo "WARNING: Could not connect to PostgreSQL Server with $URL, "
-        echo "  username $USER_NAME, password $PASSWORD and port $PORT."
-        echo "  If you keep this setting, you can edit it later in the config file:"
-        echo "  $CONFIG_FILE"
-        echo -n "  Keep setting and use this server anyway? [Yn]"
-        read yn
-        if [ -n "`echo $yn | egrep -io '^n'`" ]; then
-            # just return 1, loop will re-run
-            return 1
-        fi
-        echo
-
-    else
-        echo "SUCCESS!"
-        echo
-    fi
-
-    if [ "$INITIAL_CHECK" == "initial" ]; then
-        echo "  -" >> $CONFIG_FILE
-        echo "    name: \"$LABEL\""               >> $CONFIG_FILE
-        echo "    hostname: \"$URL\"" >> $CONFIG_FILE
-        echo "    port: \"$PORT\"" >> $CONFIG_FILE
-        echo "    sslmode: \"$SSLMODE\""       >> $CONFIG_FILE
-        echo "    databases:"        >> $CONFIG_FILE
-    fi
-    echo "    -"        >> $CONFIG_FILE
-    echo "      name: \"$DBNAME\""        >> $CONFIG_FILE
-    echo "      username: \"$USER_NAME\""        >> $CONFIG_FILE
-    echo "      password: \"$PASSWORD\""        >> $CONFIG_FILE
-
-}
-
-setup_postgresql()
-{
-    DEFAULT_LABEL="$1"
-    DEFAULT_URL="$2"
-    DEFAULT_PORT="$3"
-    DEFAULT_SSLMODE="$4"
-
-    echo -n "Unique_id: [$DEFAULT_LABEL] "
+    echo -n "Unique_id "
+    echo -n "(Hint : This would be visible in UI under Custom -> Custom objects) "
     read LABEL
     if [ -z "$LABEL" ]; then
-        if [ -z "$DEFAULT_LABEL" ]; then
-            echo "Unique_id cannot be blank"
+        echo "Unique_id cannot be blank"
+        return 1
+    fi
+
+    echo
+    echo -n "Query "
+    echo -n "(Hint : Basically the record you want to search. It would be of the form subdomain.domain.com) "
+    read QUERY
+    if [ -z "$QUERY" ]; then
+        echo "Query cannot be blank"
+        return 1
+    fi
+
+    echo
+    echo -n "Record Type [Default: A] "
+    echo -n "(Hint : DNS record types may be one of A, AAAA, CNAME, MX, TXT. List of supported types is available on http://www.rubydoc.info/gems/dnsruby/1.59.3) "
+    read TYPE
+    if [ -z "$TYPE" ]; then
+        TYPE="$DEFAULT_TYPE"
+    fi
+
+    echo
+    echo -n "Timeout [Default: 5s] "
+    echo -n "(Hint :The connection will timeout if DNS server doesn't responding within this time. Numeric value expected) "
+    read TIMEOUT
+    if [ -z "$TIMEOUT" ]; then
+        TIMEOUT="$DEFAULT_TIMEOUT"
+    fi
+
+    echo
+    echo -n "Match value [OPTIONAL]. Press Enter to skip "
+    echo -n "(Hint : When making a hit to $QUERY, what result should be expected ? This might be an IP, another web address or anything similar) "
+    read MATCH
+
+    echo
+    echo -n "Nameservers [OPTIONAL]. Press Enter to skip"
+    echo -n "(Hint : By default we use any nameserver from available nameservers. You can target specific nameservers too) "
+    read NAMESERVERS[NAMESERVERS_INDEX]
+
+    if [ -n "${NAMESERVERS[0]}" ]; then
+        while true; do
+            NAMESERVERS_INDEX=$[NAMESERVERS_INDEX + 1]
+            echo
+            echo "Add Nameserver $[NAMESERVERS_INDEX + 1] [OPTIONAL]. Press enter to skip "
+            read ns
+            if [ -z "$ns" ]; then
+                break
+            fi
+            NAMESERVERS[NAMESERVERS_INDEX]=$ns
+        done
+    fi
+
+    echo
+    echo
+    failure=false
+    if [ -z $NAMESERVERS ]; then
+        echo "Testing with command: dig -t $TYPE $QUERY +short"
+        response=`dig -t $TYPE $QUERY +short`
+        if [ -z "$response" ]; then
+            failure=true
+        else
+            echo "Success !"
+        fi
+    else
+        for ns in "${NAMESERVERS[@]}"
+        do
+          echo "Testing with command: dig -t $TYPE $QUERY +short @$ns"
+          response=`dig -t $TYPE $QUERY +short @$ns`
+          if [ -z $response ]; then
+            failure=true
+            echo "Error while checking with nameserver [$ns]"
+          else
+            echo "Success !"
+          fi
+        done
+    fi
+
+    if [ $failure == true ]; then
+        echo
+        echo "WARNING: Could not connect to DNS Server with given settings, "
+        echo -n "  Do you want to keep these setting anyway? [Yn] "
+        read yn
+        if [ -n "`echo $yn | egrep -io '^n'`" ]; then
             return 1
         fi
-        LABEL="$DEFAULT_LABEL"
+        echo
     fi
 
-    echo "Server URL: [$DEFAULT_URL] "
-    echo -n "Hint : Include http:// or https:// in the beginning [Eg http://your_server_name.com] "
-    read URL
-    if [ -z "$URL" ]; then
-        if [ -z "$DEFAULT_URL" ]; then
-            echo "Hostname cannot be blank"
-            return 1
-        fi
-        URL="$DEFAULT_URL"
+    echo "  - name: \"$LABEL\""      >> $CONFIG_FILE
+    echo "    query: \"$QUERY\""     >> $CONFIG_FILE
+    echo "    type: \"$TYPE\""       >> $CONFIG_FILE
+    echo "    timeout: \"$TIMEOUT\"" >> $CONFIG_FILE
+    echo "    match: \"$MATCH\""     >> $CONFIG_FILE
+    echo "    nameservers:"          >> $CONFIG_FILE
+
+    if [ -n "$NAMESERVERS" ]; then
+        for ns in "${NAMESERVERS[@]}"
+        do
+            echo "      - \"$ns\""       >> $CONFIG_FILE
+        done
     fi
 
-    echo -n "Port: [5432]"
-    read PORT
-    if [ -z "$PORT" ]; then
-        PORT="$DEFAULT_PORT"
-    fi
-
-    echo -n "SSL MODE: [disable]"
-    read SSLMODE
-    if [ -z "$SSLMODE" ]; then
-        SSLMODE="$DEFAULT_SSLMODE"
-    fi
-
-    lc=1
-    while [ $lc -ne 0 ]; do
-      # loop with defaults until they get it right
-      echo "Configuring first PostgreSQL Database (required)"
-      setup_database $LABEL $URL $PORT $SSLMODE "postgres" "initial"
-      lc=$?
-    done
-
-    while true; do
-      echo -n "Add another Databse for PostgreSQL server? [Yn] "
-      read yn
-      if [ -n "`echo $yn | egrep -io '^n'`" ]; then
-        break
-      fi
-      setup_database $LABEL $URL $PORT $SSLMODE "postgres" ""
-    done
+    unset NAMESERVERS
 }
 
 
 setup_upstart_init()
 {
-    INIT_FILE="/etc/init/revealmetrics_postgresql.conf"
+    INIT_FILE="/etc/init/revealmetrics_dns.conf"
     if [ -e "$INIT_FILE" ]; then
         stop `basename $INIT_FILE .conf` >/dev/null 2>&1
         rm $INIT_FILE
@@ -176,10 +169,10 @@ setup_upstart_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/postgresql_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/dns_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                    LOGFILE="/usr/local/copperegg/log/postgresql_metrics.log"
+                LOGFILE="/usr/local/copperegg/log/dns_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -213,7 +206,6 @@ respawn limit 5 30
 
 start on runlevel [2345]
 stop on runlevel [06]
-
 exec su -s /bin/sh -c 'exec "\$0" "\$@"' $COPPEREGG_USER -- $EXE_FILE --config $CONFIG_FILE $API_SETTING $DEBUG_SETTING >> $LOGFILE 2>&1
 
 ENDINIT
@@ -254,10 +246,10 @@ setup_standard_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/postgresql_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/revealmetrics_dns.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                LOGFILE="/usr/local/copperegg/log/postgresql_metrics.log"
+                LOGFILE="/usr/local/copperegg/log/revealmetrics_dns.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -388,11 +380,13 @@ ENDINIT
 
 create_exe_file()
 {
-    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_postgresql_launcher.sh"
+    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_dns_launcher.sh"
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
+DIRNAME="`dirname \$0`"
 . $RVM_SCRIPT
+cd \$DIRNAME
 $AGENT_FILE \$*
 ENDINIT
         EXE_FILE=$LAUNCHER_FILE
@@ -443,46 +437,50 @@ fi
 echo "Monitoring frequency set to one sample per $FREQ seconds."
 
 if [ -n "`which dpkg 2>/dev/null`" ]; then
-    HAS_PGDEV="`dpkg --list | egrep 'libpq-dev'`"
+    HAS_DIG="`dpkg --list | grep 'dnsutils'`"
 elif [ -n "`which yum 2>/dev/null`" ]; then
-    HAS_PGDEV="`yum list installed | egrep postgresql-devel`"
+    HAS_DIG="`yum list installed | grep 'bind-utils'`"
 fi
 
-if [ -z "$HAS_PGDEV" ]; then
+if [ -z "$HAS_DIG" ]; then
     echo
-    echo -n "Postgres Development package is not installed. May I install it for you? [Yn] "
+    echo -n "dig command is not available. May I install required packages for you? [Yn] "
     read yn
     if [ -z "`echo $yn | egrep -io '^n'`" ]; then
         install_rc=0
         if [ -n "`which apt-get 2>/dev/null`" ]; then
-            echo "Installing Postgres Development Package with apt-get.  This may take a few minutes..."
+            echo "Installing dnsutils package. This may take a few minutes..."
             apt-get update >> $PKG_INST_OUT 2>&1
-            apt-get -y install libpq-dev >> $PKG_INST_OUT 2>&1
+            apt-get -y install dnsutils >> $PKG_INST_OUT 2>&1
             install_rc=$?
         elif [ -n "`which yum 2>/dev/null`" ]; then
-            echo "Installing Postgres Development Package with yum.  This may take a few minutes..."
-            yum -y install postgresql-devel >> $PKG_INST_OUT 2>&1
+            echo "Installing bind-utils package. This may take a few minutes..."
+            yum -y install bind-utils >> $PKG_INST_OUT 2>&1
             install_rc=$?
         else
             # This should not happen, but if it does just warn
-            echo "Warn: could not install Postgres Development"
+            echo "Warn: could not install package to use dig command"
         fi
         if [ $install_rc -ne 0 ]; then
             echo
-            echo "ERROR: Could not install Postgres Development.  Please report this to support-uptimecm@idera.com"
+            echo "ERROR: Could not required pacakges for dig command. Please report this to support-uptimecm@idera.com"
             echo "  and include all this output, plus the file: $PKG_INST_OUT"
             echo
             exit 1
         fi
     else
-        echo "Postgres Development package is required for installing pg module. Please install it manually or allow this script to."
+        if [ -n "`which dpkg 2>/dev/null`" ]; then
+            echo "dig command uses dnsutils package. Please install it manually"
+        elif [ -n "`which yum 2>/dev/null`" ]; then
+            echo "dig command uses bind-utils package. Please install it manually"
+        fi
         exit 1
     fi
 fi
 
 
 echo
-for THIS_GEM in `cat postgresql/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
+for THIS_GEM in `cat dns/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
     echo "Installing gem $THIS_GEM..."
     if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
         # install prerelease gems if "$PRE" is not null, but only for copperegg
@@ -506,20 +504,18 @@ for THIS_GEM in `cat postgresql/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed
     fi
 done
 
-
-#
 # create config.yml
-#
+
 echo
 echo
 echo "------------------------------------------------------------------"
 echo
 
-CONFIG_FILE="/usr/local/copperegg/ucm-metrics/postgresql/config.yml"
-AGENT_FILE="/usr/local/copperegg/ucm-metrics/postgresql/postgresql.rb"
+CONFIG_FILE="/usr/local/copperegg/ucm-metrics/dns/config.yml"
+AGENT_FILE="/usr/local/copperegg/ucm-metrics/dns/dns.rb"
 
 echo
-echo "Creating config.yml."
+echo "Creating config.yml.  Press enter to use the default [in brackets]"
 echo
 
 echo "copperegg:" > $CONFIG_FILE
@@ -527,25 +523,25 @@ echo "  apikey: \"$API_KEY\"" >> $CONFIG_FILE
 echo "  apihost: \"$API_HOST\"" >> $CONFIG_FILE
 echo "  frequency: $FREQ" >> $CONFIG_FILE
 echo "  services:" >> $CONFIG_FILE
-echo "  - postgresql" >> $CONFIG_FILE
+echo "  - dns" >> $CONFIG_FILE
 
 
-setup_base_group "postgresql" "PostgreSQL"
+setup_base_group "dns" "DNS Monitoring"
 rc=1
 while [ $rc -ne 0 ]; do
     # loop with defaults until they get it right
-    echo "Configuring first PostgreSQL server (required)"
-    setup_postgresql "`hostname | sed 's/ /_/g'`-postgresql" "localhost" "5432" "disable"
+    echo "Configuring first entry for DNS monitoring (required)"
+    setup_dns
     rc=$?
 done
 
 while true; do
-    echo -n "Add another PostgreSQL server? [Yn] "
+    echo -n "Add another entry for DNS monitoring? [Yn] "
     read yn
     if [ -n "`echo $yn | egrep -io '^n'`" ]; then
         break
     fi
-    setup_postgresql "" "" "5432" "disable"
+    setup_dns
 done
 
 chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/copperegg/ucm-metrics/*
@@ -574,7 +570,7 @@ if [ -z "$CREATED_INIT" ]; then
     echo
     echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
     echo "You may run it using the following command:"
-    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_postgresql.log 2>&1 &"
+    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_dns.log 2>&1 &"
     echo
 fi
 
