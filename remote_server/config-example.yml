@@ -1,0 +1,14 @@
+copperegg:
+  apikey:  'YOUR_API_KEY_HERE'
+  frequency: 60
+  services:
+  - remote_server
+
+remote_server:
+  group_name: "Remote Server Stats"
+  group_label: "remote_server Stats"
+  dashboard: "remote_server"
+  servers:
+  - name: "remote_server-01.prod"
+    hostname: 'remote_server-01.prod.company.com'
+    port: 22
