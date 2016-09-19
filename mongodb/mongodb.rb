@@ -226,36 +226,41 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
           log "Error getting mongo admin stats from: #{mhost['hostname']} [skipping]"
           next
         end
+
         metrics = {}
-        metrics['btree_accesses']           = mstats['indexCounters']['accesses'].to_i
-        metrics['btree_misses']             = mstats['indexCounters']['misses'].to_i
-        metrics['btree_hits']               = mstats['indexCounters']['hits'].to_i
-        metrics['cursors_totalOpen']        = mstats['cursors']['totalOpen'].to_i
-        metrics['cursors_timedOut']         = mstats['cursors']['timedOut'].to_i
-        metrics['op_inserts']               = mstats['opcounters']['insert'].to_i
-        metrics['op_queries']               = mstats['opcounters']['query'].to_i
-        metrics['op_updates']               = mstats['opcounters']['update'].to_i
-        metrics['op_deletes']               = mstats['opcounters']['delete'].to_i
-        metrics['op_getmores']              = mstats['opcounters']['getmore'].to_i
-        metrics['op_commands']              = mstats['opcounters']['command'].to_i
-        metrics['asserts_regular']          = mstats['asserts']['regular'].to_i
-        metrics['asserts_warning']          = mstats['asserts']['warning'].to_i
-        metrics['asserts_msg']              = mstats['asserts']['msg'].to_i
-        metrics['asserts_user']             = mstats['asserts']['user'].to_i
-        metrics['asserts_rollover']         = mstats['asserts']['rollovers'].to_i
-        metrics['connections_available']    = mstats['connections']['available'].to_i
-        metrics['connections_current']      = mstats['connections']['current'].to_i
-        metrics['mem_resident']             = mstats['mem']['resident'].to_i
-        metrics['mem_virtual']              = mstats['mem']['virtual'].to_i
-        metrics['mem_mapped']               = mstats['mem']['mapped'].to_i
-        metrics['globalLock_ratio']         = (mstats['globalLock']['lockTime'] / mstats['globalLock']['totalTime']).to_f
-        metrics['globalLock_currentQueue']  = mstats['globalLock']['currentQueue']['total'].to_i
-        metrics['globalLock_activeClients'] = mstats['globalLock']['activeClients']['total'].to_i
-        metrics['uptime']                   = mstats['uptime'].to_i
-
-        #  TODO add replication status check
-        #  rstatus = mongo_admin.command({'replSetGetStatus' => 1}, :check_response => false)
-
+        metrics['asserts_regular']           = mstats.documents[0]['asserts']['regular'].to_i
+        metrics['asserts_warning']           = mstats.documents[0]['asserts']['warning'].to_i
+        metrics['asserts_msg']               = mstats.documents[0]['asserts']['msg'].to_i
+        metrics['asserts_user']              = mstats.documents[0]['asserts']['user'].to_i
+        metrics['asserts_rollover']          = mstats.documents[0]['asserts']['rollovers'].to_i
+        metrics['connections_current']       = mstats.documents[0]["connections"]["current"].to_i
+        metrics['connections_available']     = mstats.documents[0]["connections"]["available"].to_i
+        metrics['connections_total_created'] = mstats.documents[0]["connections"]["totalCreated"].to_i
+        metrics['cursors_timed_out']         = mstats.documents[0]["metrics"]["cursor"]["timedOut"].to_i
+        metrics['total_cursors_open']        = mstats.documents[0]["metrics"]["cursor"]["open"]["total"].to_i
+        metrics['page_faults']               = mstats.documents[0]["extra_info"]["page_faults"].to_i
+        metrics['current_read_lock_queue']   = mstats.documents[0]["globalLock"]["currentQueue"]["readers"].to_i
+        metrics['current_lock_queue']        = mstats.documents[0]["globalLock"]["currentQueue"]["total"].to_i
+        metrics['current_write_lock_queue']  = mstats.documents[0]["globalLock"]["currentQueue"]["writers"].to_i
+        metrics['global_lock_total_time']    = mstats.documents[0]["globalLock"]["totalTime"].to_i
+        metrics['mapped_memory']             = mstats.documents[0]["mem"]["mapped"].to_i
+        metrics['resident_memory']           = mstats.documents[0]["mem"]["resident"].to_i
+        metrics['virtual_memory']            = mstats.documents[0]["mem"]["virtual"].to_i
+        metrics['documents_deleted']         = mstats.documents[0]["metrics"]["document"]["deleted"].to_i
+        metrics['documents_inserted']        = mstats.documents[0]["metrics"]["document"]["inserted"].to_i
+        metrics['documents_returned']        = mstats.documents[0]["metrics"]["document"]["returned"].to_i
+        metrics['documents_updated']         = mstats.documents[0]["metrics"]["document"]["updated"].to_i
+        metrics['fastmod']                   = mstats.documents[0]["metrics"]["operation"]["fastmod"].to_i
+        metrics['idhack']                    = mstats.documents[0]["metrics"]["operation"]["idhack"].to_i
+        metrics['scanAndOrder']              = mstats.documents[0]["metrics"]["operation"]["scanAndOrder"].to_i
+        metrics['index_items_scanned']       = mstats.documents[0]["metrics"]["queryExecutor"]["scanned"].to_i
+        metrics['objects_scanned']           = mstats.documents[0]["metrics"]["queryExecutor"]["scannedObjects"].to_i
+        metrics['records_moved']             = mstats.documents[0]["metrics"]["record"]["moves"].to_i
+        metrics['batches_applied_number']    = mstats.documents[0]["metrics"]["repl"]["apply"]["batches"]["num"].to_i
+        metrics['batches_time_spent']        = mstats.documents[0]["metrics"]["repl"]["apply"]["batches"]["totalMillis"].to_i
+        metrics['max_buffer_size']           = mstats.documents[0]["metrics"]["repl"]["buffer"]["maxSizeBytes"].to_i
+        metrics['oplog_buffer_size']         = mstats.documents[0]["metrics"]["repl"]["buffer"]["maxSizeBytes"].to_i
+        metrics['uptime']                    = mstats.documents[0]["uptime"].to_i
       end
 
       puts "#{group_name} - #{mhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
@@ -294,31 +299,39 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => "ce_counter", :name => "btree_accesses",            :unit => "accesses"}
-  metric_group.metrics << {:type => "ce_counter", :name => "btree_misses",              :unit => "misses"}
-  metric_group.metrics << {:type => "ce_counter", :name => "btree_hits",                :unit => "hits"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "cursors_totalOpen",         :unit => "cursors"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "cursors_timedOut",          :unit => "ops/s"}
-  metric_group.metrics << {:type => "ce_counter", :name => "op_inserts",                :unit => "inserts"}
-  metric_group.metrics << {:type => "ce_counter", :name => "op_queries",                :unit => "queries"}
-  metric_group.metrics << {:type => "ce_counter", :name => "op_updates",                :unit => "updates"}
-  metric_group.metrics << {:type => "ce_counter", :name => "op_deletes",                :unit => "deletes"}
-  metric_group.metrics << {:type => "ce_counter", :name => "op_getmores",               :unit => "getmores"}
-  metric_group.metrics << {:type => "ce_counter", :name => "op_commands",               :unit => "commands"}
-  metric_group.metrics << {:type => "ce_counter", :name => "asserts_regular",           :unit => "asserts"}
-  metric_group.metrics << {:type => "ce_counter", :name => "asserts_warning",           :unit => "asserts"}
-  metric_group.metrics << {:type => "ce_counter", :name => "asserts_msg",               :unit => "asserts"}
-  metric_group.metrics << {:type => "ce_counter", :name => "asserts_user",              :unit => "asserts"}
-  metric_group.metrics << {:type => "ce_counter", :name => "asserts_rollover",          :unit => "asserts"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "connections_available",     :unit => "connections"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "connections_current",       :unit => "connections"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "mem_resident",              :unit => "megabytes"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "mem_virtual",               :unit => "megabytes"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "mem_mapped",                :unit => "megabytes"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "globalLock_ratio",          :unit => ""}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "globalLock_currentQueue",   :unit => "entries"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "globalLock_activeClients",  :unit => "clients"}
-  metric_group.metrics << {:type => "ce_counter", :name => "uptime",                    :unit => "seconds"}
+  metric_group.metrics << {:type => "ce_counter", :name => "asserts_regular", :unit => "asserts" }
+  metric_group.metrics << {:type => "ce_counter", :name => "asserts_warning", :unit => "asserts" }
+  metric_group.metrics << {:type => "ce_counter", :name => "asserts_msg", :unit => "asserts" }
+  metric_group.metrics << {:type => "ce_counter", :name => "asserts_user", :unit => "asserts" }
+  metric_group.metrics << {:type => "ce_counter", :name => "asserts_rollover", :unit => "asserts" }
+  metric_group.metrics << {:type => "ce_counter", :name => "connections_current", :unit => "connections" }
+  metric_group.metrics << {:type => "ce_counter", :name => "connections_available", :unit => "connections" }
+  metric_group.metrics << {:type => "ce_counter", :name => "connections_total_created", :unit => "connections" }
+  metric_group.metrics << {:type => "ce_counter", :name => "cursors_timed_out", :unit => "cursors" }
+  metric_group.metrics << {:type => "ce_counter", :name => "total_cursors_open", :unit => "cursors" }
+  metric_group.metrics << {:type => "ce_counter", :name => "page_faults", :unit => "page_faults" }
+  metric_group.metrics << {:type => "ce_counter", :name => "current_read_lock_queue", :unit => "locks" }
+  metric_group.metrics << {:type => "ce_counter", :name => "current_lock_queue", :unit => "locks" }
+  metric_group.metrics << {:type => "ce_counter", :name => "current_write_lock_queue", :unit => "locks" }
+  metric_group.metrics << {:type => "ce_counter", :name => "global_lock_total_time", :unit => "locks" }
+  metric_group.metrics << {:type => "ce_counter", :name => "mapped_memory", :unit => "Bytes" }
+  metric_group.metrics << {:type => "ce_counter", :name => "resident_memory", :unit => "Bytes" }
+  metric_group.metrics << {:type => "ce_counter", :name => "virtual_memory", :unit => "Bytes" }
+  metric_group.metrics << {:type => "ce_counter", :name => "documents_deleted", :unit => "documents" }
+  metric_group.metrics << {:type => "ce_counter", :name => "documents_inserted", :unit => "documents" }
+  metric_group.metrics << {:type => "ce_counter", :name => "documents_returned", :unit => "documents" }
+  metric_group.metrics << {:type => "ce_counter", :name => "documents_updated", :unit => "documents" }
+  metric_group.metrics << {:type => "ce_counter", :name => "fastmod", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "idhack", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "scanAndOrder", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "index_items_scanned", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "objects_scanned", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "records_moved", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "batches_applied_number", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "batches_time_spent", :unit => "" }
+  metric_group.metrics << {:type => "ce_counter", :name => "max_buffer_size", :unit => "Bytes" }
+  metric_group.metrics << {:type => "ce_counter", :name => "oplog_buffer_size", :unit => "Bytes" }
+  metric_group.metrics << {:type => "ce_counter", :name => "uptime", :unit => "" }
   metric_group.save
   metric_group
 end
