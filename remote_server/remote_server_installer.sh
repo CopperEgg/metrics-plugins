@@ -52,7 +52,7 @@ setup_remote_server()
 
     echo
     echo
-    echo -n "Server URL or IP (without HTTP or HTTPS)"
+    echo -n "Server URL or IP (without HTTP or HTTPS) "
     read URL
     if [ -z "$URL" ]; then
         echo "Hostname cannot be blank"
