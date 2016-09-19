@@ -1,5 +1,7 @@
 #!/bin/sh
 
+BASE_PATH='/usr/local/copperegg/ucm-metrics'
+
 setup_base_group()
 {
     TYPE_LOWER="$1"
@@ -50,7 +52,7 @@ setup_remote_server()
 
     echo
     echo
-    echo -n "Server URL or IP "
+    echo -n "Server URL or IP (without HTTP or HTTPS)"
     read URL
     if [ -z "$URL" ]; then
         echo "Hostname cannot be blank"
@@ -59,7 +61,7 @@ setup_remote_server()
 
     echo
     echo "User [ubuntu] "
-    echo -n "Hint : When you do ssh, you write username@servername.com, write that 'username' here "
+    echo "Hint : When you do ssh, you write username@servername.com, write that 'username' here "
     read USER
     if [ -z "$USER" ]; then
         USER="$DEFAULT_USER"
@@ -67,7 +69,7 @@ setup_remote_server()
 
     echo
     echo "Password (if any) "
-    echo -n "Hint : Did you set any password at the time of generating ssh keys ? If yes, add it here otherwise hit Enter "
+    echo "Hint : Did you set any password at the time of generating ssh keys ? If yes, add it here otherwise hit Enter "
     read PASSWORD
 
     echo
@@ -79,7 +81,7 @@ setup_remote_server()
 
     echo
     echo "SSH Keys (public / private key pair) :"
-    echo -n "Hint : Must give a key pair path, so that if the program runs with $COPPEREGG_USER user, it can ssh sucessfully "
+    echo "Hint : Must give a key pair path, so that if the program runs with $COPPEREGG_USER user, it can ssh sucessfully "
     read KEY
 
     echo
@@ -137,8 +139,8 @@ setup_remote_server()
     fi
 
     if [ -n "$KEY" ]; then
-        mkdir -p /usr/local/copperegg/ucm-metrics/remote_server/keys
-        echo "Copying key to /usr/local/copperegg/ucm-metrics/remote_server/keys/ so that it is accessible by $COPPEREGG_USER"
+        mkdir -p $BASE_PATH/remote_server/keys
+        echo "Copying key to $BASE_PATH/remote_server/keys/ so that it is accessible by $COPPEREGG_USER"
         keyname=`basename $KEY`"$COUNTER"
         cp $KEY "remote_server/keys/$keyname"
     fi
@@ -385,7 +387,7 @@ ENDINIT
 
 create_exe_file()
 {
-    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_remote_server_launcher.sh"
+    LAUNCHER_FILE="$BASE_PATH/revealmetrics_remote_server_launcher.sh"
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
@@ -454,8 +456,8 @@ echo
 echo "------------------------------------------------------------------"
 echo
 
-CONFIG_FILE="/usr/local/copperegg/ucm-metrics/remote_server/config.yml"
-AGENT_FILE="/usr/local/copperegg/ucm-metrics/remote_server/remote_server.rb"
+CONFIG_FILE="$BASE_PATH/remote_server/config.yml"
+AGENT_FILE="$BASE_PATH/remote_server/remote_server.rb"
 
 echo
 echo "Creating config.yml.  Press enter to use the default [in brackets]"
@@ -487,7 +489,7 @@ while true; do
     setup_remote_server $COUNTER
 done
 
-chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/copperegg/ucm-metrics/*
+chown -R $COPPEREGG_USER:$COPPEREGG_GROUP $BASE_PATH/remote_server/*
 
 echo
 echo

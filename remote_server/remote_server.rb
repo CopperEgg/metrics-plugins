@@ -194,8 +194,7 @@ def monitor_single_remote(remote_server, group_name)
       rescue SocketError => so_e
         log "SocketError  #{so_e}"
       rescue StandardError => st_e
-        log "StandardError  #{st_e}"
-        log st_e.backtrace.join("\n")
+        log "StandardError  #{st_e}. #{st_e.backtrace.join("\n")}"
       end
     end
 
@@ -262,7 +261,7 @@ def ensure_remote_server_metric_group(metric_group, group_name, group_label)
   metric_group
 end
 
-def create_couchdb_dashboard(metric_group, name, server_list)
+def create_remote_server_dashboard(metric_group, name, server_list)
   log 'Creating new Remote Server Dashboard'
   metrics = metric_group.metrics.map { |metric| metric['name'] }
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics)
@@ -270,7 +269,8 @@ end
 
 def ensure_metric_group(metric_group, service)
   if service == 'remote_server'
-    return ensure_remote_server_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+    return ensure_remote_server_metric_group(metric_group, @config[service]['group_name'],
+      @config[service]['group_label'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -278,7 +278,8 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'remote_server'
-    create_couchdb_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
+    create_remote_server_dashboard(metric_group, @config[service]['dashboard'],
+      @config[service]['servers'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
