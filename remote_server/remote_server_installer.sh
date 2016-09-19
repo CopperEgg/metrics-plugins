@@ -442,11 +442,29 @@ echo "Monitoring frequency set to one sample per $FREQ seconds."
 
 echo
 
-echo "Installing required gems (using bundler)"
-gem install bundler -v1.10.6
-cd remote_server
-sudo su $COPPEREGG_USER -c "bundle install"
-cd ..
+echo "Installing required gems "
+gems=`grep -w gem remote_server/Gemfile | awk -F " " '{print $2 $3}'`
+
+for gem in $gems; do
+  gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \'`
+  gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \'`
+
+  echo "Installing gem $gem_name [Using gem install $gem_name -v $gem_version]"
+
+  gem install $gem_name -v $gem_version >> $PKG_INST_OUT
+  install_rc=$?
+  if [ $install_rc -ne 0 ]; then
+    echo
+    echo "********************************************************"
+    echo "*** "
+    echo "*** WARNING: gem $gem did not install properly!"
+    echo "*** Please contact support-uptimecm@idera.com if you are"
+    echo "*** unable to run 'gem install $gem' manually."
+    echo "*** "
+    echo "********************************************************"
+    echo
+  fi
+done
 
 #
 # create config.yml
