@@ -443,15 +443,16 @@ echo "Monitoring frequency set to one sample per $FREQ seconds."
 echo
 
 echo "Installing required gems "
-gems=`grep -w gem remote_server/Gemfile | awk -F " " '{print $2 $3}'`
+IFS=$'\n'
+gems=`grep -w gem remote_server/Gemfile | awk '{$1="" ; print $0}'`
 
 for gem in $gems; do
-  gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \'`
-  gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \'`
+  gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
+  gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \' | tr -d \" | tr -d [:blank:]`
 
-  echo "Installing gem $gem_name [Using gem install $gem_name -v $gem_version]"
+  echo "Installing gem $gem_name [Using gem install $gem_name -v \"$gem_version\"]"
 
-  gem install $gem_name -v $gem_version >> $PKG_INST_OUT
+  gem install $gem_name -v "$gem_version" >> $PKG_INST_OUT
   install_rc=$?
   if [ $install_rc -ne 0 ]; then
     echo
@@ -459,7 +460,7 @@ for gem in $gems; do
     echo "*** "
     echo "*** WARNING: gem $gem did not install properly!"
     echo "*** Please contact support-uptimecm@idera.com if you are"
-    echo "*** unable to run 'gem install $gem' manually."
+    echo "*** unable to run 'gem install $gem_name -v \"$gem_version\"' manually."
     echo "*** "
     echo "********************************************************"
     echo
