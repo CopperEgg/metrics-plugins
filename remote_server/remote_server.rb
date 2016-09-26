@@ -16,6 +16,42 @@ class CopperEggAgentError < Exception; end
 
 ####################################################################
 
+TIME_STRING = '%Y/%m/%d %H:%M:%S'
+COLLECTL_REQUIRED_HEADERS = ['#cpu', 'Free', 'Buff', 'Cach', 'KBRead', 'KBWrit', 'KBIn', 'KBOut']
+COLLECTL_HEADERS_UCM = ['cpu_total', 'free_memory', 'buff_memory', 'cach_memory', 'disk_read_kb',
+                        'disk_write_kb','network_in_kb', 'network_out_kb']
+UNITS_FACTOR = {
+  'B'  => 1024**0,
+  'K' => 1024**1,
+  'M' => 1024**2,
+  'G' => 1024**3,
+  'T' => 1024**4
+}
+
+MAX_RETRIES = 30
+last_failure = 0
+
+MAX_SETUP_RETRIES = 5
+setup_retries = MAX_SETUP_RETRIES
+
+opts = GetoptLong.new(
+  ['--help',      '-h', GetoptLong::NO_ARGUMENT],
+  ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
+  ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
+  ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
+  ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
+  ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
+)
+
+@base_path = '/usr/local/copperegg/ucm-metrics/remote_server/'
+config_file = "#{@base_path}config.yml"
+@apihost = nil
+@debug = false
+@freq = 60
+@interupted = false
+@worker_pids = []
+@services = []
+
 def help
   puts 'usage: $0 args'
   puts 'Examples:'
@@ -24,18 +60,6 @@ def help
   puts '  -k hcd7273hrejh712 (your APIKEY from the UI dashboard settings)'
   puts '  -a https://api.copperegg.com (API endpoint to use [DEBUG ONLY])'
 end
-
-TIME_STRING = '%Y/%m/%d %H:%M:%S'
-COLLECTL_REQUIRED_HEADERS = ['#cpu', 'Free', 'Buff', 'Cach', 'KBRead', 'KBWrit', 'KBIn', 'KBOut']
-COLLECTL_HEADERS_UCM = ['cpu_total', 'free_memory', 'buff_memory', 'cach_memory', 'disk_read_kb',
-  'disk_write_kb','network_in_kb', 'network_out_kb']
-UNITS_FACTOR = {
-  'B'  => 1024**0,
-  'K' => 1024**1,
-  'M' => 1024**2,
-  'G' => 1024**3,
-  'T' => 1024**4
-}
 
 def log(string)
   begin
@@ -295,24 +319,6 @@ end
 
 ######### MAIN SCRIPT #########
 
-opts = GetoptLong.new(
-  ['--help',      '-h', GetoptLong::NO_ARGUMENT],
-  ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
-  ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
-  ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
-  ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
-  ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
-  )
-
-@base_path = '/usr/local/copperegg/ucm-metrics/remote_server/'
-config_file = "#{@base_path}config.yml"
-@apihost = nil
-@debug = false
-@freq = 60
-@interupted = false
-@worker_pids = []
-@services = []
-
 opts.each do |opt, arg|
   case opt
   when '--help'
@@ -335,7 +341,7 @@ end
 
 unless @config.nil?
   unless @config['copperegg'].nil?
-    CopperEgg::Api.apikey = @config['copperegg']['apikey'] unless @config['copperegg']['apikey'].nil? && CopperEgg::Api.apikey.nil?
+    CopperEgg::Api.apikey = @config['copperegg']['apikey'] unless @config['copperegg']['apikey'].nil?
     CopperEgg::Api.host = @config['copperegg']['apihost'] unless @config['copperegg']['apihost'].nil?
     @freq = @config['copperegg']['frequency'] unless @config['copperegg']['frequency'].nil?
     @services = @config['copperegg']['services']
@@ -365,11 +371,6 @@ log "Update frequency set to #{@freq}s."
 trap('INT') { parent_interrupt }
 trap('TERM') { parent_interrupt }
 
-MAX_RETRIES = 30
-last_failure = 0
-
-MAX_SETUP_RETRIES = 5
-setup_retries = MAX_SETUP_RETRIES
 
 begin
   dashboards = CopperEgg::CustomDashboard.find

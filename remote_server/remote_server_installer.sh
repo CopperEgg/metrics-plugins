@@ -82,6 +82,7 @@ setup_remote_server()
     echo
     echo "SSH Keys (public / private key pair) :"
     echo "Hint : Must give a key pair path, so that if the program runs with $COPPEREGG_USER user, it can ssh sucessfully "
+    echo "This should be an absolute path like /home/user/.ssh/some_rsa_or_pem_file"
     read KEY
 
     echo
@@ -117,6 +118,16 @@ setup_remote_server()
         else
             echo "ssh -p $PORT -i $KEY -t -o ConnectTimeout=10 -o ConnectionAttempts=1 $USER@$URL 'sudo yum update && sudo yum install collectl 2>/dev/null'"
             ssh -p $PORT -i $KEY -t -o ConnectTimeout=10 -o ConnectionAttempts=1 $USER@$URL 'sudo yum update && sudo yum install collectl 2>/dev/null'
+        fi
+
+        if [ $? -ne 0 ]; then
+            echo "Installation of collectl failed on remote system. For getting system metrics, you will need to manually install collectl on remote system"
+            echo "For Ubuntu (apt-get) based systems, use "
+            echo "sudo apt-get -y install collectl"
+            echo
+            echo "For RHEL/Fedora (yum) based systems, use "
+            echo "yum install collectl"
+            echo
         fi
     else
         echo

@@ -5,10 +5,13 @@ copperegg:
   - remote_server
 
 remote_server:
-  group_name: "Remote Server Stats"
-  group_label: "remote_server Stats"
-  dashboard: "remote_server"
+  group_name: "remote_server"
+  group_label: "Remote Server"
+  dashboard: "Remote Monitoring Dashboard"
   servers:
-  - name: "remote_server-01.prod"
-    hostname: 'remote_server-01.prod.company.com'
+  - name: 'my_server1'
+    host: 'subdomain.domain.com'
+    user: 'user'
+    password: ''
     port: 22
+    key: '/home/user/.ssh/id_rsa'
