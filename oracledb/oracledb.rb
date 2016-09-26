@@ -18,8 +18,6 @@ def help
   puts '  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])'
 end
 
-TIME_STRING='%Y/%m/%d %H:%M:%S'
-
 def log(str)
   begin
     str.split("\n").each do |str|
@@ -67,7 +65,7 @@ def connect_to_oracle(url, port, user, password)
   begin
     @cxn = OCI8.new(user, password, "#{url}:#{port}")
   rescue Exception => e
-    log "Error connecting to oracle server for user #{user}, on #{url}:#{port}"
+    log "Error connecting to oracle DB server for user #{user}, on #{url}:#{port}"
     return nil
   end
   return @cxn
@@ -104,8 +102,8 @@ def get_stats(cxn)
 end
 
 
-def monitor_oracle(servers, group_name)
-  log 'Monitoring oracle: '
+def monitor_oracle_db(servers, group_name)
+  log 'Monitoring oracle DB: '
   return if @interrupted
 
   until @interupted do
@@ -163,10 +161,10 @@ end
 
 def ensure_oracle_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log 'Creating oracle metric group'
-    metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
+    log 'Creating oracle DB metric group'
+    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq)
   else
-    log 'Updating oracle metric group'
+    log 'Updating oracle DB metric group'
     metric_group.frequency = @freq
   end
 
@@ -203,12 +201,14 @@ def ensure_oracle_metric_group(metric_group, group_name, group_label)
 end
 
 def create_oracle_dashboard(metric_group, name)
-  log 'Creating new Oracle Dashboard'
+  log 'Creating new Oracle DB Dashboard'
   metrics = metric_group.metrics || []
-  CopperEgg::CustomDashboard.create(metric_group, :name => name, :identifiers => nil, :metrics => metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics)
 end
 
 ####################################################################
+
+TIME_STRING='%Y/%m/%d %H:%M:%S'
 
 # get options
 opts = GetoptLong.new(
@@ -221,7 +221,7 @@ opts = GetoptLong.new(
     ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-base_path = '/usr/local/copperegg/ucm-metrics/oracle'
+base_path = '/usr/local/copperegg/ucm-metrics/oracledb'
 config_file = "#{base_path}/config.yml"
 
 @apihost = nil
@@ -308,7 +308,7 @@ end
 
 
 @services.each do |service|
-  raise CopperEggAgentError.new("Service #{service} not recognized") unless service == 'oracle'
+  raise CopperEggAgentError.new("Service #{service} not recognized") unless service == 'oracledb'
 
   if @config[service] && !@config[service]['servers'].empty?
     begin
@@ -326,7 +326,7 @@ end
       dashboard = dashboards.detect { |d| d.name == @config[service]['dashboard'] } unless dashboards.nil?
       dashboard = create_oracle_dashboard(metric_group, @config[service]['dashboard']) if dashboard.nil?
 
-      raise "Could not create a dashboard for #{service}" if dashboard.nil?
+      log "Could not create a dashboard for #{service}" if dashboard.nil?
     rescue => e
       log 'Error while creating Metric group/dashboard'
       log e.message
@@ -341,7 +341,7 @@ end
       last_failure = 0
       retries = MAX_RETRIES
       begin
-        monitor_oracle(@config[service]['servers'], metric_group.name)
+        monitor_oracle_db(@config[service]['servers'], metric_group.name)
       rescue => e
         log "Error monitoring #{service}.  Retrying (#{retries}) more times..."
         log "#{e.inspect}"

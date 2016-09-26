@@ -33,7 +33,7 @@ setup_base_group()
     echo "  servers:" >> $CONFIG_FILE
 }
 
-setup_oracle()
+setup_oracledb()
 {
     DEFAULT_LABEL="$1"
     DEFAULT_URL="$2"
@@ -50,7 +50,7 @@ setup_oracle()
     fi
 
     echo "Server URL: [$DEFAULT_URL] "
-    echo -n "Hint : Include http:// or https:// in the beginning [Eg http://your_server_name.com] "
+    echo -n "Hint : Don't include http:// or https:// in the beginning. Mention the Route to your server. "
     read URL
     if [ -z "$URL" ]; then
         if [ -z "$DEFAULT_URL" ]; then
@@ -76,21 +76,21 @@ setup_oracle()
 
     echo "Testing with command: sqlplus  -L $USER_NAME/$PASSWORD@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=$URL)(Port=$PORT))) < /dev/null"
     if [ -n "$ORACLE_HOME" ]; then
-        $ORACLE_HOME/bin/sqlplus  -L "$USER_NAME/$PASSWORD@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=$URL)(Port=$PORT)))" < /dev/null > /tmp/oracle_stats.txt
+        $ORACLE_HOME/bin/sqlplus  -L "$USER_NAME/$PASSWORD@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=$URL)(Port=$PORT)))" < /dev/null > /tmp/oracledb_stats.txt
     elif [ -n "$LD_LIBRARY_PATH" ]; then
-        $LD_LIBRARY_PATH/sqlplus  -L "$USER_NAME/$PASSWORD@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=$URL)(Port=$PORT)))" < /dev/null > /tmp/oracle_stats.txt
+        $LD_LIBRARY_PATH/sqlplus  -L "$USER_NAME/$PASSWORD@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=$URL)(Port=$PORT)))" < /dev/null > /tmp/oracledb_stats.txt
     else
         echo "Exiting from script. Cannot access sqlplus to test connection."
         echo "Ensure ORACLE_HOME or LD_LIBRARY_PATH variables point to correct path for sqlplus"
-        # exit 1
+        exit 1
     fi
 
     # grep any one metric from the output file
-    if [ -z "`grep 'Connected to' /tmp/oracle_stats.txt`" ]; then
+    if [ -z "`grep 'Connected to' /tmp/oracledb_stats.txt`" ]; then
         echo
         echo "WARNING: Could not connect to Oracle Server $URL"
         echo "  user: $USER_NAME, password: $PASSWORD and port: $PORT"
-        echo "  See connection error log in : /tmp/oracle_stats.txt"
+        echo "  See connection error log in : /tmp/oracledb_stats.txt"
         echo "  If you keep this setting, you can edit it later in the config file:"
         echo "  $CONFIG_FILE"
         echo -n "  Keep setting and use this server anyway? [Yn]"
@@ -117,7 +117,7 @@ setup_oracle()
 
 setup_upstart_init()
 {
-    INIT_FILE="/etc/init/revealmetrics_oracle.conf"
+    INIT_FILE="/etc/init/revealmetrics_oracledb.conf"
     if [ -e "$INIT_FILE" ]; then
         stop `basename $INIT_FILE .conf` >/dev/null 2>&1
         rm $INIT_FILE
@@ -134,10 +134,10 @@ setup_upstart_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/oracle_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/oracledb_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                    LOGFILE="/usr/local/copperegg/log/oracle_metrics.log"
+                    LOGFILE="/usr/local/copperegg/log/oracledb_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -212,10 +212,10 @@ setup_standard_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/oracle_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/oracledb_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                LOGFILE="/usr/local/copperegg/log/oracle_metrics.log"
+                LOGFILE="/usr/local/copperegg/log/oracledb_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -346,7 +346,7 @@ ENDINIT
 
 create_exe_file()
 {
-    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_oracle_launcher.sh"
+    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_oracledb_launcher.sh"
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
@@ -427,7 +427,7 @@ fi
 
 
 echo
-for THIS_GEM in `cat oracle/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
+for THIS_GEM in `cat oracledb/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
     echo "Installing gem $THIS_GEM..."
     if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
         gem install --no-ri --no-rdoc $THIS_GEM --pre --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
@@ -459,8 +459,8 @@ echo
 echo "------------------------------------------------------------------"
 echo
 
-CONFIG_FILE="/usr/local/copperegg/ucm-metrics/oracle/config.yml"
-AGENT_FILE="/usr/local/copperegg/ucm-metrics/oracle/oracle.rb"
+CONFIG_FILE="/usr/local/copperegg/ucm-metrics/oracledb/config.yml"
+AGENT_FILE="/usr/local/copperegg/ucm-metrics/oracledb/oracledb.rb"
 
 echo
 echo "Creating config.yml."
@@ -471,15 +471,15 @@ echo "  apikey: \"$API_KEY\"" >> $CONFIG_FILE
 echo "  apihost: \"$API_HOST\"" >> $CONFIG_FILE
 echo "  frequency: $FREQ" >> $CONFIG_FILE
 echo "  services:" >> $CONFIG_FILE
-echo "  - oracle" >> $CONFIG_FILE
+echo "  - oracledb" >> $CONFIG_FILE
 
 
-setup_base_group "oracle" "Oracle"
+setup_base_group "oracledb" "Oracle DB"
 rc=1
 while [ $rc -ne 0 ]; do
     # loop with defaults until they get it right
     echo "Configuring first Oracle server (required)"
-    setup_oracle "`hostname | sed 's/ /_/g'`-oracle" "localhost" "1521"
+    setup_oracledb "`hostname | sed 's/ /_/g'`-oracledb" "localhost" "1521"
     rc=$?
 done
 
@@ -489,7 +489,7 @@ while true; do
     if [ -n "`echo $yn | egrep -io '^n'`" ]; then
         break
     fi
-    setup_oracle "" "" "1521"
+    setup_oracledb "" "" "1521"
 done
 
 chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/copperegg/ucm-metrics/*
@@ -518,7 +518,7 @@ if [ -z "$CREATED_INIT" ]; then
     echo
     echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
     echo "You may run it using the following command:"
-    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_oracle.log 2>&1 &"
+    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_oracledb.log 2>&1 &"
     echo
 fi
 
