@@ -790,7 +790,7 @@ else
 
 echo
 
-echo "Installing required gems "
+echo
 IFS=$'\n'
 gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
 
