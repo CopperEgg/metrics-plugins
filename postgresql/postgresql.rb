@@ -7,6 +7,7 @@
 # written by Mahlon E. Smith <mahlon@martini.nu>,
 
 require 'rubygems'
+require 'bundler/setup'
 require 'getoptlong'
 require 'copperegg'
 require 'json/pure'
