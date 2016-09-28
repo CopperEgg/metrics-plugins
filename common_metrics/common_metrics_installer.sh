@@ -792,7 +792,7 @@ echo
 
 echo "Installing required gems "
 IFS=$'\n'
-gems=`grep -w gem Gemfile | awk '{$1="" ; print $0}'`
+gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
 
     for gem in $gems; do
         gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
