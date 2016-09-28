@@ -43,7 +43,8 @@ setup_remote_server()
 
     echo
     echo
-    echo -n "Unique_id: "
+    echo "Unique_id: "
+    echo "Hint : This would be unique identifier for this server on Uptime Cloud Monitor UI "
     read LABEL
     if [ -z "$LABEL" ]; then
         echo "Unique_id cannot be blank"
@@ -52,7 +53,7 @@ setup_remote_server()
 
     echo
     echo
-    echo -n "Server URL or IP (without HTTP or HTTPS) "
+    echo -n "Server URL or IP (without HTTP or HTTPS): "
     read URL
     if [ -z "$URL" ]; then
         echo "Hostname cannot be blank"
@@ -73,7 +74,7 @@ setup_remote_server()
     read PASSWORD
 
     echo
-    echo -n "Port: [22] "
+    echo -n "Port [22]: "
     read PORT
     if [ -z "$PORT" ]; then
         PORT="$DEFAULT_PORT"
