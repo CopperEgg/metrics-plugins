@@ -787,37 +787,39 @@ else
             fi
         fi
     fi
-    echo
-    for THIS_GEM in `cat common_metrics/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
-        if [ -n "`echo $THIS_GEM | egrep mysql`" -a -z "$MONITOR_MYSQL" ]; then
+
+echo
+
+echo "Installing required gems "
+IFS=$'\n'
+gems=`grep -w gem couchdb/Gemfile | awk '{$1="" ; print $0}'`
+
+    for gem in $gems; do
+        gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
+        gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \' | tr -d \" | tr -d [:blank:]`
+
+        if [ -n "`echo $gem_name | egrep mysql`" -a -z "$MONITOR_MYSQL" ]; then
             # skip installing mysql gem if user doesn't need it
             continue
         fi
-        if [ -n "`echo $THIS_GEM | egrep redis`" -a -z "$MONITOR_REDIS" ]; then
+        if [ -n "`echo $gem_name | egrep redis`" -a -z "$MONITOR_REDIS" ]; then
             # skip installing redis gem if user doesn't need it
             continue
         fi
-        echo "Installing gem $THIS_GEM..."
-        if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
-            # install prerelease gems if "$PRE" is not null, but only for copperegg
-            gem install --no-ri --no-rdoc $THIS_GEM --pre --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
-        else
-            gem install --no-ri --no-rdoc $THIS_GEM --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
-        fi
+
+        echo "Installing gem $gem_name [Using gem install $gem_name -v \"$gem_version\"]"
+
+        gem install $gem_name -v "$gem_version" >> $PKG_INST_OUT
         install_rc=$?
         if [ $install_rc -ne 0 ]; then
             echo
-            echo
-            echo "***************************************************"
-            echo "***************************************************"
+            echo "********************************************************"
             echo "*** "
-            echo "*** WARNING: gem $THIS_GEM did not install properly!"
+            echo "*** WARNING: gem $gem did not install properly!"
             echo "*** Please contact support-uptimecm@idera.com if you are"
-            echo "*** unable to run 'gem install $THIS_GEM' manually."
+            echo "*** unable to run 'gem install $gem_name -v \"$gem_version\"' manually."
             echo "*** "
-            echo "***************************************************"
-            echo "***************************************************"
-            echo
+            echo "********************************************************"
             echo
         fi
     done
