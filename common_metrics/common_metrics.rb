@@ -81,7 +81,8 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-config_file = "config.yml"
+base_path = '/usr/local/copperegg/ucm-metrics/common_metrics'
+config_file = "#{base_path}/config.yml"
 @apihost = nil
 @debug = false
 @verbose = false
@@ -179,7 +180,7 @@ end
 def monitor_redis(redis_servers, group_name)
   require 'redis'
   log "Monitoring Redis: "
-  
+
   while !@interrupted do
     return if @interrupted
 
@@ -312,7 +313,7 @@ def connect_to_mysql(hostname, user, pw, db, socket=nil)
                               :password => pw,
                               :database => db,
                               :socket => socket)
-    
+
   return client
 end
 
