@@ -5,6 +5,7 @@
 
 require 'rubygems'
 require 'bundler'
+ENV['BUNDLE_GEMFILE'] = '/usr/local/copperegg/ucm-metrics/common_metrics/Gemfile'
 Bundler.setup(:default)
 require 'getoptlong'
 require 'copperegg'
