@@ -4,6 +4,8 @@
 #
 
 require 'rubygems'
+require 'bundler'
+Bundler.setup(:default)
 require 'getoptlong'
 require 'copperegg'
 require 'json/pure'
@@ -318,7 +320,9 @@ def connect_to_mysql(hostname, user, pw, db, socket=nil)
 end
 
 def monitor_mysql(mysql_servers, group_name)
+  Bundler.setup(:mysql)
   require 'mysql2'
+    log "#{Gem.loaded_specs["mysql2"].version}"
   log "Monitoring MySQL: "
   return if @interrupted
 

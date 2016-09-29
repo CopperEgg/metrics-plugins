@@ -790,6 +790,10 @@ else
 
 echo
 
+echo "Installing gem bundler [Using gem bundler -v \"1.12.5\"]"
+
+        gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+
 echo
 IFS=$'\n'
 gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
