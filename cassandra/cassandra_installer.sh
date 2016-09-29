@@ -403,6 +403,10 @@ echo "Monitoring frequency set to one sample per $FREQ seconds."
 echo
 
 echo "Installing required gems "
+echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
+    gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+
+OLDIFS=$IFS
 IFS=$'\n'
 gems=`grep -w gem cassandra/Gemfile | awk '{$1="" ; print $0}'`
 
@@ -426,6 +430,7 @@ for gem in $gems; do
     echo
   fi
 done
+IFS=$OLDIFS
 
 
 #

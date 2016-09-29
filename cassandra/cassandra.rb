@@ -4,6 +4,7 @@
 #
 
 require 'rubygems'
+require 'bundler/setup'
 require 'getoptlong'
 require 'copperegg'
 require 'json/pure'
