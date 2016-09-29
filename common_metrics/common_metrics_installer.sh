@@ -794,6 +794,7 @@ else
 
         gem install bundler -v "1.12.5" >> $PKG_INST_OUT
 
+    OLDIFS=$IFS
     IFS=$'\n'
     gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
 
@@ -826,7 +827,7 @@ else
             echo
         fi
     done
-    IFS=$' '
+    IFS=$OLDIFS
 fi
 
 
