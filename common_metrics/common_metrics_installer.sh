@@ -790,44 +790,45 @@ else
 
 echo
 
-echo "Installing gem bundler [Using gem bundler -v \"1.12.5\"]"
+echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
 
         gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+        bundle install
 
 echo
-IFS=$'\n'
-gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
+# IFS=$'\n'
+# gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
 
-    for gem in $gems; do
-        gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
-        gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \' | tr -d \" | tr -d [:blank:]`
+#     for gem in $gems; do
+#         gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
+#         gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \' | tr -d \" | tr -d [:blank:]`
 
-        if [ -n "`echo $gem_name | egrep mysql`" -a -z "$MONITOR_MYSQL" ]; then
-            # skip installing mysql gem if user doesn't need it
-            continue
-        fi
-        if [ -n "`echo $gem_name | egrep redis`" -a -z "$MONITOR_REDIS" ]; then
-            # skip installing redis gem if user doesn't need it
-            continue
-        fi
+#         if [ -n "`echo $gem_name | egrep mysql`" -a -z "$MONITOR_MYSQL" ]; then
+#             # skip installing mysql gem if user doesn't need it
+#             continue
+#         fi
+#         if [ -n "`echo $gem_name | egrep redis`" -a -z "$MONITOR_REDIS" ]; then
+#             # skip installing redis gem if user doesn't need it
+#             continue
+#         fi
 
-        echo "Installing gem $gem_name [Using gem install $gem_name -v \"$gem_version\"]"
+#         echo "Installing gem $gem_name [Using gem install $gem_name -v \"$gem_version\"]"
 
-        gem install $gem_name -v "$gem_version" >> $PKG_INST_OUT
-        install_rc=$?
-        if [ $install_rc -ne 0 ]; then
-            echo
-            echo "********************************************************"
-            echo "*** "
-            echo "*** WARNING: gem $gem did not install properly!"
-            echo "*** Please contact support-uptimecm@idera.com if you are"
-            echo "*** unable to run 'gem install $gem_name -v \"$gem_version\"' manually."
-            echo "*** "
-            echo "********************************************************"
-            echo
-        fi
-    done
-fi
+#         gem install $gem_name -v "$gem_version" >> $PKG_INST_OUT
+#         install_rc=$?
+#         if [ $install_rc -ne 0 ]; then
+#             echo
+#             echo "********************************************************"
+#             echo "*** "
+#             echo "*** WARNING: gem $gem did not install properly!"
+#             echo "*** Please contact support-uptimecm@idera.com if you are"
+#             echo "*** unable to run 'gem install $gem_name -v \"$gem_version\"' manually."
+#             echo "*** "
+#             echo "********************************************************"
+#             echo
+#         fi
+#     done
+# fi
 
 
 #
