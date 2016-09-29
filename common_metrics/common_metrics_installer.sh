@@ -788,15 +788,14 @@ else
         fi
     fi
 
-echo
+    echo
 
-echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
+    echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
 
         gem install bundler -v "1.12.5" >> $PKG_INST_OUT
 
-echo
-IFS=$'\n'
-gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
+    IFS=$'\n'
+    gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
 
     for gem in $gems; do
         gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
@@ -827,6 +826,7 @@ gems=`grep -w gem common_metrics/Gemfile | awk '{$1="" ; print $0}'`
             echo
         fi
     done
+    IFS=$' '
 fi
 
 
