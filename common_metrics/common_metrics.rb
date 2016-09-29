@@ -5,7 +5,6 @@
 
 require 'rubygems'
 require 'bundler'
-ENV['BUNDLE_GEMFILE'] = '/usr/local/copperegg/ucm-metrics/common_metrics/Gemfile'
 Bundler.setup(:default)
 require 'getoptlong'
 require 'copperegg'
@@ -181,6 +180,7 @@ def connect_to_redis(uri, attempts=10)
 end
 
 def monitor_redis(redis_servers, group_name)
+  Bundler.setup(:redis)
   require 'redis'
   log "Monitoring Redis: "
 
@@ -323,7 +323,6 @@ end
 def monitor_mysql(mysql_servers, group_name)
   Bundler.setup(:mysql)
   require 'mysql2'
-    log "#{Gem.loaded_specs["mysql2"].version}"
   log "Monitoring MySQL: "
   return if @interrupted
 
