@@ -189,75 +189,149 @@ def monitor_mongodb(mongo_servers, group_name)
           metrics['db_storage_size']       = dbstats['storageSize']
           metrics['db_index_size']         = dbstats['indexSize']
           begin
-            dbstats = mongo_db.command(serverStatus: 1)
-            dbstats = dbstats.first
+            server_stats = mongo_db.command(serverStatus: 1)
+            server_stats = server_status.first
           rescue
             log "Error getting mongo server stats for database: #{mhost['database']} [skipping]"
             next
           end
-          metrics['asserts_regular']          = dbstats['asserts']['regular']
-          metrics['asserts_warning']          = dbstats['asserts']['warning']
-          metrics['asserts_msg']              = dbstats['asserts']['msg']
-          metrics['asserts_user']             = dbstats['asserts']['user']
-          metrics['asserts_rollover']         = dbstats['asserts']['rollovers']
-          metrics['connections_available']    = dbstats['connections']['available']
-          metrics['connections_current']      = dbstats['connections']['current']
-          metrics['page_faults']              = dbstats['extra_info']['page_faults']
-          metrics['op_inserts']               = dbstats['opcounters']['insert']
-          metrics['op_queries']               = dbstats['opcounters']['query']
-          metrics['op_updates']               = dbstats['opcounters']['update']
-          metrics['op_deletes']               = dbstats['opcounters']['delete']
-          metrics['op_getmores']              = dbstats['opcounters']['getmore']
-          metrics['op_commands']              = dbstats['opcounters']['command']
-          metrics['repl_inserts']             = dbstats['opcountersRepl']['insert']
-          metrics['repl_queries']             = dbstats['opcountersRepl']['query']
-          metrics['repl_updates']             = dbstats['opcountersRepl']['update']
-          metrics['repl_deletes']             = dbstats['opcountersRepl']['delete']
-          metrics['repl_getmores']            = dbstats['opcountersRepl']['getmore']
-          metrics['repl_commands']            = dbstats['opcountersRepl']['command']
+
+          # Extract assert stats
+          if server_stats.key? 'asserts'
+            metrics['asserts_msg']              = server_stats['asserts']['msg']
+            metrics['asserts_regular']          = server_stats['asserts']['regular']
+            metrics['asserts_rollover']         = server_stats['asserts']['rollovers']
+            metrics['asserts_user']             = server_stats['asserts']['user']
+            metrics['asserts_warning']          = server_stats['asserts']['warning']
+          end
+
+          # Extract connections stats
+          if server_stats.key? 'connections'
+            metrics['connections_available']    = dbstats['connections']['available']
+            metrics['connections_current']      = dbstats['connections']['current']
+          end
+
+          # Check for 'metrics' key
+          if server_stats.key? 'metrics'
+
+            # Extract cursor stats
+            if server_stats['metrics'].key? 'cursor'
+              metrics['cursors_timedout']         = dbstats['metrics']['cursor']['timedOut']
+              metrics['cursors_total_open']       = dbstats['metrics']['cursor']['open']['total']
+            end
+
+            # Extract document stats
+            if server_stats['metrics'].key? 'document'
+              metrics['document_inserted']        = dbstats['metrics']['document']['inserted']
+              metrics['document_deleted']         = dbstats['metrics']['document']['deleted']
+              metrics['document_updated']         = dbstats['metrics']['document']['updated']
+              metrics['document_returned']        = dbstats['metrics']['document']['returned']
+            end
+
+            # Extract getlastError stats
+            if server_stats['metrics'].key? 'getLastError'
+              metrics['get_last_error_write_timeouts']   = dbstats['metrics']['getLastError']['wtimeouts']
+              metrics['get_last_error_write_concerns'] = dbstats['metrics']['getLastError']['wtime']['num']
+            end
+
+            # Extract operation stats
+            if server_stats['metrics'].key? 'operation'
+              metrics['op_fastmod']              = dbstats['metrics']['operation']['fastmod']
+              metrics['op_idhack']               = dbstats['metrics']['operation']['idhack']
+              metrics['op_scan_and_order']       = dbstats['metrics']['operation']['scanAndOrder']
+            end
+
+            # Extract queryExecutor stats
+            if server_stats['metrics'].key? 'queryExecutor'
+              metrics['index_item_scan_per_query'] = dbstats['metrics']['queryExecutor']['scanned']
+            end
+
+            # Extract record stats
+            if server_stats['metrics'].key? 'record'
+              metrics['records_moved']             = dbstats['metrics']['record']['moves']
+            end
+
+            # Check for 'repl' key
+            if server_stats['metrics'].key? 'repl'
+
+              # Extract for replication apply stats
+              if server_stats['metrics']['repl'].key? 'apply'
+                metrics['batch_applied_num']        = dbstats['metrics']['repl']['apply']['batches']['num']
+                metrics['batch_time_spent']         = dbstats['metrics']['repl']['apply']['batches']['totalMillis']
+              end
+
+              # Extract replication buffer stats
+              if server_stats['metrics']['repl'].key? 'buffer'
+                metrics['oplog_operations']         = dbstats['metrics']['repl']['buffer']['count']
+                metrics['oplog_buffer_size']        = dbstats['metrics']['repl']['buffer']['sizeBytes']
+                metrics['max_buffer_size']          = dbstats['metrics']['repl']['buffer']['maxSizeBytes']
+              end
+
+              # Extract replication network stats
+              if server_stats['metrics']['repl'].key? 'network'
+                metrics['repl_sync_src_data_read']  = dbstats['metrics']['repl']['network']['bytes']
+                metrics['getmores_op']              = dbstats['metrics']['repl']['network']['getmores']['num']
+                metrics['getmores_op_fraction']     = dbstats['metrics']['repl']['network']['getmores']['totalMillis']
+                metrics['op_read_from_repl_src']    = dbstats['metrics']['repl']['network']['ops']
+                metrics['oplog_qry_proc_create_ps'] = dbstats['metrics']['repl']['network']['readersCreated']
+              end
+            end
+
+            # Extract ttl stats
+            if server_stats['metrics'].key? 'ttl'
+              metrics['ttl_deletedDocuments']     = dbstats['metrics']['ttl']['deletedDocuments']
+              metrics['ttl_passes']               = dbstats['metrics']['ttl']['passes']
+            end
+
+          end
+
+          # Extract page_faults stats
+          if server_stats.key? 'extra_info'
+            metrics['page_faults']              = dbstats['extra_info']['page_faults']
+          end
+
+          # Extract global lock stats
+          if server_stats.key? 'globalLock'
+            metrics['global_lock_total_time']   = dbstats['globalLock']['totalTime']
+            metrics['current_queue_lock']       = dbstats['globalLock']['currentQueue']['total']
+            metrics['current_queue_read_lock']  = dbstats['globalLock']['currentQueue']['readers']
+            metrics['current_queue_write_lock'] = dbstats['globalLock']['currentQueue']['writers']
+          end
+
+          # Extract memory stats
+          if server_stats.key? 'mem'
+            metrics['mem_mapped']               = dbstats['mem']['mapped']
+            metrics['mem_resident']             = dbstats['mem']['resident']
+            metrics['mem_virtual']              = dbstats['mem']['virtual']
+          end
+
+          # Extract opcounters
+          if server_stats.key? 'opcounters'
+            metrics['op_inserts']               = dbstats['opcounters']['insert']
+            metrics['op_queries']               = dbstats['opcounters']['query']
+            metrics['op_updates']               = dbstats['opcounters']['update']
+            metrics['op_deletes']               = dbstats['opcounters']['delete']
+            metrics['op_getmores']              = dbstats['opcounters']['getmore']
+            metrics['op_commands']              = dbstats['opcounters']['command']
+          end
+
+          # Extract replication opcounters
+          if server_stats.key? 'opcountersRepl'
+            metrics['repl_inserts']             = dbstats['opcountersRepl']['insert']
+            metrics['repl_queries']             = dbstats['opcountersRepl']['query']
+            metrics['repl_updates']             = dbstats['opcountersRepl']['update']
+            metrics['repl_deletes']             = dbstats['opcountersRepl']['delete']
+            metrics['repl_getmores']            = dbstats['opcountersRepl']['getmore']
+            metrics['repl_commands']            = dbstats['opcountersRepl']['command']
+          end
+
+          # Extract uptime
           metrics['uptime']                   = dbstats['uptime']
-          metrics['cursors_totalOpen']        = dbstats['metrics']['cursor']['open']['total']
-          metrics['cursors_timedOut']         = dbstats['metrics']['cursor']['timedOut']
-          metrics['document_inserted']        = dbstats['metrics']['document']['inserted']
-          metrics['document_deleted']         = dbstats['metrics']['document']['deleted']
-          metrics['document_updated']         = dbstats['metrics']['document']['updated']
-          metrics['document_returned']        = dbstats['metrics']['document']['returned']
-          metrics['op_fastmode']              = dbstats['metrics']['operation']['fastmod']
-          metrics['op_idhack']                = dbstats['metrics']['operation']['idhack']
-          metrics['op_scanAndOrder']          = dbstats['metrics']['operation']['scanAndOrder']
-          metrics['getLastError_wtimeouts']   = dbstats['metrics']['getLastError']['wtimeouts']
-          metrics['getLastError_wrt_concern'] = dbstats['metrics']['getLastError']['wtime']['num']
-          metrics['ttl_deletedDocuments']     = dbstats['metrics']['ttl']['deletedDocuments']
-          metrics['ttl_passes']               = dbstats['metrics']['ttl']['passes']
-          metrics['batch_applied_num']        = dbstats['metrics']['repl']['apply']['batches'][
-                                                'num']
-          metrics['batch_time_spent']         = dbstats['metrics']['repl']['apply']['batches'][
-                                                'totalMillis']
-          metrics['mem_resident']             = dbstats['mem']['resident']
-          metrics['mem_virtual']              = dbstats['mem']['virtual']
-          metrics['mem_mapped']               = dbstats['mem']['mapped']
-          metrics['globalLock_totalTime']     = dbstats['globalLock']['totalTime']
-          metrics['current_queue_lock']       = dbstats['globalLock']['currentQueue']['total']
-          metrics['current_queue_read_lock']  = dbstats['globalLock']['currentQueue']['readers']
-          metrics['current_queue_write_lock'] = dbstats['globalLock']['currentQueue']['writers']
-          metrics['index_itm_scan_per_query'] = dbstats['metrics']['queryExecutor']['scanned']
-          metrics['record_moved']             = dbstats['metrics']['record']['moves']
-          metrics['max_buffer_size']          = dbstats['metrics']['repl']['buffer']['maxSizeBytes']
-          metrics['oplog_operations']         = dbstats['metrics']['repl']['buffer']['count']
-          metrics['oplog_buffer_size']        = dbstats['metrics']['repl']['buffer']['sizeBytes']
-          metrics['oplog_qry_proc_create_ps'] = dbstats['metrics']['repl']['network'][
-                                                'readersCreated']
-          metrics['repl_sync_src_data_read']  = dbstats['metrics']['repl']['network']['bytes']
-          metrics['op_read_from_repl_src']    = dbstats['metrics']['repl']['network']['ops']
-          metrics['getmores_op']              = dbstats['metrics']['repl']['network']['getmores'][
-                                                'num']
-          metrics['getmores_op_fraction']     = dbstats['metrics']['repl']['network']['getmores'][
-                                                'totalMillis']
           mongo_client.close
+
         end
         # puts "#{group_name} - #{mhost['name']} - #{Time.now.to_i} - #{metrics.inspect}"
-        CopperEgg::MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}",
-                                     Time.now.to_i, metrics)
+        CopperEgg::MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i, metrics)
       end
     end
     interruptible_sleep @freq
