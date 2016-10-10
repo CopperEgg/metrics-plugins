@@ -111,6 +111,29 @@ end
 # Look for config file
 @config = YAML.load(File.open(config_file))
 
+# Update config to add mongodb_admin service
+if @config.key? 'mongodb'
+  @config['mongodb_admin'] = {}
+
+  @config['mongodb_admin']['group_name'] = @config['mongodb']['group_name'] + '_admin'
+  @config['mongodb_admin']['group_label'] = @config['mongodb']['group_label'] + ' Admin'
+  @config['mongodb_admin']['dashboard'] = @config['mongodb']['dashboard'] + ' Admin'
+  @config['mongodb_admin']['servers'] = []
+
+  @config['mongodb']['servers'].each do |server|
+    single_server = {}
+    single_server['name'] = server['name']+'-admin'
+    single_server['hostname'] = server['hostname']
+    single_server['port'] = server['port']
+
+    single_server['username'] = server['databases'][0]['username']
+    single_server['password'] = server['databases'][0]['password']
+
+    @config['mongodb_admin']['servers'].push single_server
+  end
+
+end
+
 unless @config.nil?
   # load config
   if !@config['copperegg'].nil?
