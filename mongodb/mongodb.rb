@@ -176,18 +176,18 @@ def monitor_mongodb(mongo_servers, group_name)
 
         if mongo_db
           begin
-            dbstats = mongo_db.command(dbstats: 1)
-            dbstats = dbstats.first
+            db_stats = mongo_db.command(dbstats: 1)
+            db_stats = db_stats.first
           rescue
             log "Error getting mongo stats for database: #{mhost['database']} [skipping]"
             next
           end
           metrics = {}
-          metrics['db_objects']            = dbstats['objects']
-          metrics['db_indexes']            = dbstats['indexes']
-          metrics['db_datasize']           = dbstats['dataSize']
-          metrics['db_storage_size']       = dbstats['storageSize']
-          metrics['db_index_size']         = dbstats['indexSize']
+          metrics['db_objects']            = db_stats['objects']
+          metrics['db_indexes']            = db_stats['indexes']
+          metrics['db_datasize']           = db_stats['dataSize']
+          metrics['db_storage_size']       = db_stats['storageSize']
+          metrics['db_index_size']         = db_stats['indexSize']
         end
         mongo_client.close
 
@@ -214,13 +214,14 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
       if mongo_admin
 
         begin
-          server_stats = mongo_db.command(serverStatus: 1)
-          server_stats = server_status.first
+          server_stats = mongo_admin.command(serverStatus: 1)
+          server_stats = server_stats.first
         rescue
           log "Error getting mongo server stats for database: #{mhost['database']} [skipping]"
           next
         end
 
+        metrics = {}
         # Extract assert stats
         if server_stats.key? 'asserts'
           metrics['asserts_msg']              = server_stats['asserts']['msg']
@@ -232,8 +233,8 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
 
         # Extract connections stats
         if server_stats.key? 'connections'
-          metrics['connections_available']    = dbstats['connections']['available']
-          metrics['connections_current']      = dbstats['connections']['current']
+          metrics['connections_available']    = server_stats['connections']['available']
+          metrics['connections_current']      = server_stats['connections']['current']
         end
 
         # Check for 'metrics' key
@@ -241,39 +242,39 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
 
           # Extract cursor stats
           if server_stats['metrics'].key? 'cursor'
-            metrics['cursors_timedout']         = dbstats['metrics']['cursor']['timedOut']
-            metrics['cursors_total_open']       = dbstats['metrics']['cursor']['open']['total']
+            metrics['cursors_timedout']         = server_stats['metrics']['cursor']['timedOut']
+            metrics['cursors_total_open']       = server_stats['metrics']['cursor']['open']['total']
           end
 
           # Extract document stats
           if server_stats['metrics'].key? 'document'
-            metrics['document_inserted']        = dbstats['metrics']['document']['inserted']
-            metrics['document_deleted']         = dbstats['metrics']['document']['deleted']
-            metrics['document_updated']         = dbstats['metrics']['document']['updated']
-            metrics['document_returned']        = dbstats['metrics']['document']['returned']
+            metrics['document_inserted']        = server_stats['metrics']['document']['inserted']
+            metrics['document_deleted']         = server_stats['metrics']['document']['deleted']
+            metrics['document_updated']         = server_stats['metrics']['document']['updated']
+            metrics['document_returned']        = server_stats['metrics']['document']['returned']
           end
 
           # Extract getlastError stats
           if server_stats['metrics'].key? 'getLastError'
-            metrics['get_last_error_write_timeouts']   = dbstats['metrics']['getLastError']['wtimeouts']
-            metrics['get_last_error_write_concerns'] = dbstats['metrics']['getLastError']['wtime']['num']
+            metrics['get_last_error_write_timeouts']   = server_stats['metrics']['getLastError']['wtimeouts']
+            metrics['get_last_error_write_concerns'] = server_stats['metrics']['getLastError']['wtime']['num']
           end
 
           # Extract operation stats
           if server_stats['metrics'].key? 'operation'
-            metrics['op_fastmod']              = dbstats['metrics']['operation']['fastmod']
-            metrics['op_idhack']               = dbstats['metrics']['operation']['idhack']
-            metrics['op_scan_and_order']       = dbstats['metrics']['operation']['scanAndOrder']
+            metrics['op_fastmod']              = server_stats['metrics']['operation']['fastmod']
+            metrics['op_idhack']               = server_stats['metrics']['operation']['idhack']
+            metrics['op_scan_and_order']       = server_stats['metrics']['operation']['scanAndOrder']
           end
 
           # Extract queryExecutor stats
           if server_stats['metrics'].key? 'queryExecutor'
-            metrics['index_item_scan_per_query'] = dbstats['metrics']['queryExecutor']['scanned']
+            metrics['index_item_scan_per_query'] = server_stats['metrics']['queryExecutor']['scanned']
           end
 
           # Extract record stats
           if server_stats['metrics'].key? 'record'
-            metrics['records_moved']             = dbstats['metrics']['record']['moves']
+            metrics['records_moved']             = server_stats['metrics']['record']['moves']
           end
 
           # Check for 'repl' key
@@ -281,76 +282,76 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
 
             # Extract for replication apply stats
             if server_stats['metrics']['repl'].key? 'apply'
-              metrics['batch_applied_num']        = dbstats['metrics']['repl']['apply']['batches']['num']
-              metrics['batch_time_spent']         = dbstats['metrics']['repl']['apply']['batches']['totalMillis']
+              metrics['batch_applied_num']        = server_stats['metrics']['repl']['apply']['batches']['num']
+              metrics['batch_time_spent']         = server_stats['metrics']['repl']['apply']['batches']['totalMillis']
             end
 
             # Extract replication buffer stats
             if server_stats['metrics']['repl'].key? 'buffer'
-              metrics['oplog_operations']         = dbstats['metrics']['repl']['buffer']['count']
-              metrics['oplog_buffer_size']        = dbstats['metrics']['repl']['buffer']['sizeBytes']
-              metrics['max_buffer_size']          = dbstats['metrics']['repl']['buffer']['maxSizeBytes']
+              metrics['oplog_operations']         = server_stats['metrics']['repl']['buffer']['count']
+              metrics['oplog_buffer_size']        = server_stats['metrics']['repl']['buffer']['sizeBytes']
+              metrics['max_buffer_size']          = server_stats['metrics']['repl']['buffer']['maxSizeBytes']
             end
 
             # Extract replication network stats
             if server_stats['metrics']['repl'].key? 'network'
-              metrics['repl_sync_src_data_read']  = dbstats['metrics']['repl']['network']['bytes']
-              metrics['getmores_op']              = dbstats['metrics']['repl']['network']['getmores']['num']
-              metrics['op_read_from_repl_src']    = dbstats['metrics']['repl']['network']['ops']
-              metrics['oplog_qry_proc_create_ps'] = dbstats['metrics']['repl']['network']['readersCreated']
+              metrics['repl_sync_src_data_read']  = server_stats['metrics']['repl']['network']['bytes']
+              metrics['getmores_op']              = server_stats['metrics']['repl']['network']['getmores']['num']
+              metrics['op_read_from_repl_src']    = server_stats['metrics']['repl']['network']['ops']
+              metrics['oplog_qry_proc_create_ps'] = server_stats['metrics']['repl']['network']['readersCreated']
             end
           end
 
           # Extract ttl stats
           if server_stats['metrics'].key? 'ttl'
-            metrics['ttl_deleted_documents']     = dbstats['metrics']['ttl']['deletedDocuments']
-            metrics['ttl_passes']               = dbstats['metrics']['ttl']['passes']
+            metrics['ttl_deleted_documents']     = server_stats['metrics']['ttl']['deletedDocuments']
+            metrics['ttl_passes']               = server_stats['metrics']['ttl']['passes']
           end
 
         end
 
         # Extract page_faults stats
         if server_stats.key? 'extra_info'
-          metrics['page_faults']              = dbstats['extra_info']['page_faults']
+          metrics['page_faults']              = server_stats['extra_info']['page_faults']
         end
 
         # Extract global lock stats
         if server_stats.key? 'globalLock'
-          metrics['global_lock_total_time']   = dbstats['globalLock']['totalTime']
-          metrics['current_queue_lock']       = dbstats['globalLock']['currentQueue']['total']
-          metrics['current_queue_read_lock']  = dbstats['globalLock']['currentQueue']['readers']
-          metrics['current_queue_write_lock'] = dbstats['globalLock']['currentQueue']['writers']
+          metrics['global_lock_total_time']   = server_stats['globalLock']['totalTime']
+          metrics['current_queue_lock']       = server_stats['globalLock']['currentQueue']['total']
+          metrics['current_queue_read_lock']  = server_stats['globalLock']['currentQueue']['readers']
+          metrics['current_queue_write_lock'] = server_stats['globalLock']['currentQueue']['writers']
         end
 
         # Extract memory stats
         if server_stats.key? 'mem'
-          metrics['mem_mapped']               = dbstats['mem']['mapped']
-          metrics['mem_resident']             = dbstats['mem']['resident']
-          metrics['mem_virtual']              = dbstats['mem']['virtual']
+          metrics['mem_mapped']               = server_stats['mem']['mapped']
+          metrics['mem_resident']             = server_stats['mem']['resident']
+          metrics['mem_virtual']              = server_stats['mem']['virtual']
         end
 
         # Extract opcounters
         if server_stats.key? 'opcounters'
-          metrics['op_inserts']               = dbstats['opcounters']['insert']
-          metrics['op_queries']               = dbstats['opcounters']['query']
-          metrics['op_updates']               = dbstats['opcounters']['update']
-          metrics['op_deletes']               = dbstats['opcounters']['delete']
-          metrics['op_getmores']              = dbstats['opcounters']['getmore']
-          metrics['op_commands']              = dbstats['opcounters']['command']
+          metrics['op_inserts']               = server_stats['opcounters']['insert']
+          metrics['op_queries']               = server_stats['opcounters']['query']
+          metrics['op_updates']               = server_stats['opcounters']['update']
+          metrics['op_deletes']               = server_stats['opcounters']['delete']
+          metrics['op_getmores']              = server_stats['opcounters']['getmore']
+          metrics['op_commands']              = server_stats['opcounters']['command']
         end
 
         # Extract replication opcounters
         if server_stats.key? 'opcountersRepl'
-          metrics['repl_inserts']             = dbstats['opcountersRepl']['insert']
-          metrics['repl_queries']             = dbstats['opcountersRepl']['query']
-          metrics['repl_updates']             = dbstats['opcountersRepl']['update']
-          metrics['repl_deletes']             = dbstats['opcountersRepl']['delete']
-          metrics['repl_getmores']            = dbstats['opcountersRepl']['getmore']
-          metrics['repl_commands']            = dbstats['opcountersRepl']['command']
+          metrics['repl_inserts']             = server_stats['opcountersRepl']['insert']
+          metrics['repl_queries']             = server_stats['opcountersRepl']['query']
+          metrics['repl_updates']             = server_stats['opcountersRepl']['update']
+          metrics['repl_deletes']             = server_stats['opcountersRepl']['delete']
+          metrics['repl_getmores']            = server_stats['opcountersRepl']['getmore']
+          metrics['repl_commands']            = server_stats['opcountersRepl']['command']
         end
 
         # Extract uptime
-        metrics['uptime']                   = dbstats['uptime']
+        metrics['uptime']                   = server_stats['uptime']
 
       end
 
@@ -485,7 +486,7 @@ def ensure_metric_group(metric_group, service)
   if service == 'mongodb'
     return ensure_mongodb_metric_group(metric_group, @config[service]['group_name'],
                                        @config[service]['group_label'])
-  elsif service == 'mongo_dbadmin'
+  elsif service == 'mongodb_admin'
     return ensure_mongo_dbadmin_metric_group metric_group, @config[service]['group_name'], @config[service]['group_label']
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
@@ -493,7 +494,7 @@ def ensure_metric_group(metric_group, service)
 end
 
 def create_dashboard(service, metric_group)
-  if service == 'mongodb'
+  if service == 'mongodb' || service == 'mongodb_admin'
     create_mongodb_dashboard(metric_group, @config[service]['dashboard'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
@@ -503,7 +504,7 @@ end
 def monitor_service(service, metric_group)
   if service == 'mongodb'
     monitor_mongodb @config[service]['servers'], metric_group.name
-  elsif service == 'mongo_dbadmin'
+  elsif service == 'mongodb_admin'
     monitor_mongo_dbadmin @config[service]['servers'], metric_group.name
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
