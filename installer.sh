@@ -281,6 +281,9 @@ case $MON_LIST in
 "oracledb")
     bash "oracledb/oracledb_installer.sh"
     ;;
+"remote_server")
+    bash "remote_server/remote_server_installer.sh"
+    ;;
 esac
 
 echo
