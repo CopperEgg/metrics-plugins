@@ -278,6 +278,9 @@ case $MON_LIST in
 "mongodb")
     bash "mongodb/mongodb_installer.sh"
     ;;
+"oracledb")
+    bash "oracledb/oracledb_installer.sh"
+    ;;
 esac
 
 echo
