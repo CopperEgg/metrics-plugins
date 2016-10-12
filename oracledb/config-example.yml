@@ -1,0 +1,16 @@
+copperegg:
+  apikey: "YOUR_APIKEY"
+  frequency: 60
+  services:
+  - oracledb
+oracledb:
+  group_name: "oracle-001"
+  group_label: "Oracle Metrics"
+  dashboard: "Oracle Dashboard"
+  servers:
+  -
+    name: "oracle-local-01"
+    url: "http://localhost"
+    port: 1521
+    user: "my user"
+    password: "my password"

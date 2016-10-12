@@ -259,6 +259,7 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
+
 # Add more services here and call its respective script
 export COPPEREGG_USER COPPEREGG_GROUP
 case $MON_LIST in
@@ -271,8 +272,17 @@ case $MON_LIST in
 "memcached")
     bash "memcached/memcached_installer.sh"
     ;;
+"dns")
+    bash "dns/dns_installer.sh"
+    ;;
 "mongodb")
-   bash "mongodb/mongodb_installer.sh"
+    bash "mongodb/mongodb_installer.sh"
+    ;;
+"oracledb")
+    bash "oracledb/oracledb_installer.sh"
+    ;;
+"remote_server")
+    bash "remote_server/remote_server_installer.sh"
     ;;
 esac
 
