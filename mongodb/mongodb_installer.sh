@@ -167,7 +167,7 @@ setup_mongodb()
         fi
         LABEL="$DEFAULT_LABEL"
     fi
-    echo "Server URL (Include http:// or https:// in the beginning) : [$DEFAULT_URL] "
+    echo -n "Server URL : [$DEFAULT_URL] "
     read URL
     if [ -z "$URL" ]; then
         if [ -z "$DEFAULT_URL" ]; then

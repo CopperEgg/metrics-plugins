@@ -32,8 +32,8 @@ Copy the example config into config.yml, and edit with your favorite editor:
 
   - Enter your Uptime Cloud Monitor User API Key:  replace 'YOUR_APIKEY' with your API key, found in the settings tab of http://app.copperegg.com.
   - You will find two services, 'mongo_dbadmin' and 'mongodb'
-  - The mongo_dbadmin service monitors the privelaged 'admin' database; it must be edited to include the correct mongodb server hostname, port and username / password of the mogodb admin.
-    The database 'admin' should not be changed; you can apply any name you choose for the server 'name.'
+  - The mongo_dbadmin service monitors the privileged 'admin' (It might have some othername, usually it is admin) database; it must be edited to include the correct mongodb server hostname, port and username / password of the mogodb admin.
+    See - https://docs.mongodb.com/manual/tutorial/manage-users-and-roles/ for more details on Role and User management in MongoDB.    
   - The mongodb service monitors the individual database metrics; it should have the same server name, hostname and port as the server defined in the mongo_dbadmin.
     For each database you wish to monitor, add a 'database section' containing the database name, and the appropriate username / password of someone permitted to view these meterics.
     
@@ -72,4 +72,3 @@ Note that you can add widgets to the Mongodb Dashboard which display data from a
 Have a look at the [Uptime Cloud Monitor Demo site](https://app.copperegg.com/demo), to see more ideas on how to customize and optimize your cloud infrastructure and application monitoring.
 
 Don't forget that you can set alerts and notifications based on the custom metrics being gathered from mongodb, just as simply as setting up all of your Uptime Cloud Monitor system and website monitoring alerts. Simply go to the Issues tab, and navigate to Configure Alerts.
-
