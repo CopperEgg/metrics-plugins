@@ -65,7 +65,7 @@ def parent_interrupt
 end
 
 def connect_to_mongo(hostname, port, user, pw, db)
-  if pw.nil?
+  if pw.nil? || pw === ''
     client = Mongo::Client.new(["#{hostname}:#{port}"], database: db)
   else
     client = Mongo::Client.new(["#{hostname}:#{port}"], user: user, password: pw, database: db)
@@ -535,7 +535,7 @@ end
   next unless @config[service] && !@config[service]['servers'].empty?
   begin
     log "Checking for existence of metric group for #{service}"
-    metric_group = metric_groups.detect { |m| m.name == @config[service]['group_name'] }
+    metric_group =metric_group.nil? ? nil :  metric_groups.detect { |m| m.name == @config[service]['group_name'] }
     metric_group = ensure_metric_group(metric_group, service)
     raise "Could not create a metric group for #{service}" if metric_group.nil?
     log "Checking for existence of #{@config[service]['dashboard']}"

@@ -1,6 +1,6 @@
 copperegg:
   apikey:  'API-KEY'
-  frequency: 'FREQUENCY'
+  frequency: FREQUENCY
   apihost: 'APIHOST'
   services:
   - mongodb
