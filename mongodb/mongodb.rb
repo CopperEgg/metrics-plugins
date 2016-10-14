@@ -64,108 +64,6 @@ def parent_interrupt
   exit
 end
 
-####################################################################
-
-# get options
-opts = GetoptLong.new(
-  ['--help',      '-h', GetoptLong::NO_ARGUMENT],
-  ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
-  ['--verbose',   '-v', GetoptLong::NO_ARGUMENT],
-  ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
-  ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
-  ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
-  ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
-)
-
-base_path = '/usr/local/copperegg/ucm-metrics/postgresql'
-config_file = "#{base_path}/config.yml"
-@apihost = nil
-@debug = false
-@verbose = false
-@freq = 60
-@interupted = false
-@worker_pids = []
-@services = []
-
-# Options and examples:
-opts.each do |opt, arg|
-  case opt
-  when '--help'
-    help
-    exit
-  when '--debug'
-    @debug = true
-  when '--verbose'
-    @verbose = true
-  when '--config'
-    config_file = arg
-  when '--apikey'
-    CopperEgg::Api.apikey = arg
-  when '--frequency'
-    @freq = arg.to_i
-  when '--apihost'
-    CopperEgg::Api.host = arg
-  end
-end
-
-# Look for config file
-@config = YAML.load(File.open(config_file))
-
-# Update config to add mongodb_admin service
-if @config.key? 'mongodb'
-  @config['mongodb_admin'] = {}
-
-  @config['mongodb_admin']['group_name'] = @config['mongodb']['group_name'] + '_admin'
-  @config['mongodb_admin']['group_label'] = @config['mongodb']['group_label'] + ' Admin'
-  @config['mongodb_admin']['dashboard'] = @config['mongodb']['dashboard'] + ' Admin'
-  @config['mongodb_admin']['servers'] = []
-
-  @config['mongodb']['servers'].each do |server|
-    single_server = {}
-    single_server['name'] = server['name']+'-admin'
-    single_server['hostname'] = server['hostname']
-    single_server['port'] = server['port']
-
-    single_server['username'] = server['databases'][0]['username']
-    single_server['password'] = server['databases'][0]['password']
-
-    @config['mongodb_admin']['servers'].push single_server
-  end
-
-end
-
-unless @config.nil?
-  # load config
-  if !@config['copperegg'].nil?
-    CopperEgg::Api.apikey = @config['copperegg']['apikey'] unless
-                            @config['copperegg']['apikey'].nil? && CopperEgg::Api.apikey.nil?
-    CopperEgg::Api.host = @config['copperegg']['apihost'] unless
-                          @config['copperegg']['apihost'].nil?
-    @freq = @config['copperegg']['frequency'] unless @config['copperegg']['frequency'].nil?
-    @services = @config['copperegg']['services']
-  else
-    log 'You have no copperegg entry in your config.yml!'
-    log 'Edit your config.yml and restart.'
-    exit
-  end
-end
-
-if CopperEgg::Api.apikey.nil?
-  log 'You need to supply an apikey with the -k option or in the config.yml.'
-  exit
-end
-
-if @services.empty?
-  log 'No services listed in the config file.'
-  log 'Nothing will be monitored!'
-  exit
-end
-
-@freq = 60 unless [5, 15, 60, 300, 900, 3600, 21_600].include?(@freq)
-log "Update frequency set to #{@freq}s."
-
-####################################################################
-
 def connect_to_mongo(hostname, port, user, pw, db)
   if pw.nil?
     client = Mongo::Client.new(["#{hostname}:#{port}"], database: db)
@@ -214,7 +112,6 @@ def monitor_mongodb(mongo_servers, group_name)
         end
         mongo_client.close
 
-        # puts "#{group_name} - #{mhost['name']} - #{Time.now.to_i} - #{metrics.inspect}"
         CopperEgg::MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i, metrics)
       end
     end
@@ -533,6 +430,85 @@ def monitor_service(service, metric_group)
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
 end
+
+##########################################################################
+### Main Code Starts from here
+##########################################################################
+
+# get options
+opts = GetoptLong.new(
+    ['--help',      '-h', GetoptLong::NO_ARGUMENT],
+    ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
+    ['--verbose',   '-v', GetoptLong::NO_ARGUMENT],
+    ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
+    ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
+    ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
+    ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
+)
+
+base_path = '/usr/local/copperegg/ucm-metrics/mongodb'
+config_file = "#{base_path}/config.yml"
+@apihost = nil
+@debug = false
+@verbose = false
+@freq = 60
+@interupted = false
+@worker_pids = []
+@services = []
+
+# Options and examples:
+opts.each do |opt, arg|
+  case opt
+    when '--help'
+      help
+      exit
+    when '--debug'
+      @debug = true
+    when '--verbose'
+      @verbose = true
+    when '--config'
+      config_file = arg
+    when '--apikey'
+      CopperEgg::Api.apikey = arg
+    when '--frequency'
+      @freq = arg.to_i
+    when '--apihost'
+      CopperEgg::Api.host = arg
+  end
+end
+
+# Look for config file
+@config = YAML.load(File.open(config_file))
+
+unless @config.nil?
+  # load config
+  if !@config['copperegg'].nil?
+    CopperEgg::Api.apikey = @config['copperegg']['apikey'] unless
+        @config['copperegg']['apikey'].nil? && CopperEgg::Api.apikey.nil?
+    CopperEgg::Api.host = @config['copperegg']['apihost'] unless
+        @config['copperegg']['apihost'].nil?
+    @freq = @config['copperegg']['frequency'] unless @config['copperegg']['frequency'].nil?
+    @services = @config['copperegg']['services']
+  else
+    log 'You have no copperegg entry in your config.yml!'
+    log 'Edit your config.yml and restart.'
+    exit
+  end
+end
+
+if CopperEgg::Api.apikey.nil?
+  log 'You need to supply an apikey with the -k option or in the config.yml.'
+  exit
+end
+
+if @services.empty?
+  log 'No services listed in the config file.'
+  log 'Nothing will be monitored!'
+  exit
+end
+
+@freq = 60 unless [5, 15, 60, 300, 900, 3600, 21_600].include?(@freq)
+log "Update frequency set to #{@freq}s."
 
 ##########################################################################
 

@@ -1,0 +1,19 @@
+copperegg:
+  apikey:  'API-KEY'
+  frequency: 'FREQUENCY'
+  apihost: 'APIHOST'
+  services:
+  - mongodb
+  - mongodb_admin
+mongodb_admin:
+  group_name: 'MONGO-ADMIN-GROUP'
+  group_label: 'MONGO-ADMIN-GROUP-LABEL'
+  dashboard: 'MONGO-ADMIN-DASH'
+  servers:
+  - ANOTHER-ADMIN-SERVER
+mongodb:
+  group_name: 'MONGO-DB-GROUP'
+  group_label: 'MONGO-DB-GROUP-LABEL'
+  dashboard: 'MONGO-DB-DASH'
+  servers:
+  - ANOTHER-DB-SERVER

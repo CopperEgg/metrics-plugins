@@ -1,5 +1,6 @@
 copperegg:
   apikey:  'YOUR_APIKEY'
+  apihost: "api.copperegg.com"
   frequency: 60
   services:
   - mongo_dbadmin
@@ -15,7 +16,6 @@ mongo_dbadmin:
     password:
     port: 27017
     database: 'admin'
-
 mongodb:
   group_name: "Mongo_DB_Metrics"
   group_label: "Mongo DB Metrics"
