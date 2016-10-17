@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 setup_admin_base_group()
 {
