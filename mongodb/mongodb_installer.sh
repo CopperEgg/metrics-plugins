@@ -545,9 +545,9 @@ echo "Creating config.yml."
 echo
 cp $CONFIG_TEMPLATE $CONFIG_FILE
 
-sed -i "0,/API-KEY/s//$API_KEY/" $CONFIG_FILE
-sed -i "0,/FREQUENCY/s//$FREQ/" $CONFIG_FILE
-sed -i "0,/APIHOST/s//$API_HOST/" $CONFIG_FILE
+sed -i "s@API-KEY@$API_KEY@g" $CONFIG_FILE
+sed -i "s@FREQUENCY@$FREQ@g" $CONFIG_FILE
+sed -i "s@APIHOST@$API_HOST@g" $CONFIG_FILE
 
 setup_admin_base_group "mongodb_admin" "MongoDB-Admin"
 setup_db_base_group "mongodb" "MongoDB"
