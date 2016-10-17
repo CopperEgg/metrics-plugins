@@ -145,6 +145,11 @@ setup_database()
         DB_DATA="$DB_DATA\n    - ANOTHER-DB"
         sed -i "0,/    - ANOTHER-DB/s//$DB_DATA/" $CONFIG_FILE
     else
+
+        DB_BLOCK_NAME="    - name: \"$DBNAME\""
+        DB_BLOCK_USER="      username: \"$USER_NAME\""
+        DB_BLOCK_PWD="      password: \"$PASSWORD\""
+
         DB_DATA="$DB_BLOCK_NAME\n$DB_BLOCK_USER\n$DB_BLOCK_PWD"
         DB_DATA="$DB_DATA\n    - ANOTHER-DB"
         sed -i "0,/    - ANOTHER-DB/s//$DB_DATA/" $CONFIG_FILE
@@ -540,7 +545,7 @@ echo "Creating config.yml."
 echo
 cp $CONFIG_TEMPLATE $CONFIG_FILE
 
-sed -i "0,/API-KEY/s//$APIKEY/" $CONFIG_FILE
+sed -i "0,/API-KEY/s//$API_KEY/" $CONFIG_FILE
 sed -i "0,/FREQUENCY/s//$FREQ/" $CONFIG_FILE
 sed -i "0,/APIHOST/s//$API_HOST/" $CONFIG_FILE
 
@@ -568,11 +573,6 @@ done
 sed -i "s/  - ANOTHER-ADMIN-SERVER//g" $CONFIG_FILE
 sed -i "s/  - ANOTHER-DB-SERVER//g" $CONFIG_FILE
 sed -i "s/    - ANOTHER-DB//g" $CONFIG_FILE
-
-
-#sed -i "0,/  - ANOTHER-ADMIN-SERVER/s// /" $CONFIG_FILE
-#sed -i "0,/  - ANOTHER-DB-SERVER/s// /" $CONFIG_FILE
-#sed -i "0,/    - ANOTHER-DB/s// /" $CONFIG_FILE
 
 chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/copperegg/ucm-metrics/*mongo*
 
