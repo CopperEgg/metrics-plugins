@@ -111,9 +111,9 @@ def monitor_mongodb(mongo_servers, group_name)
           metrics['db_index_size']         = db_stats['indexSize']
         end
         mongo_client.close
-
+        puts "#{group_name} - #{mhost['name']}_#{db['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
         result = CopperEgg::MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i, metrics)
-        log "MetricSample save response - #{result}"
+        log "MetricSample save response - #{result}" if @verbose
       end
     end
     interruptible_sleep @freq
@@ -280,7 +280,7 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
 
       puts "#{group_name} - #{mhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
       result = CopperEgg::MetricSample.save(group_name, mhost['name'], Time.now.to_i, metrics)
-      log "MetricSample save response - #{result}"
+      log "MetricSample save response - #{result}" if @verbose
     end
     interruptible_sleep @freq
   end
