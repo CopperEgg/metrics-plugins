@@ -112,7 +112,8 @@ def monitor_mongodb(mongo_servers, group_name)
         end
         mongo_client.close
 
-        CopperEgg::MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i, metrics)
+        result = CopperEgg::MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i, metrics)
+        log "MetricSample save response - #{result}"
       end
     end
     interruptible_sleep @freq
@@ -129,7 +130,7 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
     mongo_servers.each do |mhost|
       return if @interrupted
 
-      mongo_admin = connect_to_mongo(mhost['hostname'], mhost['port'], mhost['username'], mhost['password'], 'admin')
+      mongo_admin = connect_to_mongo(mhost['hostname'], mhost['port'], mhost['username'], mhost['password'], mhost['database'])
 
       if mongo_admin
 
@@ -278,7 +279,8 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
       mongo_admin.close
 
       puts "#{group_name} - #{mhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
-      CopperEgg::MetricSample.save(group_name, mhost['name'], Time.now.to_i, metrics)
+      result = CopperEgg::MetricSample.save(group_name, mhost['name'], Time.now.to_i, metrics)
+      log "MetricSample save response - #{result}"
     end
     interruptible_sleep @freq
   end
@@ -352,7 +354,7 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << { type: 'ce_gauge', name: 'document_updated', unit: 'Documents', label: 'Documents Updated' }
   metric_group.metrics << { type: 'ce_gauge', name: 'document_returned', unit: 'Documents', label: 'Documents Returned' }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_fastmode', unit: 'Operations', label: 'Fastmode Update Operations' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_fastmod', unit: 'Operations', label: 'Fastmode Update Operations' }
   metric_group.metrics << { type: 'ce_gauge', name: 'op_idhack', unit: 'Queries', label: 'Id Hack Queries' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'op_scan_and_order', unit: 'Queries', label: 'Scan and Order Queries' }
@@ -364,6 +366,7 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << { type: 'ce_gauge', name: 'ttl_passes', unit: 'Operations', label: 'ttl Indexes Passes' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'batch_applied_num', unit: 'Batches', label: 'Batches Applied Number' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'batch_time_spent', unit: 'Milliseconds', label: 'Time Spent on applying operations from Oplog' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'mem_resident', unit: 'Megabytes', label: 'Resident Memory' }
   metric_group.metrics << { type: 'ce_gauge', name: 'mem_virtual', unit: 'Megabytes', label: 'Virtual Memory' }
@@ -376,7 +379,7 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label)
   metric_group.metrics << { type: 'ce_gauge', name: 'current_queue_write_lock', unit: 'Operations', label: 'Current Write Lock Queue' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'index_item_scan_per_query', unit: 'Items', label: 'Index Items Scanned During Query' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'record_moved', unit: 'Records', label: 'Records Moved' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'records_moved', unit: 'Records', label: 'Records Moved' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'max_buffer_size', unit: 'Bytes', label: 'Max Buffer Size' }
   metric_group.metrics << { type: 'ce_gauge', name: 'oplog_operations', unit: 'Operations', label: 'Oplog Operations' }
@@ -539,7 +542,7 @@ end
     metric_group = ensure_metric_group(metric_group, service)
     raise "Could not create a metric group for #{service}" if metric_group.nil?
     log "Checking for existence of #{@config[service]['dashboard']}"
-    dashboard = dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
+    dashboard = dashboards.nil? ? nil : dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
                 create_dashboard(service, metric_group)
     log "Could not create a dashboard for #{service}" if dashboard.nil?
   rescue => e
