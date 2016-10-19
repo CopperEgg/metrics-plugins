@@ -243,7 +243,7 @@ CONFIGFILE=$CONFIG_FILE
 LOGFILE=$LOGFILE
 COPPEREGG_USER=$COPPEREGG_USER
 DESC="custom analytics collection for Uptime Cloud Monitor"
-NAME=copperegg-metrics
+NAME=copperegg-metrics-memcached
 
 do_start()
 {
@@ -354,6 +354,48 @@ ENDINIT
     echo $EXE_FILE
 }
 
+create_init_file() {
+    CREATED_INIT=""
+
+    # Detect Upstart system, If it exists proceed with Upstart init file
+
+    READLINK_UPSTART=`readlink /sbin/init | grep -i 'upstart'`
+    DPKG_UPSTART=""
+    RPM_UPSTART=""
+    PACMAN_UPSTART=""
+
+    if [ -n "`which dpkg 2>/dev/null`" ]; then
+        DPKG_UPSTART=`dpkg -S /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "`which rpm 2>/dev/null`" ]; then
+        RPM_UPSTART=`rpm -qf /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "`which pacman 2>/dev/null`" ]; then
+        PACMAN_UPSTART=`pacman -Qo /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "$READLINK_UPSTART" -o -n "$DPKG_UPSTART" -o -n "$RPM_UPSTART" -o -n "$PACMAN_UPSTART" ]; then
+        if [ -d '/etc/init' ]; then
+            setup_upstart_init
+        else
+            echo "Upstart Init system detected but /etc/init does not exist. Creating a SYS-V Init script instead."
+        fi
+    fi
+
+    if [ -d '/etc/init.d' -a -z "$CREATED_INIT" ]; then
+        setup_standard_init
+    fi
+
+    if [ -z "$CREATED_INIT" ]; then
+        echo
+        echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
+        echo "You may run it using the following command:"
+        echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_memcached.log 2>&1 &"
+        echo
+    fi
+}
 
 ###############################################################
 ###############################################################
@@ -460,24 +502,5 @@ echo
 echo "Done creating config file $CONFIG_FILE"
 echo
 
-CREATED_INIT=""
-if [ -d "/etc/init" -a -n "`which start 2>/dev/null`" ]; then
-    # uncomment to test the init.d method on an ubuntu system:
-    #echo "upstart exists but installing standard anyway"
-    #setup_standard_init
-
-    setup_upstart_init
-
-elif [ -d "/etc/init.d" ]; then
-    setup_standard_init
-
-fi
-
-if [ -z "$CREATED_INIT" ]; then
-    echo
-    echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
-    echo "You may run it using the following command:"
-    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_memcached.log 2>&1 &"
-    echo
-fi
-
+# Method to create init file, based on machine's Init system
+create_init_file

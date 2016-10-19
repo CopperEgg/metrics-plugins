@@ -238,7 +238,7 @@ setup_standard_init()
     /etc/init.d/copperegg-agent stop >/dev/null 2>&1 # old-named init file.
     rm -f /etc/init.d/copperegg-agent                # just blast it away.
 
-    INIT_FILE="/etc/init.d/copperegg-metrics"
+    INIT_FILE="/etc/init.d/revealmetrics_postgresql"
     if [ -e "$INIT_FILE" ]; then
         $INIT_FILE stop >/dev/null 2>&1
         rm $INIT_FILE
@@ -303,7 +303,7 @@ CONFIGFILE=$CONFIG_FILE
 LOGFILE=$LOGFILE
 COPPEREGG_USER=$COPPEREGG_USER
 DESC="custom analytics collection for Uptime Cloud Monitor"
-NAME=copperegg-metrics
+NAME=revealmetrics_postgresql
 
 do_start()
 {
@@ -358,23 +358,23 @@ ENDINIT
         chmod 755 $INIT_FILE
 
         if [ -d "/etc/rc1.d" ]; then
-            rm -f /etc/rc*.d/*copperegg-metrics
-            ln -s $INIT_FILE /etc/rc0.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc1.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc2.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc3.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc4.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc5.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/rc6.d/K99copperegg-metrics
+            rm -f /etc/rc*.d/*revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/rc0.d/K99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/rc1.d/K99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/rc2.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/rc3.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/rc4.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/rc5.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/rc6.d/K99revealmetrics_postgresql
         elif [ -d "/etc/init.d/rc1.d" ]; then
-            rm -f /etc/init.d/rc*.d/*copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc1.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc2.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc3.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc4.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc5.d/S99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rc6.d/K99copperegg-metrics
-            ln -s $INIT_FILE /etc/init.d/rcS.d/S99copperegg-metrics
+            rm -f /etc/init.d/rc*.d/*revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/init.d/rc1.d/K99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/init.d/rc2.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/init.d/rc3.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/init.d/rc4.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/init.d/rc5.d/S99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/init.d/rc6.d/K99revealmetrics_postgresql
+            ln -s $INIT_FILE /etc/init.d/rcS.d/S99revealmetrics_postgresql
         fi
 
         echo
@@ -412,6 +412,48 @@ ENDINIT
     echo $EXE_FILE
 }
 
+create_init_file() {
+    CREATED_INIT=""
+
+    # Detect Upstart system, If it exists proceed with Upstart init file
+
+    READLINK_UPSTART=`readlink /sbin/init | grep -i 'upstart'`
+    DPKG_UPSTART=""
+    RPM_UPSTART=""
+    PACMAN_UPSTART=""
+
+    if [ -n "`which dpkg 2>/dev/null`" ]; then
+        DPKG_UPSTART=`dpkg -S /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "`which rpm 2>/dev/null`" ]; then
+        RPM_UPSTART=`rpm -qf /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "`which pacman 2>/dev/null`" ]; then
+        PACMAN_UPSTART=`pacman -Qo /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "$READLINK_UPSTART" -o -n "$DPKG_UPSTART" -o -n "$RPM_UPSTART" -o -n "$PACMAN_UPSTART" ]; then
+        if [ -d '/etc/init' ]; then
+            setup_upstart_init
+        else
+            echo "Upstart Init system detected but /etc/init does not exist. Creating a SYS-V Init script instead."
+        fi
+    fi
+
+    if [ -d '/etc/init.d' -a -z "$CREATED_INIT" ]; then
+        setup_standard_init
+    fi
+
+    if [ -z "$CREATED_INIT" ]; then
+        echo
+        echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
+        echo "You may run it using the following command:"
+        echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_postgresql.log 2>&1 &"
+        echo
+    fi
+}
 
 ###############################################################
 ###############################################################
@@ -557,24 +599,5 @@ echo
 echo "Done creating config file $CONFIG_FILE"
 echo
 
-CREATED_INIT=""
-if [ -d "/etc/init" -a -n "`which start 2>/dev/null`" ]; then
-    # uncomment to test the init.d method on an ubuntu system:
-    #echo "upstart exists but installing standard anyway"
-    #setup_standard_init
-
-    setup_upstart_init
-
-elif [ -d "/etc/init.d" ]; then
-    setup_standard_init
-
-fi
-
-if [ -z "$CREATED_INIT" ]; then
-    echo
-    echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
-    echo "You may run it using the following command:"
-    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_postgresql.log 2>&1 &"
-    echo
-fi
-
+# Method to create init file, based on machine's Init system
+create_init_file
