@@ -199,7 +199,7 @@ setup_mongodb()
     done
 
     while true; do
-      echo -n "Add another Databse for MongoDB server? [Yn] "
+      echo -n "Add another Database for MongoDB server? [Yn] "
       read yn
       if [ -n "`echo $yn | egrep -io '^n'`" ]; then
         break
