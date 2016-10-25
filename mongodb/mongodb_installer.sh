@@ -76,10 +76,23 @@ setup_mongodb()
     echo
     if [ -z $USER_NAME ]; then
         echo "Testing with command: mongostat --host $URL:$PORT --rowcount 5 1"
-        mongostat --host $URL:$PORT --rowcount 5 1 > /tmp/mongodb_stats.txt
+        # proceed only if mongostat exists
+        if command -v mongostat; then
+            mongostat --host $URL:$PORT --rowcount 5 1 > /tmp/mongodb_stats.txt
+        else
+            echo "mongostat command does not exist, please install mongostat command to continue installation"
+            exit 1
+        fi
+
     else
         echo "Testing with command: mongostat --host $URL:$PORT --rowcount 5 1 -u $USER_NAME -p $PASSWORD"
-        mongostat --host $URL:$PORT --rowcount 5 1 -u $USER_NAME -p $PASSWORD > /tmp/mongodb_stats.txt
+        # proceed only if mongostat exists
+        if command -v mongostat; then
+            mongostat --host $URL:$PORT --rowcount 5 1 -u $USER_NAME -p $PASSWORD > /tmp/mongodb_stats.txt
+        else
+            echo "mongostat command does not exist, please install mongostat command to continue installation"
+            exit 1
+        fi
     fi
 
     # grep any one metric from the output file

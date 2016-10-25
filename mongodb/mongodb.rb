@@ -153,19 +153,18 @@ log "Update frequency set to #{@freq}s."
 def connect_to_mongo(hostname, port, user, pw, db)
 
   begin
-    connection = Mongo::Connection.new(hostname,port,:slave_ok=>true)
+    if user.nil?
+      # if the username is not present we can try without usernamd and password
+      connection = Mongo::Client.new(["#{hostname}:#{port}"], :database => "#{db}")
+    else
+      # Authenticated user connection
+      connection = Mongo::Client.new(["#{hostname}:#{port}"], user: '#{user}', password: '#{pw}', :database => "#{db}")
+    end
   rescue CopperEggAgentError.new("Unable to connect to Mongo at #{hostname}:#{port}")
     return nil
   end
 
-  mongo = connection.db(db)
-  begin 
-    mongo.authenticate(user,pw) unless pw.nil?
-  rescue Exception => e
-    log "Error connecting to mongodb #{db}, on #{hostname}:#{port}"
-    return nil
-  end
-  return  mongo
+  return  connection
 end
 
 def monitor_mongodb(mongo_servers, group_name)
@@ -185,17 +184,17 @@ def monitor_mongodb(mongo_servers, group_name)
 
         if mongo_db 
           begin
-            dbstats = mongo_db.stats
+            dbstats = mongo_db.command({'dbstats' => 1 })
           rescue Exception => e
             log "Error getting mongo stats for database: #{mhost['database']} [skipping]"
             next
           end
           metrics = {}
-          metrics['db_objects']            = dbstats['objects'].to_i
-          metrics['db_indexes']            = dbstats['indexes'].to_i
-          metrics['db_datasize']           = (dbstats['datasize'].to_f/(1024*1024).to_f)
-          metrics['db_storage_size']       = (dbstats['storage_size'].to_f/(1024*1024).to_f)
-          metrics['db_index_size']         = (dbstats['index_size'].to_f/(1024*1024).to_f)
+          metrics['db_objects']            = dbstats.documents[0]['objects'].to_i
+          metrics['db_indexes']            = dbstats.documents[0]['indexes'].to_i
+          metrics['db_datasize']           = (dbstats.documents[0]['datasize'].to_f/(1024*1024).to_f)
+          metrics['db_storage_size']       = (dbstats.documents[0]['storage_size'].to_f/(1024*1024).to_f)
+          metrics['db_index_size']         = (dbstats.documents[0]['index_size'].to_f/(1024*1024).to_f)
         end
 
         oname = mhost['name'] + '-' + dbname['name']
