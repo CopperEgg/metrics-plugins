@@ -497,29 +497,44 @@ echo "Monitoring frequency set to one sample per $FREQ seconds."
 echo
 
 echo "Installing required gems "
+echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
+    gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+
+OLDIFS=$IFS
 IFS=$'\n'
 gems=`grep -w gem remote_server/Gemfile | awk '{$1="" ; print $0}'`
 
 for gem in $gems; do
-  gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
-  gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \' | tr -d \" | tr -d [:blank:]`
+  gem=${gem//[\'\" ]/}
+  IFS=',' read -r -a array <<< "$gem"
+  echo "Installing gem ${array[0]}"
+  if [ -z "${array[1]}" ]
+    then
+    gem install --no-ri --no-rdoc ${array[0]} >> $PKG_INST_OUT
+  else
+    gem install --no-ri --no-rdoc ${array[0]} -v ${array[1]} >> $PKG_INST_OUT
+  fi
 
-  echo "Installing gem $gem_name [Using gem install $gem_name -v \"$gem_version\"]"
-
-  gem install $gem_name -v "$gem_version" >> $PKG_INST_OUT
   install_rc=$?
   if [ $install_rc -ne 0 ]; then
     echo
     echo "********************************************************"
     echo "*** "
-    echo "*** WARNING: gem $gem did not install properly!"
+    echo "*** WARNING: gem ${array[0]} did not install properly!"
     echo "*** Please contact support-uptimecm@idera.com if you are"
-    echo "*** unable to run 'gem install $gem_name -v \"$gem_version\"' manually."
+    if [ -z "${array[1]}" ]
+      then
+      echo "*** unable to run 'gem install ${array[0]}' manually."
+    else
+      echo "*** unable to run 'gem install ${array[0]} -v \"${array[1]}\"' manually."
+    fi
     echo "*** "
     echo "********************************************************"
     echo
   fi
 done
+IFS=$OLDIFS
+
 
 #
 # create config.yml

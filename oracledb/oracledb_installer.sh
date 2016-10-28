@@ -469,28 +469,46 @@ fi
 
 
 echo
-for THIS_GEM in `cat oracledb/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
-    echo "Installing gem $THIS_GEM..."
-    if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
-        gem install --no-ri --no-rdoc $THIS_GEM --pre --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
+
+echo "Installing required gems "
+echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
+    gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+
+OLDIFS=$IFS
+IFS=$'\n'
+gems=`grep -w gem oracledb/Gemfile | awk '{$1="" ; print $0}'`
+
+for gem in $gems; do
+  gem=${gem//[\'\" ]/}
+  IFS=',' read -r -a array <<< "$gem"
+  echo "Installing gem ${array[0]}"
+  if [ -z "${array[1]}" ]
+    then
+    gem install --no-ri --no-rdoc ${array[0]} >> $PKG_INST_OUT
+  else
+    gem install --no-ri --no-rdoc ${array[0]} -v ${array[1]} >> $PKG_INST_OUT
+  fi
+
+  install_rc=$?
+  if [ $install_rc -ne 0 ]; then
+    echo
+    echo "********************************************************"
+    echo "*** "
+    echo "*** WARNING: gem ${array[0]} did not install properly!"
+    echo "*** Please contact support-uptimecm@idera.com if you are"
+    if [ -z "${array[1]}" ]
+      then
+      echo "*** unable to run 'gem install ${array[0]}' manually."
     else
-        gem install --no-ri --no-rdoc $THIS_GEM --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
+      echo "*** unable to run 'gem install ${array[0]} -v \"${array[1]}\"' manually."
     fi
-    install_rc=$?
-    if [ $install_rc -ne 0 ]; then
-        echo
-        echo "********************************************************"
-        echo "********************************************************"
-        echo "*** "
-        echo "*** WARNING: gem $THIS_GEM did not install properly!"
-        echo "*** Please contact support-uptimecm@idera.com if you are"
-        echo "*** unable to run 'gem install $THIS_GEM' manually."
-        echo "*** "
-        echo "********************************************************"
-        echo "********************************************************"
-        echo
-    fi
+    echo "*** "
+    echo "********************************************************"
+    echo
+  fi
 done
+IFS=$OLDIFS
+
 
 
 #
