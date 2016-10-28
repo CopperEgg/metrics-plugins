@@ -441,8 +441,20 @@ echo "Monitoring frequency set to one sample per $FREQ seconds."
 echo
 
 echo "Installing required gems "
-echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
-    gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+echo "Installing gem bundler"
+gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+install_rc=$?
+if [ $install_rc -ne 0 ]; then
+    echo
+    echo "********************************************************"
+    echo "*** "
+    echo "*** WARNING: gem bundler did not install properly!"
+    echo "*** Please contact support-uptimecm@idera.com if you are"
+    echo "*** unable to run 'gem install bundler -v 1.12.5 ' manually."
+    echo "*** "
+    echo "********************************************************"
+    echo
+fi
 
 OLDIFS=$IFS
 IFS=$'\n'
