@@ -392,7 +392,7 @@ create_exe_file()
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
-DIRNAME="/usr/local/copperegg/ucm-metrics/memcached"
+DIRNAME="/usr/local/copperegg/ucm-metrics/postgresql"
 . $RVM_SCRIPT
 cd \$DIRNAME
 $AGENT_FILE \$*

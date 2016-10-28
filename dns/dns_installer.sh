@@ -384,7 +384,7 @@ create_exe_file()
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
-DIRNAME="`dirname \$0`"
+DIRNAME="/usr/local/copperegg/ucm-metrics/dns"
 . $RVM_SCRIPT
 cd \$DIRNAME
 $AGENT_FILE \$*
