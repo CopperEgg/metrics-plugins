@@ -3,6 +3,11 @@
 # Copyright 2013 IDERA.  All rights reserved.
 #
 
+base_path = '/usr/local/copperegg/ucm-metrics/couchdb'
+ENV['BUNDLE_GEMFILE'] = "#{base_path}/Gemfile"
+
+##################################################
+
 require 'rubygems'
 require 'bundler/setup'
 require 'getoptlong'
@@ -82,7 +87,6 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-base_path = '/usr/local/copperegg/ucm-metrics/couchdb'
 config_file = "#{base_path}/config.yml"
 @apihost = nil
 @debug = false
