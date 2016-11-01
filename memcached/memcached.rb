@@ -6,6 +6,11 @@
 #
 # License:: MIT License
 
+base_path = '/usr/local/copperegg/ucm-metrics/memcached'
+ENV['BUNDLE_GEMFILE'] = "#{base_path}/Gemfile"
+
+##################################################
+
 require 'rubygems'
 require 'bundler/setup'
 require 'getoptlong'
@@ -310,7 +315,6 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-base_path = '/usr/local/copperegg/ucm-metrics/memcached'
 config_file = "#{base_path}/config.yml"
 
 @apihost = nil
