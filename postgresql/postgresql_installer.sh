@@ -116,7 +116,7 @@ setup_postgresql()
     fi
 
     echo "Server URL: [$DEFAULT_URL] "
-    echo -n "Hint : Include http:// or https:// in the beginning [Eg http://your_server_name.com] "
+    echo -n "Hint : Don't include http:// or https:// in the beginning. Mention the Route to your server."
     read URL
     if [ -z "$URL" ]; then
         if [ -z "$DEFAULT_URL" ]; then

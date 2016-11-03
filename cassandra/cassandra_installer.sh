@@ -50,7 +50,7 @@ setup_cassandra()
     fi
 
     echo "Server URL: [$DEFAULT_URL] "
-    echo -n "Hint : Include http:// or https:// in the beginning [Eg http://your_server_name.com] "
+    echo -n "Hint : Don't include http:// or https:// in the beginning. Mention the Route to your server."
     read URL
     if [ -z "$URL" ]; then
         if [ -z "$DEFAULT_URL" ]; then
@@ -72,7 +72,7 @@ setup_cassandra()
     echo -n "Password: "
     read PASSWORD
 
-echo
+    echo
     if [ -z $USER_NAME ]; then
         echo "nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt"
         nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt
@@ -101,7 +101,7 @@ echo
         echo
     fi
 
-echo "  -" >> $CONFIG_FILE
+    echo "  -" >> $CONFIG_FILE
     echo "    name: \"$LABEL\""   >> $CONFIG_FILE
     echo "    hostname: \"$URL\"" >> $CONFIG_FILE
     echo "    port: \"$PORT\""    >> $CONFIG_FILE
@@ -137,7 +137,7 @@ setup_upstart_init()
             echo -n "log file: [/usr/local/copperegg/log/cassandra_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                    LOGFILE="/usr/local/copperegg/log/cassandra_metrics.log"
+                LOGFILE="/usr/local/copperegg/log/cassandra_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -196,7 +196,7 @@ setup_standard_init()
     /etc/init.d/copperegg-agent stop >/dev/null 2>&1 # old-named init file.
     rm -f /etc/init.d/copperegg-agent                # just blast it away.
 
-    INIT_FILE="/etc/init.d/copperegg-metrics"
+    INIT_FILE="/etc/init.d/revealmetrics_cassandra"
     if [ -e "$INIT_FILE" ]; then
         $INIT_FILE stop >/dev/null 2>&1
         rm $INIT_FILE
@@ -261,7 +261,7 @@ CONFIGFILE=$CONFIG_FILE
 LOGFILE=$LOGFILE
 COPPEREGG_USER=$COPPEREGG_USER
 DESC="custom analytics collection for Uptime Cloud Monitor"
-NAME=copperegg-metrics
+NAME=revealmetrics_cassandra
 
 do_start()
 {
@@ -350,6 +350,7 @@ create_exe_file()
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
+DIRNAME="/usr/local/copperegg/ucm-metrics/cassandra"
 . $RVM_SCRIPT
 $AGENT_FILE \$*
 ENDINIT
@@ -370,6 +371,48 @@ ENDINIT
     echo $EXE_FILE
 }
 
+create_init_file() {
+    CREATED_INIT=""
+
+    # Detect Upstart system, If it exists proceed with Upstart init file
+
+    READLINK_UPSTART=`readlink /sbin/init | grep -i 'upstart'`
+    DPKG_UPSTART=""
+    RPM_UPSTART=""
+    PACMAN_UPSTART=""
+
+    if [ -n "`which dpkg 2>/dev/null`" ]; then
+        DPKG_UPSTART=`dpkg -S /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "`which rpm 2>/dev/null`" ]; then
+        RPM_UPSTART=`rpm -qf /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "`which pacman 2>/dev/null`" ]; then
+        PACMAN_UPSTART=`pacman -Qo /sbin/init | grep -i 'upstart'`
+    fi
+
+    if [ -n "$READLINK_UPSTART" -o -n "$DPKG_UPSTART" -o -n "$RPM_UPSTART" -o -n "$PACMAN_UPSTART" ]; then
+        if [ -d '/etc/init' ]; then
+            setup_upstart_init
+        else
+            echo "Upstart Init system detected but /etc/init does not exist. Creating a SYS-V Init script instead."
+        fi
+    fi
+
+    if [ -d '/etc/init.d' -a -z "$CREATED_INIT" ]; then
+        setup_standard_init
+    fi
+
+    if [ -z "$CREATED_INIT" ]; then
+        echo
+        echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
+        echo "You may run it using the following command:"
+        echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_couchdb.log 2>&1 &"
+        echo
+    fi
+}
 
 ###############################################################
 ###############################################################
@@ -403,28 +446,50 @@ echo "Monitoring frequency set to one sample per $FREQ seconds."
 echo
 
 echo "Installing required gems "
-echo "Installing gem bundler [Using gem install bundler -v \"1.12.5\"]"
-    gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+echo "Installing gem bundler"
+gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+install_rc=$?
+
+if [ $install_rc -ne 0 ]; then
+    echo
+    echo "********************************************************"
+    echo "*** "
+    echo "*** WARNING: gem bundler did not install properly!"
+    echo "*** Please contact support-uptimecm@idera.com if you are"
+    echo "*** unable to run 'gem install bundler -v 1.12.5 ' manually."
+    echo "*** "
+    echo "********************************************************"
+    echo
+fi
 
 OLDIFS=$IFS
 IFS=$'\n'
 gems=`grep -w gem cassandra/Gemfile | awk '{$1="" ; print $0}'`
 
 for gem in $gems; do
-  gem_name=`echo $gem | awk -F "," '{print $1}' | tr -d \' | tr -d \" | tr -d [:blank:]`
-  gem_version=`echo $gem | awk -F "," '{print $2}' | tr -d \' | tr -d \" | tr -d [:blank:]`
+  gem=${gem//[\'\" ]/}
+  IFS=',' read -r -a array <<< "$gem"
+  echo "Installing gem ${array[0]}"
+  if [ -z "${array[1]}" ]
+    then
+    gem install --no-ri --no-rdoc ${array[0]} >> $PKG_INST_OUT
+  else
+    gem install --no-ri --no-rdoc ${array[0]} -v ${array[1]} >> $PKG_INST_OUT
+  fi
 
-  echo "Installing gem $gem_name [Using gem install $gem_name -v \"$gem_version\"]"
-
-  gem install $gem_name -v "$gem_version" >> $PKG_INST_OUT
   install_rc=$?
   if [ $install_rc -ne 0 ]; then
     echo
     echo "********************************************************"
     echo "*** "
-    echo "*** WARNING: gem $gem did not install properly!"
+    echo "*** WARNING: gem ${array[0]} did not install properly!"
     echo "*** Please contact support-uptimecm@idera.com if you are"
-    echo "*** unable to run 'gem install $gem_name -v \"$gem_version\"' manually."
+    if [ -z "${array[1]}" ]
+      then
+      echo "*** unable to run 'gem install ${array[0]}' manually."
+    else
+      echo "*** unable to run 'gem install ${array[0]} -v \"${array[1]}\"' manually."
+    fi
     echo "*** "
     echo "********************************************************"
     echo
@@ -483,23 +548,5 @@ echo
 echo "Done creating config file $CONFIG_FILE"
 echo
 
-CREATED_INIT=""
-if [ -d "/etc/init" -a -n "`which start 2>/dev/null`" ]; then
-    # uncomment to test the init.d method on an ubuntu system:
-    #echo "upstart exists but installing standard anyway"
-    #setup_standard_init
-
-    setup_upstart_init
-
-elif [ -d "/etc/init.d" ]; then
-    setup_standard_init
-
-fi
-
-if [ -z "$CREATED_INIT" ]; then
-    echo
-    echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
-    echo "You may run it using the following command:"
-    echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_cassandra.log 2>&1 &"
-    echo
-fi
+# Method to create init file, based on machine's Init system
+create_init_file

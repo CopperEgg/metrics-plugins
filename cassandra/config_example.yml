@@ -9,13 +9,9 @@ cassandra:
   group_label: "Cassandra Metrics"
   dashboard: "Cassandra_Clusters"
   clusters:
-  - name: "cassandra-cluster-01"
+  -
+    name: "cassandra-cluster-01"
     hostname: 'localhost'
     port: '7199'
     username:
     password:
-  - name: "cassandra-cluster-02"
-      hostname: '192.168.0.1'
-      port: '7199'
-      username:
-      password:

@@ -3,6 +3,9 @@
 # CopperEgg cassandra monitoring
 #
 
+base_path = '/usr/local/copperegg/ucm-metrics/cassandra'
+ENV['BUNDLE_GEMFILE'] = "#{base_path}/Gemfile"
+
 require 'rubygems'
 require 'bundler/setup'
 require 'getoptlong'
@@ -11,19 +14,6 @@ require 'json/pure'
 require 'yaml'
 
 class CopperEggAgentError < Exception; end
-
-TIME_STRING = '%Y/%m/%d %H:%M:%S'.freeze
-UNITS_FACTOR = {
-    'bytes' => 1,
-    'KB' => 1024,
-    'MB' => 1024**2,
-    'GB' => 1024**3,
-    'TB' => 1024**4
-}
-MAX_RETRIES = 30
-MAX_SETUP_RETRIES = 5
-
-####################################################################
 
 def help
   puts 'usage: $0 args'
@@ -34,7 +24,6 @@ def help
   puts '  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])'
 end
 
-##########
 # Used to prefix the log message with a date.
 def log(str)
   str.split("\n").each do |line|
@@ -73,87 +62,9 @@ def parent_interrupt
   exit
 end
 
-####################################################################
-
-# get options
-opts = GetoptLong.new(
-    ['--help',      '-h', GetoptLong::NO_ARGUMENT],
-    ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
-    ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
-    ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
-    ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
-    ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
-)
-
-base_path = '/usr/local/copperegg/ucm-metrics/cassandra'
-config_file = "#{base_path}/config.yml"
-@apihost = nil
-@debug = false
-@freq = 60
-@interrupted = false
-@worker_pids = []
-@services = []
-
-# Options and examples:
-opts.each do |opt, arg|
-  case opt
-  when '--help'
-    help
-    exit
-  when '--debug'
-    @debug = true
-  when '--config'
-    config_file = arg
-  when '--apikey'
-    CopperEgg::Api.apikey = arg
-  when '--frequency'
-    @freq = arg.to_i
-  when '--apihost'
-    CopperEgg::Api.host = arg
-  end
-end
-
-# Look for config file
-@config = YAML.load(File.open(config_file))
-
-unless @config.nil?
-  # load config
-  if !@config['copperegg'].nil?
-    CopperEgg::Api.apikey = @config['copperegg']['apikey'] unless
-        @config['copperegg']['apikey'].nil? && CopperEgg::Api.apikey.nil?
-    CopperEgg::Api.host = @config['copperegg']['apihost'] unless
-        @config['copperegg']['apihost'].nil?
-    @freq = @config['copperegg']['frequency'] unless @config['copperegg']['frequency'].nil?
-    @services = @config['copperegg']['services']
-  else
-    log 'You have no copperegg entry in your config.yml!'
-    log 'Edit your config.yml and restart.'
-    exit
-  end
-end
-
-if CopperEgg::Api.apikey.nil?
-  log 'You need to supply an apikey with the -k option or in the config.yml.'
-  exit
-end
-
-if @services.empty?
-  log 'No services listed in the config file.'
-  log 'Nothing will be monitored!'
-  exit
-end
-
-@freq = 60 unless [15, 60, 300, 900, 3600].include?(@freq)
-log "Update frequency set to #{@freq}s."
-
-######################################################################
-
-
 def convert_to_bytes(size, unit)
   size.to_f * UNITS_FACTOR[unit]
 end
-
-####################################################################
 
 def parse_info_stats(stats)
   hash = {}
@@ -320,8 +231,6 @@ rescue
   return {}
 end
 
-#########################################################################
-
 def get_cassandra_stats(host = 'localhost', port = '7199', user = nil, pw = nil)
   metrics = {}
   user_info = user && pw ? "-u#{user} -pw#{pw}" : ''
@@ -336,7 +245,6 @@ rescue
   return nil
 end
 
-
 def parse_cassandra_stats(stats)
   hash = {}
   if stats
@@ -346,8 +254,6 @@ def parse_cassandra_stats(stats)
   end
   hash
 end
-
-#########################################################################
 
 def monitor_cassandra(cassandra_cluster, group_name)
   log 'Monitoring cassandra databases: '
@@ -475,8 +381,6 @@ def create_cassandra_dashboard(metric_group, name)
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics)
 end
 
-#########################################################################
-
 def ensure_metric_group(metric_group, service)
   if service == 'cassandra'
     return ensure_cassandra_metric_group(metric_group, @config[service]['group_name'],
@@ -502,7 +406,88 @@ def monitor_service(service, metric_group)
   end
 end
 
-##########################################################################
+############################ main code ############################
+
+TIME_STRING = '%Y/%m/%d %H:%M:%S'.freeze
+UNITS_FACTOR = {
+    'bytes' => 1,
+    'KB' => 1024,
+    'MB' => 1024**2,
+    'GB' => 1024**3,
+    'TB' => 1024**4
+}
+MAX_RETRIES = 30
+MAX_SETUP_RETRIES = 5
+
+# get options
+opts = GetoptLong.new(
+    ['--help',      '-h', GetoptLong::NO_ARGUMENT],
+    ['--debug',     '-d', GetoptLong::NO_ARGUMENT],
+    ['--config',    '-c', GetoptLong::REQUIRED_ARGUMENT],
+    ['--apikey',    '-k', GetoptLong::REQUIRED_ARGUMENT],
+    ['--frequency', '-f', GetoptLong::REQUIRED_ARGUMENT],
+    ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
+)
+
+config_file = "#{base_path}/config.yml"
+@apihost = nil
+@debug = false
+@freq = 60
+@interrupted = false
+@worker_pids = []
+@services = []
+
+# Options and examples:
+opts.each do |opt, arg|
+  case opt
+    when '--help'
+      help
+      exit
+    when '--debug'
+      @debug = true
+    when '--config'
+      config_file = arg
+    when '--apikey'
+      CopperEgg::Api.apikey = arg
+    when '--frequency'
+      @freq = arg.to_i
+    when '--apihost'
+      CopperEgg::Api.host = arg
+  end
+end
+
+# Look for config file
+@config = YAML.load(File.open(config_file))
+
+unless @config.nil?
+  # load config
+  if !@config['copperegg'].nil?
+    CopperEgg::Api.apikey = @config['copperegg']['apikey'] unless
+        @config['copperegg']['apikey'].nil? && CopperEgg::Api.apikey.nil?
+    CopperEgg::Api.host = @config['copperegg']['apihost'] unless
+        @config['copperegg']['apihost'].nil?
+    @freq = @config['copperegg']['frequency'] unless @config['copperegg']['frequency'].nil?
+    @services = @config['copperegg']['services']
+  else
+    log 'You have no copperegg entry in your config.yml!'
+    log 'Edit your config.yml and restart.'
+    exit
+  end
+end
+
+if CopperEgg::Api.apikey.nil?
+  log 'You need to supply an apikey with the -k option or in the config.yml.'
+  exit
+end
+
+if @services.empty?
+  log 'No services listed in the config file.'
+  log 'Nothing will be monitored!'
+  exit
+end
+
+@freq = 60 unless [15, 60, 300, 900, 3600].include?(@freq)
+log "Update frequency set to #{@freq}s."
 
 last_failure = 0
 setup_retries = MAX_SETUP_RETRIES
