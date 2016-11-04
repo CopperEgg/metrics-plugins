@@ -72,26 +72,26 @@ def parse_info_stats(stats)
     stats.each_line do |line|
       if (m = line.match(/^Exceptions\s*:\s+([0-9]+)$/))
         hash['exceptions'] = m[1]
-      elsif (m = line.match(/^Load\s*:\s+([0-9.]+)\s+([KMGT]B|bytes)$/))
+      elsif (m = line.match(/^Load\s*:\s+([0-9.]+)\s+([KMGT]B|[KMGT]iB|bytes)$/))
         hash['load'] = convert_to_bytes(m[1], m[2])
-      elsif (m = line.match(/^Key Cache\s*:\s+entries\s+([0-9.]+), size\s+([0-9.]+)\s+([KMGT]B|bytes), capacity\s+([0-9.]+)\s+([KMGT]B|bytes), ([0-9.]+) hits, ([0-9.]+) requests, (NaN|[0-9.]+) recent hit rate/))
+      elsif (m = line.match(/^Key Cache\s*:\s+entries\s+([0-9.]+), size\s+([0-9.]+)\s+([KMGT]B|[KMGT]iB|bytes), capacity\s+([0-9.]+)\s+([KMGT]B|[KMGT]iB|bytes), ([0-9.]+) hits, ([0-9.]+) requests, (NaN|[0-9.]+) recent hit rate/))
         hash['key_cache_size'] = convert_to_bytes(m[2], m[3])
         hash['key_cache_capacity'] = convert_to_bytes(m[4], m[5])
-        hash['key_cache_hits'] = m[6]
-        hash['key_cache_requests'] = m[7]
-        hash['key_cache_recent_hit_rate'] = m[8]
-      elsif (m = line.match(/^Row Cache\s*:\s+entries\s+([0-9.]+), size\s+([0-9.]+)\s+([KMGT]B|bytes), capacity\s+([0-9.]+)\s+([KMGT]B|bytes), ([0-9.]+) hits, ([0-9.]+) requests, (NaN|[0-9.]+) recent hit rate/))
+        hash['key_cache_hits'] = m[6].to_i
+        hash['key_cache_requests'] = m[7].to_i
+        hash['key_cache_recent_hit_rate'] = m[8].to_f
+      elsif (m = line.match(/^Row Cache\s*:\s+entries\s+([0-9.]+), size\s+([0-9.]+)\s+([KMGT]B|[KMGT]iB|bytes), capacity\s+([0-9.]+)\s+([KMGT]B|[KMGT]iB|bytes), ([0-9.]+) hits, ([0-9.]+) requests, (NaN|[0-9.]+) recent hit rate/))
         hash['row_cache_size'] = convert_to_bytes(m[2], m[3])
         hash['row_cache_capacity'] = convert_to_bytes(m[4], m[5])
-        hash['row_cache_hits'] = m[6]
-        hash['row_cache_requests'] = m[7]
-        hash['row_cache_recent_hit_rate'] = m[8]
-      elsif (m = line.match(/^Counter Cache\s*:\s+entries\s+([0-9.]+), size\s+([0-9.]+)\s+([KMGT]B|bytes), capacity\s+([0-9.]+)\s+([KMGT]B|bytes), ([0-9.]+) hits, ([0-9.]+) requests, (NaN|[0-9.]+) recent hit rate/))
+        hash['row_cache_hits'] = m[6].to_i
+        hash['row_cache_requests'] = m[7].to_i
+        hash['row_cache_recent_hit_rate'] = m[8].to_f
+      elsif (m = line.match(/^Counter Cache\s*:\s+entries\s+([0-9.]+), size\s+([0-9.]+)\s+([KMGT]B|[KMGT]iB|bytes), capacity\s+([0-9.]+)\s+([KMGT]B|[KMGT]iB|bytes), ([0-9.]+) hits, ([0-9.]+) requests, (NaN|[0-9.]+) recent hit rate/))
         hash['counter_cache_size'] = convert_to_bytes(m[2], m[3])
         hash['counter_cache_capacity'] = convert_to_bytes(m[4], m[5])
-        hash['counter_cache_hits'] = m[6]
-        hash['counter_cache_requests'] = m[7]
-        hash['counter_cache_recent_hit_rate'] = m[8]
+        hash['counter_cache_hits'] = m[6].to_i
+        hash['counter_cache_requests'] = m[7].to_i
+        hash['counter_cache_recent_hit_rate'] = m[8].to_f
       end
     end
   end
@@ -314,6 +314,7 @@ def monitor_cassandra(cassandra_cluster, group_name)
     end
     interruptible_sleep @freq
   end
+
 end
 
 def ensure_cassandra_metric_group(metric_group, group_name, group_label)
@@ -414,7 +415,11 @@ UNITS_FACTOR = {
     'KB' => 1024,
     'MB' => 1024**2,
     'GB' => 1024**3,
-    'TB' => 1024**4
+    'TB' => 1024**4,
+    'KiB' => 1024,
+    'MiB' => 1024**2,
+    'GiB' => 1024**3,
+    'TiB' => 1024**4
 }
 MAX_RETRIES = 30
 MAX_SETUP_RETRIES = 5
