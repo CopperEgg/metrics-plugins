@@ -434,7 +434,7 @@ create_init_file() {
         PACMAN_UPSTART=`pacman -Qo /sbin/init | grep -i 'upstart'`
     fi
 
-    if [ -n "$READLINK_UPSTART" -o -n "$DPKG_UPSTART" -o -n "$RPM_UPSTART" -o -n "$PACMAN_UPSTART" ]; then
+    if [ \( -n "$READLINK_UPSTART" -o -n "$DPKG_UPSTART" -o -n "$RPM_UPSTART" -o -n "$PACMAN_UPSTART" \) -a \( -d '/etc/init' \) ]; then
         if [ -d '/etc/init' ]; then
             setup_upstart_init
         else
