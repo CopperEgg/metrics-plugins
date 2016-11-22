@@ -392,7 +392,9 @@ create_exe_file()
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
+DIRNAME="/usr/local/copperegg/ucm-metrics/postgresql"
 . $RVM_SCRIPT
+cd \$DIRNAME
 $AGENT_FILE \$*
 ENDINIT
         EXE_FILE=$LAUNCHER_FILE
@@ -524,29 +526,57 @@ fi
 
 
 echo
-for THIS_GEM in `cat postgresql/Gemfile |grep '^[ ]*gem' |awk '{print $2}' | sed -r -e "s/[',]//g"`; do
-    echo "Installing gem $THIS_GEM..."
-    if [ -n "$PRE" -a -n "`echo $THIS_GEM | egrep copperegg`" ]; then
-        # install prerelease gems if "$PRE" is not null, but only for copperegg
-        gem install --no-ri --no-rdoc $THIS_GEM --pre --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
+
+echo "Installing required gems "
+echo "Installing gem bundler"
+gem install bundler -v "1.12.5" >> $PKG_INST_OUT
+install_rc=$?
+if [ $install_rc -ne 0 ]; then
+    echo
+    echo "********************************************************"
+    echo "*** "
+    echo "*** WARNING: gem bundler did not install properly!"
+    echo "*** Please contact support-uptimecm@idera.com if you are"
+    echo "*** unable to run 'gem install bundler -v 1.12.5 ' manually."
+    echo "*** "
+    echo "********************************************************"
+    echo
+fi
+
+OLDIFS=$IFS
+IFS=$'\n'
+gems=`grep -w gem postgresql/Gemfile | awk '{$1="" ; print $0}'`
+
+for gem in $gems; do
+  gem=${gem//[\'\" ]/}
+  IFS=',' read -r -a array <<< "$gem"
+  echo "Installing gem ${array[0]}"
+  if [ -z "${array[1]}" ]
+    then
+    gem install --no-ri --no-rdoc ${array[0]} >> $PKG_INST_OUT
+  else
+    gem install --no-ri --no-rdoc ${array[0]} -v ${array[1]} >> $PKG_INST_OUT
+  fi
+
+  install_rc=$?
+  if [ $install_rc -ne 0 ]; then
+    echo
+    echo "********************************************************"
+    echo "*** "
+    echo "*** WARNING: gem ${array[0]} did not install properly!"
+    echo "*** Please contact support-uptimecm@idera.com if you are"
+    if [ -z "${array[1]}" ]
+      then
+      echo "*** unable to run 'gem install ${array[0]}' manually."
     else
-        gem install --no-ri --no-rdoc $THIS_GEM --source 'http://rubygems.org' >> $PKG_INST_OUT 2>&1
+      echo "*** unable to run 'gem install ${array[0]} -v \"${array[1]}\"' manually."
     fi
-    install_rc=$?
-    if [ $install_rc -ne 0 ]; then
-        echo
-        echo "********************************************************"
-        echo "********************************************************"
-        echo "*** "
-        echo "*** WARNING: gem $THIS_GEM did not install properly!"
-        echo "*** Please contact support-uptimecm@idera.com if you are"
-        echo "*** unable to run 'gem install $THIS_GEM' manually."
-        echo "*** "
-        echo "********************************************************"
-        echo "********************************************************"
-        echo
-    fi
+    echo "*** "
+    echo "********************************************************"
+    echo
+  fi
 done
+IFS=$OLDIFS
 
 
 #
