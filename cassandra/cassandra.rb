@@ -327,13 +327,14 @@ class CassandraMonitoring
       hash['memtable_column_count'] = temp_hash['memtable_column_count']
       hash['memtable_data_size'] = temp_hash['memtable_data_size']
       hash['memtable_switch_count'] = temp_hash['memtable_switch_count']
-      hash['bloom_filter_false_ratio'] = temp_hash['bloom_filter_false_ratio'][:value] /
-          temp_hash['bloom_filter_false_ratio'][:count]
-      hash['compression_ratio'] = temp_hash['compression_ratio'][:value] /
-          temp_hash['compression_ratio'][:count]
+      hash['bloom_filter_false_ratio'] = temp_hash['bloom_filter_false_ratio'][:count] > 0 ?
+          temp_hash['bloom_filter_false_ratio'][:value] / temp_hash['bloom_filter_false_ratio'][:count] : 0
+      hash['compression_ratio'] = temp_hash['compression_ratio'][:count] > 0 ?
+          temp_hash['compression_ratio'][:value] / temp_hash['compression_ratio'][:count] : 0
       hash['min_row_size'] = temp_hash['min_row_size']
       hash['max_row_size'] = temp_hash['max_row_size']
-      hash['mean_row_size'] = temp_hash['mean_row_size'][:value] / temp_hash['mean_row_size'][:count]
+      hash['mean_row_size'] = temp_hash['mean_row_size'][:count] > 0 ?
+          temp_hash['mean_row_size'][:value] / temp_hash['mean_row_size'][:count] : 0
     end
     hash
   rescue
