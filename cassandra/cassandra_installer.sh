@@ -75,10 +75,10 @@ setup_cassandra()
     echo
     if [ -z $USER_NAME ]; then
         echo "nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt"
-        nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt
+        nodetool -h $URL -p $PORT < /dev/null > /tmp/cassandra_stats.txt
     else
         echo "nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD status > /tmp/cassandra_stats.txt"
-        nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD status > /tmp/cassandra_stats.txt
+        nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD < /dev/null > /tmp/cassandra_stats.txt
     fi
 
     # check exit status of last command

@@ -124,12 +124,16 @@ class CassandraMonitoring
       next unless @config[service] && !@config[service]['clusters'].empty?
       begin
         log "Checking for existence of metric group for #{service}"
-        metric_group = metric_groups.detect { |m| m.name == @config[service]['group_name'] }
+        metric_group = metric_groups.detect { |m| m.name == @config[service]['group_name'] } unless metric_groups.nil?
+        if metric_group.nil?
+          metric_group = ensure_cassandra_metric_group(metric_group, @config[service]['group_name'],
+                                                    @config[service]['group_label'])
+        end
         metric_group = ensure_metric_group(metric_group, service)
         raise "Could not create a metric group for #{service}" if metric_group.nil?
         log "Checking for existence of #{@config[service]['dashboard']}"
-        dashboard = dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
-            create_dashboard(service, metric_group)
+        dashboard = dashboards.detect { |d| d.name == @config[service]['dashboard'] } unless dashboards.nil?
+        dashboard = create_dashboard(service, metric_group) if dashboard.nil?
         log "Could not create a dashboard for #{service}" if dashboard.nil?
       rescue => e
         log e.message
@@ -384,7 +388,7 @@ class CassandraMonitoring
 
   def get_cassandra_stats(host = 'localhost', port = '7199', user = nil, pw = nil)
     metrics = {}
-    user_info = user && pw ? "-u#{user} -pw#{pw}" : ''
+    user_info = user && pw ? "-u #{user} -pw #{pw}" : ''
 
     metrics['info'] = `nodetool -h #{host} -p #{port} #{user_info} info`
     metrics['table_stats'] = `nodetool -h #{host} -p #{port} #{user_info} tablestats`
