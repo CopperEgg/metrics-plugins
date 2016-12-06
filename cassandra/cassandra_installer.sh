@@ -75,14 +75,14 @@ setup_cassandra()
     echo
     if [ -z $USER_NAME ]; then
         echo "nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt"
-        nodetool -h $URL -p $PORT < /dev/null > /tmp/cassandra_stats.txt
+        nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt
     else
         echo "nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD status > /tmp/cassandra_stats.txt"
-        nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD < /dev/null > /tmp/cassandra_stats.txt
+        nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD status > /tmp/cassandra_stats.txt
     fi
 
     # check exit status of last command
-    if [ $? -ne 0 ]; then
+    if [ -z "`grep -E 'U[N|L|M|J]' /tmp/cassandra_stats.txt`" ]; then
         echo
         echo "WARNING: Could not connect to Cassandra Cluster with $URL, "
         echo "  username $USER_NAME, password $PASSWORD, host $URL and port $PORT."
