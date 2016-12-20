@@ -259,7 +259,6 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
-
 # Add more services here and call its respective script
 export COPPEREGG_USER COPPEREGG_GROUP
 case $MON_LIST in
@@ -283,6 +282,9 @@ case $MON_LIST in
     ;;
 "remote_server")
     bash "remote_server/remote_server_installer.sh"
+    ;;
+"cassandra")
+    bash "cassandra/cassandra_installer.sh"
     ;;
 esac
 

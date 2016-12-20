@@ -30,80 +30,14 @@ setup_base_group()
     echo "  group_name: \"$GROUP_NAME\"" >> $CONFIG_FILE
     echo "  group_label: \"$GROUP_LABEL\"" >> $CONFIG_FILE
     echo "  dashboard: \"$DASHBOARD\"" >> $CONFIG_FILE
-    echo "  servers:" >> $CONFIG_FILE
+    echo "  clusters:" >> $CONFIG_FILE
 }
 
-setup_database()
-{
-    LABEL="$1"
-    URL="$2"
-    PORT="$3"
-    SSLMODE="$4"
-    DEFAULT_DBNAME="$5"
-    INITIAL_CHECK="$6"
-
-    echo -n "Databse Name: [postgres]"
-    read DBNAME
-    if [ -z "$DBNAME" ]; then
-        DBNAME="$DEFAULT_DBNAME"
-    fi
-
-    echo -n "Username: "
-    read USER_NAME
-
-    echo -n "Password: "
-    read PASSWORD
-
-    echo
-    if [ -z $USER_NAME ]; then
-        echo "Testing with command: psql -h $URL -p $PORT -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        psql -h $URL -p $PORT -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    else
-        echo "Testing with command: PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    fi
-
-    # grep any one metric from the output file
-    if [ $? -ne 0 ]; then
-        echo
-        echo "WARNING: Could not connect to PostgreSQL Server with $URL, "
-        echo "  username $USER_NAME, password $PASSWORD and port $PORT."
-        echo "  If you keep this setting, you can edit it later in the config file:"
-        echo "  $CONFIG_FILE"
-        echo -n "  Keep setting and use this server anyway? [Yn]"
-        read yn
-        if [ -n "`echo $yn | egrep -io '^n'`" ]; then
-            # just return 1, loop will re-run
-            return 1
-        fi
-        echo
-
-    else
-        echo "SUCCESS!"
-        echo
-    fi
-
-    if [ "$INITIAL_CHECK" == "initial" ]; then
-        echo "  -" >> $CONFIG_FILE
-        echo "    name: \"$LABEL\""               >> $CONFIG_FILE
-        echo "    hostname: \"$URL\"" >> $CONFIG_FILE
-        echo "    port: \"$PORT\"" >> $CONFIG_FILE
-        echo "    sslmode: \"$SSLMODE\""       >> $CONFIG_FILE
-        echo "    databases:"        >> $CONFIG_FILE
-    fi
-    echo "    -"        >> $CONFIG_FILE
-    echo "      name: \"$DBNAME\""        >> $CONFIG_FILE
-    echo "      username: \"$USER_NAME\""        >> $CONFIG_FILE
-    echo "      password: \"$PASSWORD\""        >> $CONFIG_FILE
-
-}
-
-setup_postgresql()
+setup_cassandra()
 {
     DEFAULT_LABEL="$1"
     DEFAULT_URL="$2"
     DEFAULT_PORT="$3"
-    DEFAULT_SSLMODE="$4"
 
     echo -n "Unique_id: [$DEFAULT_LABEL] "
     read LABEL
@@ -126,40 +60,64 @@ setup_postgresql()
         URL="$DEFAULT_URL"
     fi
 
-    echo -n "Port: [5432]"
+    echo -n "Port JMX(remote): [7199]"
     read PORT
     if [ -z "$PORT" ]; then
         PORT="$DEFAULT_PORT"
     fi
 
-    echo -n "SSL MODE: [disable]"
-    read SSLMODE
-    if [ -z "$SSLMODE" ]; then
-        SSLMODE="$DEFAULT_SSLMODE"
+    echo -n "Username: "
+    read USER_NAME
+
+    echo -n "Password: "
+    read PASSWORD
+
+    echo
+    if [ -z $USER_NAME ]; then
+        echo "nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt"
+        nodetool -h $URL -p $PORT status > /tmp/cassandra_stats.txt
+    else
+        echo "nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD status > /tmp/cassandra_stats.txt"
+        nodetool -h $URL -p $PORT -u $USER_NAME -pw $PASSWORD status > /tmp/cassandra_stats.txt
     fi
 
-    lc=1
-    while [ $lc -ne 0 ]; do
-      # loop with defaults until they get it right
-      echo "Configuring first PostgreSQL Database (required)"
-      setup_database $LABEL $URL $PORT $SSLMODE "postgres" "initial"
-      lc=$?
-    done
+    # check exit status of last command
+    if [ -z "`grep -E 'U[N|L|M|J]' /tmp/cassandra_stats.txt`" ]; then
+        echo
+        echo "WARNING: Could not connect to Cassandra Cluster with $URL, "
+        echo "  username $USER_NAME, password $PASSWORD, host $URL and port $PORT."
+        echo "  If you keep this setting, you can edit it later in the config file:"
+        echo "  $CONFIG_FILE"
+        echo -n "  Keep setting and use this server anyway? [Yn]"
+        read yn
+        if [ -n "`echo $yn | egrep -io '^n'`" ]; then
+            # just return 1, loop will re-run
+            return 1
+        fi
+        echo
 
-    while true; do
-      echo -n "Add another Databse for PostgreSQL server? [Yn] "
-      read yn
-      if [ -n "`echo $yn | egrep -io '^n'`" ]; then
-        break
-      fi
-      setup_database $LABEL $URL $PORT $SSLMODE "postgres" ""
-    done
+    else
+        echo "SUCCESS!"
+        echo
+    fi
+
+    echo "  -" >> $CONFIG_FILE
+    echo "    name: \"$LABEL\""   >> $CONFIG_FILE
+    echo "    hostname: \"$URL\"" >> $CONFIG_FILE
+    echo "    port: \"$PORT\""    >> $CONFIG_FILE
+    if [ -z $USER_NAME ]; then
+        echo "    username:"      >> $CONFIG_FILE
+        echo "    password:"      >> $CONFIG_FILE
+    else
+        echo "    username: \"$USER_NAME\""      >> $CONFIG_FILE
+        echo "    password: \"$PASSWORD\""       >> $CONFIG_FILE
+    fi
 }
 
 
 setup_upstart_init()
 {
-    INIT_FILE="/etc/init/revealmetrics_postgresql.conf"
+    INIT_FILE="/etc/init/revealmetrics_cassandra.conf"
     if [ -e "$INIT_FILE" ]; then
         stop `basename $INIT_FILE .conf` >/dev/null 2>&1
         rm $INIT_FILE
@@ -176,10 +134,10 @@ setup_upstart_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/postgresql_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/cassandra_metrics.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                    LOGFILE="/usr/local/copperegg/log/postgresql_metrics.log"
+                LOGFILE="/usr/local/copperegg/log/cassandra_metrics.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -238,7 +196,7 @@ setup_standard_init()
     /etc/init.d/copperegg-agent stop >/dev/null 2>&1 # old-named init file.
     rm -f /etc/init.d/copperegg-agent                # just blast it away.
 
-    INIT_FILE="/etc/init.d/revealmetrics_postgresql"
+    INIT_FILE="/etc/init.d/revealmetrics_cassandra"
     if [ -e "$INIT_FILE" ]; then
         $INIT_FILE stop >/dev/null 2>&1
         rm $INIT_FILE
@@ -254,10 +212,10 @@ setup_standard_init()
         read yn
         if [ -z "`echo $yn | egrep -io '^n'`" ]; then
             CREATED_INIT="yes"
-            echo -n "log file: [/usr/local/copperegg/log/postgresql_metrics.log] "
+            echo -n "log file: [/usr/local/copperegg/log/revealmetrics_cassandra.log] "
             read LOGFILE
             if [ -z "$LOGFILE" ]; then
-                LOGFILE="/usr/local/copperegg/log/postgresql_metrics.log"
+                LOGFILE="/usr/local/copperegg/log/revealmetrics_cassandra.log"
             fi
             mkdir -p `dirname $LOGFILE`
             touch $LOGFILE
@@ -303,7 +261,7 @@ CONFIGFILE=$CONFIG_FILE
 LOGFILE=$LOGFILE
 COPPEREGG_USER=$COPPEREGG_USER
 DESC="custom analytics collection for Uptime Cloud Monitor"
-NAME=revealmetrics_postgresql
+NAME=revealmetrics_cassandra
 
 do_start()
 {
@@ -358,23 +316,23 @@ ENDINIT
         chmod 755 $INIT_FILE
 
         if [ -d "/etc/rc1.d" ]; then
-            rm -f /etc/rc*.d/*revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/rc0.d/K99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/rc1.d/K99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/rc2.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/rc3.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/rc4.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/rc5.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/rc6.d/K99revealmetrics_postgresql
+            rm -f /etc/rc*.d/*revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc0.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc1.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc2.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc3.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc4.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc5.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/rc6.d/K99revealmetrics_cassandra
         elif [ -d "/etc/init.d/rc1.d" ]; then
-            rm -f /etc/init.d/rc*.d/*revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/init.d/rc1.d/K99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/init.d/rc2.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/init.d/rc3.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/init.d/rc4.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/init.d/rc5.d/S99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/init.d/rc6.d/K99revealmetrics_postgresql
-            ln -s $INIT_FILE /etc/init.d/rcS.d/S99revealmetrics_postgresql
+            rm -f /etc/init.d/rc*.d/*revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc1.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc2.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc3.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc4.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc5.d/S99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rc6.d/K99revealmetrics_cassandra
+            ln -s $INIT_FILE /etc/init.d/rcS.d/S99revealmetrics_cassandra
         fi
 
         echo
@@ -388,13 +346,12 @@ ENDINIT
 
 create_exe_file()
 {
-    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_postgresql_launcher.sh"
+    LAUNCHER_FILE="/usr/local/copperegg/ucm-metrics/revealmetrics_cassandra_launcher.sh"
     if [ -n "$RVM_SCRIPT" ]; then
         cat <<ENDINIT > $LAUNCHER_FILE
 #!/bin/bash
-DIRNAME="/usr/local/copperegg/ucm-metrics/postgresql"
+DIRNAME="/usr/local/copperegg/ucm-metrics/cassandra"
 . $RVM_SCRIPT
-cd \$DIRNAME
 $AGENT_FILE \$*
 ENDINIT
         EXE_FILE=$LAUNCHER_FILE
@@ -436,7 +393,7 @@ create_init_file() {
         PACMAN_UPSTART=`pacman -Qo /sbin/init | grep -i 'upstart'`
     fi
 
-    if [ \( -n "$READLINK_UPSTART" -o -n "$DPKG_UPSTART" -o -n "$RPM_UPSTART" -o -n "$PACMAN_UPSTART" \) -a \( -d '/etc/init' \) ]; then
+    if [ -n "$READLINK_UPSTART" -o -n "$DPKG_UPSTART" -o -n "$RPM_UPSTART" -o -n "$PACMAN_UPSTART" ]; then
         if [ -d '/etc/init' ]; then
             setup_upstart_init
         else
@@ -452,7 +409,7 @@ create_init_file() {
         echo
         echo "Thank you for setting up the Uptime Cloud Monitor Metrics Agent."
         echo "You may run it using the following command:"
-        echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_postgresql.log 2>&1 &"
+        echo "nohup ruby $AGENT_FILE --config $CONFIG_FILE >/tmp/revealmetrics_couchdb.log 2>&1 &"
         echo
     fi
 }
@@ -486,51 +443,13 @@ if [ -z "$FREQ" -o -z "`echo $FREQ | egrep -o '^[0-9]$'`" ]; then
 fi
 echo "Monitoring frequency set to one sample per $FREQ seconds."
 
-if [ -n "`which dpkg 2>/dev/null`" ]; then
-    HAS_PGDEV="`dpkg --list | egrep 'libpq-dev'`"
-elif [ -n "`which yum 2>/dev/null`" ]; then
-    HAS_PGDEV="`yum list installed | egrep postgresql-devel`"
-fi
-
-if [ -z "$HAS_PGDEV" ]; then
-    echo
-    echo -n "Postgres Development package is not installed. May I install it for you? [Yn] "
-    read yn
-    if [ -z "`echo $yn | egrep -io '^n'`" ]; then
-        install_rc=0
-        if [ -n "`which apt-get 2>/dev/null`" ]; then
-            echo "Installing Postgres Development Package with apt-get.  This may take a few minutes..."
-            apt-get update >> $PKG_INST_OUT 2>&1
-            apt-get -y install libpq-dev >> $PKG_INST_OUT 2>&1
-            install_rc=$?
-        elif [ -n "`which yum 2>/dev/null`" ]; then
-            echo "Installing Postgres Development Package with yum.  This may take a few minutes..."
-            yum -y install postgresql-devel >> $PKG_INST_OUT 2>&1
-            install_rc=$?
-        else
-            # This should not happen, but if it does just warn
-            echo "Warn: could not install Postgres Development"
-        fi
-        if [ $install_rc -ne 0 ]; then
-            echo
-            echo "ERROR: Could not install Postgres Development.  Please report this to support-uptimecm@idera.com"
-            echo "  and include all this output, plus the file: $PKG_INST_OUT"
-            echo
-            exit 1
-        fi
-    else
-        echo "Postgres Development package is required for installing pg module. Please install it manually or allow this script to."
-        exit 1
-    fi
-fi
-
-
 echo
 
 echo "Installing required gems "
 echo "Installing gem bundler"
 gem install bundler -v "1.12.5" >> $PKG_INST_OUT
 install_rc=$?
+
 if [ $install_rc -ne 0 ]; then
     echo
     echo "********************************************************"
@@ -545,7 +464,7 @@ fi
 
 OLDIFS=$IFS
 IFS=$'\n'
-gems=`grep -w gem postgresql/Gemfile | awk '{$1="" ; print $0}'`
+gems=`grep -w gem cassandra/Gemfile | awk '{$1="" ; print $0}'`
 
 for gem in $gems; do
   gem=${gem//[\'\" ]/}
@@ -587,37 +506,37 @@ echo
 echo "------------------------------------------------------------------"
 echo
 
-CONFIG_FILE="/usr/local/copperegg/ucm-metrics/postgresql/config.yml"
-AGENT_FILE="/usr/local/copperegg/ucm-metrics/postgresql/postgresql.rb"
+CONFIG_FILE="/usr/local/copperegg/ucm-metrics/cassandra/config.yml"
+AGENT_FILE="/usr/local/copperegg/ucm-metrics/cassandra/cassandra.rb"
 
 echo
 echo "Creating config.yml."
 echo
 
 echo "copperegg:" > $CONFIG_FILE
-echo "  apikey: \"$API_KEY\"" >> $CONFIG_FILE
+echo "  apikey: \"$USER_API_KEY\"" >> $CONFIG_FILE
 echo "  apihost: \"$API_HOST\"" >> $CONFIG_FILE
 echo "  frequency: $FREQ" >> $CONFIG_FILE
 echo "  services:" >> $CONFIG_FILE
-echo "  - postgresql" >> $CONFIG_FILE
+echo "  - cassandra" >> $CONFIG_FILE
 
 
-setup_base_group "postgresql" "PostgreSQL"
+setup_base_group "cassandra" "Cassandra"
 rc=1
 while [ $rc -ne 0 ]; do
     # loop with defaults until they get it right
-    echo "Configuring first PostgreSQL server (required)"
-    setup_postgresql "`hostname | sed 's/ /_/g'`-postgresql" "localhost" "5432" "disable"
+    echo "Configuring first Cassandra Cluster (required)"
+    setup_cassandra "`hostname | sed 's/ /_/g'`-cassandra" "localhost" "7199"
     rc=$?
 done
 
 while true; do
-    echo -n "Add another PostgreSQL server? [Yn] "
+    echo -n "Add another Cassandra server? [Yn] "
     read yn
     if [ -n "`echo $yn | egrep -io '^n'`" ]; then
         break
     fi
-    setup_postgresql "" "" "5432" "disable"
+    setup_cassandra "" "" "7199"
 done
 
 chown -R $COPPEREGG_USER:$COPPEREGG_GROUP /usr/local/copperegg/ucm-metrics/*
