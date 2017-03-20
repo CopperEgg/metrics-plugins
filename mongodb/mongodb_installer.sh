@@ -556,7 +556,7 @@ fi
 
 OLDIFS=$IFS
 IFS=$'\n'
-gems=`grep -w gem mongodb/Gemfile | awk '{$1="" ; print $0}'
+gems=`grep -w gem mongodb/Gemfile | awk '{$1="" ; print $0}'`
 
 for gem in $gems; do
   gem=${gem//[\'\" ]/}
