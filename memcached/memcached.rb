@@ -181,11 +181,11 @@ def monitor_memcached(mc_servers, group_name)
   end
 end
 
-def ensure_memcached_metric_group(metric_group, group_name, group_label)
+def ensure_memcached_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating memcached metric group'
     metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
-                                              frequency: @freq)
+      frequency: @freq, service: service)
   else
     log 'Updating memcached metric group'
     metric_group.frequency = @freq
@@ -292,7 +292,7 @@ end
 
 def ensure_metric_group(metric_group, service)
   return ensure_memcached_metric_group(metric_group, @config[service]['group_name'],
-                                         @config[service]['group_label'])
+    @config[service]['group_label'], service)
 end
 
 def create_dashboard(service, metric_group)
@@ -418,7 +418,7 @@ end
       if dashboards.nil?
         dashboard = dashboards.detect { |d| d.name == @config[service]['dashboard'] }
       else
-        create_dashboard(service, metric_group)
+        dashboard = create_dashboard(service, metric_group)
       end
 
       log "Could not create a dashboard for #{service}" if dashboard.nil?

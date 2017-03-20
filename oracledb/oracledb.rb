@@ -165,10 +165,11 @@ def monitor_oracle_db(servers, group_name)
 end
 
 
-def ensure_oracle_metric_group(metric_group, group_name, group_label)
+def ensure_oracle_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating oracle DB metric group'
-    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq)
+    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
+      frequency: @freq, service: service)
   else
     log 'Updating oracle DB metric group'
     metric_group.frequency = @freq
@@ -322,7 +323,7 @@ end
       metric_group = metric_groups.detect { |m| m.name == @config[service]['group_name'] } unless metric_groups.nil?
       if metric_group.nil?
         metric_group = ensure_oracle_metric_group(metric_group, @config[service]['group_name'],
-                                                  @config[service]['group_label'])
+                                                  @config[service]['group_label'], service)
       end
 
       raise "Could not create a metric group for #{service}" if metric_group.nil?
