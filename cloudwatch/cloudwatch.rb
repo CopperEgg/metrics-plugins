@@ -130,7 +130,7 @@ if @services.length == 0
   exit
 end
 
-@freq = 60 if ![5, 15, 60, 300, 900, 3600, 21600].include?(@freq)
+@freq = 60 if ![15, 60, 300, 900, 3600, 21600].include?(@freq)
 log "Update frequency set to #{@freq}s."
 
 @aws_config_default = { :access_key_id => @config["aws"]["access_key_id"],

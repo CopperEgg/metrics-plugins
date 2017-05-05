@@ -22,9 +22,9 @@ class CopperEggAgentError < Exception; end
 ####################################################################
 
 TIME_STRING = '%Y/%m/%d %H:%M:%S'
-COLLECTL_REQUIRED_HEADERS = ['#cpu', 'Free', 'Buff', 'Cach', 'KBRead', 'KBWrit', 'KBIn', 'KBOut']
-COLLECTL_HEADERS_UCM = ['cpu_total', 'free_memory', 'buff_memory', 'cach_memory', 'disk_read_kb',
-                        'disk_write_kb','network_in_kb', 'network_out_kb']
+COLLECTL_REQUIRED_HEADERS = %w(#cpu Free Buff Cach KBRead KBWrit KBIn KBOut)
+COLLECTL_HEADERS_UCM = %w(cpu_total free_memory buff_memory cach_memory disk_read_kb disk_write_kb
+network_in_kb network_out_kb)
 UNITS_FACTOR = {
   'B'  => 1024**0,
   'K' => 1024**1,
