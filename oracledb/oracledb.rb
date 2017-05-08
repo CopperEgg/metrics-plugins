@@ -19,7 +19,7 @@ def help
   puts 'usage: $0 args'
   puts 'Examples:'
   puts '  -c config.yml'
-  puts '  -f 60                 (for 60s updates. Valid values: 5, 15, 60, 300, 900, 3600)'
+  puts '  -f 60                 (for 60s updates. Valid values: 15, 60, 300, 900, 3600)'
   puts '  -k hcd7273hrejh712    (your APIKEY from the UI dashboard settings)'
   puts '  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])'
 end
@@ -286,7 +286,7 @@ if @services.empty?
   exit
 end
 
-@freq = 60 unless [5, 15, 60, 300, 900, 3600, 21600].include?(@freq)
+@freq = 60 unless [15, 60, 300, 900, 3600, 21600].include?(@freq)
 log "Update frequency set to #{@freq}s."
 
 trap('INT') { parent_interrupt }
