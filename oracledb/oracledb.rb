@@ -210,7 +210,8 @@ end
 def create_oracle_dashboard(metric_group, name)
   log 'Creating new Oracle DB Dashboard'
   metrics = metric_group.metrics || []
-  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
+                                    is_database: true)
 end
 
 ####################################################################
