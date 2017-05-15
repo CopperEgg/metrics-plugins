@@ -220,10 +220,11 @@ def monitor_couchdb(couchdb_servers, group_name)
   end
 end
 
-def ensure_couchdb_metric_group(metric_group, group_name, group_label)
+def ensure_couchdb_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating CouchDB metric group'
-    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq)
+    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq,
+      service: service)
   else
     log 'Updating CouchDB metric group'
     metric_group.frequency = @freq
@@ -275,7 +276,8 @@ trap('TERM') { parent_interrupt }
 
 def ensure_metric_group(metric_group, service)
   if service == 'couchdb'
-    return ensure_couchdb_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+    return ensure_couchdb_metric_group(metric_group, @config[service]['group_name'],
+      @config[service]['group_label'], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -322,7 +324,7 @@ end
   if @config[service] && !@config[service]['servers'].empty?
     begin
       log "Checking for existence of metric group for #{service}"
-      metric_group = metric_group.nil? ? nil : metric_groups.detect {|m| m.name == @config[service]['group_name']}
+      metric_group = metric_groups.nil? ? nil : metric_groups.detect {|m| m.name == @config[service]['group_name']}
       metric_group = ensure_metric_group(metric_group, service)
       raise "Could not create a metric group for #{service}" if metric_group.nil?
 

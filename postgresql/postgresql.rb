@@ -335,10 +335,11 @@ def monitor_postgresql(pg_servers, group_name)
 end
 
 
-def ensure_postgresql_metric_group(metric_group, group_name, group_label)
+def ensure_postgresql_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log "Creating postgresql metric group"
-    metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
+    metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label,
+      :frequency => @freq, service: service)
   else
     log "Updating postgresql metric group"
     metric_group.frequency = @freq
@@ -409,7 +410,8 @@ trap("TERM") { parent_interrupt }
 
 def ensure_metric_group(metric_group, service)
   if service == 'postgresql'
-    return ensure_postgresql_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
+    return ensure_postgresql_metric_group(metric_group, @config[service]["group_name"],
+      @config[service]["group_label"], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end

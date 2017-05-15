@@ -127,7 +127,7 @@ class CassandraMonitoring
         metric_group = metric_groups.detect { |m| m.name == @config[service]['group_name'] } unless metric_groups.nil?
         if metric_group.nil?
           metric_group = ensure_cassandra_metric_group(metric_group, @config[service]['group_name'],
-                                                    @config[service]['group_label'])
+                                                    @config[service]['group_label'], service)
         end
         metric_group = ensure_metric_group(metric_group, service)
         raise "Could not create a metric group for #{service}" if metric_group.nil?
@@ -472,11 +472,11 @@ class CassandraMonitoring
 
   end
 
-  def ensure_cassandra_metric_group(metric_group, group_name, group_label)
+  def ensure_cassandra_metric_group(metric_group, group_name, group_label, service)
     if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
       log 'Creating cassandra metric group'
       metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
-                                                frequency: @freq)
+        frequency: @freq, service: service)
     else
       log 'Updating cassandra metric group'
       metric_group.frequency = @freq
@@ -540,7 +540,7 @@ class CassandraMonitoring
   def ensure_metric_group(metric_group, service)
     if service == 'cassandra'
       return ensure_cassandra_metric_group(metric_group, @config[service]['group_name'],
-                                           @config[service]['group_label'])
+        @config[service]['group_label'], service)
     else
       raise CopperEggAgentError.new("Service #{service} not recognized")
     end

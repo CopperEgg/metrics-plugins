@@ -291,11 +291,11 @@ def monitor_mongo_dbadmin(mongo_servers, group_name)
   end
 end
 
-def ensure_mongodb_metric_group(metric_group, group_name, group_label)
+def ensure_mongodb_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating MongoDB metric group'
     metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
-                                              frequency: @freq)
+      frequency: @freq, service: service)
   else
     log 'Updating MongoDB metric group'
     metric_group.frequency = @freq
@@ -312,11 +312,11 @@ def ensure_mongodb_metric_group(metric_group, group_name, group_label)
   metric_group
 end
 
-def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label)
+def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating MongoDB Admin metric group'
     metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
-                                              frequency: @freq)
+      frequency: @freq, service: service)
   else
     log 'Updating MongoDB Admin metric group'
     metric_group.frequency = @freq
@@ -413,9 +413,10 @@ end
 def ensure_metric_group(metric_group, service)
   if service == 'mongodb'
     return ensure_mongodb_metric_group(metric_group, @config[service]['group_name'],
-                                       @config[service]['group_label'])
+                                       @config[service]['group_label'], service)
   elsif service == 'mongodb_admin'
-    return ensure_mongo_dbadmin_metric_group metric_group, @config[service]['group_name'], @config[service]['group_label']
+    return ensure_mongo_dbadmin_metric_group metric_group, @config[service]['group_name'],
+      @config[service]['group_label'], service
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
