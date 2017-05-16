@@ -267,7 +267,8 @@ def create_couchdb_dashboard(metric_group, name, server_list)
   servers = server_list.map { |server_entry| server_entry['name'] }
   metrics = metric_group.metrics.map { |metric| metric['name'] }
   # Create a dashboard for all identifiers:
-  CopperEgg::CustomDashboard.create(metric_group, :name => name, :identifiers => nil, :metrics => metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
+                                    is_database: true)
 end
 
 # init - check apikey? make sure site is valid, and apikey is ok
