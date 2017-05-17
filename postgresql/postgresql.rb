@@ -175,7 +175,7 @@ end
 
 
 def get_stats(pgcxn, dbname)
-  res = pgcxn.exec %Q{
+  res = (pgcxn.exec %Q{
     SELECT
         MAX(stat_db.numbackends)              AS connections,
         MAX(stat_db.xact_commit)              AS commits,
@@ -184,9 +184,19 @@ def get_stats(pgcxn, dbname)
         MAX(stat_db.blks_hit)                 AS blkshit,
         MAX(stat_db.tup_returned)             AS rowreturned,
         MAX(stat_db.tup_fetched)              AS rowfetched,
-        MAX(stat_db.deadlocks)                  AS deadlocks,
+        MAX(stat_db.deadlocks)                AS deadlocks,
         MAX(stat_db.temp_bytes)               AS tempbytes,
         MAX(stat_db.temp_files)               AS tempfiles,
+        ((MAX(stat_db.numbackends)::decimal / MAX(conn_details.setting)::decimal) * 100)    AS percentconn
+    FROM
+        pg_stat_database    AS stat_db,
+        (SELECT * FROM pg_settings WHERE  name = 'max_connections') AS conn_details
+    WHERE
+        stat_db.datname = '%s';
+    } % [ dbname ])[0]
+
+  res.merge!((pgcxn.exec %q{
+    SELECT
         MAX(stat_bgwriter.checkpoints_timed)       AS ckhptscheduled,
         MAX(stat_bgwriter.checkpoints_req)         AS ckhptrequested,
         MAX(stat_bgwriter.buffers_checkpoint)      AS bufwrtnchkpt,
@@ -195,9 +205,58 @@ def get_stats(pgcxn, dbname)
         MAX(stat_bgwriter.buffers_alloc)           AS bufallocated,
         MAX(stat_bgwriter.buffers_backend_fsync)   AS fsyncallexecuted,
         MAX(stat_bgwriter.checkpoint_write_time)   AS ckhwrttym,
-        MAX(stat_bgwriter.checkpoint_sync_time)    AS ckhsynctym,
-        MAX(stat_dbsize.dbsize)                    AS dbsize,
-        MAX(stat_locks.locks)                      AS locks,
+        MAX(stat_bgwriter.checkpoint_sync_time)    AS ckhsynctym
+    FROM
+        pg_stat_bgwriter AS stat_bgwriter;
+    })[0])
+
+  res.merge!((pgcxn.exec %q{
+    SELECT
+        SUM(stat_indexes.idx_tup_read)        AS idxrowread
+    FROM
+        pg_stat_all_indexes AS stat_indexes;
+    })[0])
+
+  res.merge!((pgcxn.exec %Q{
+    SELECT
+        MAX(stat_dbsize.dbsize)               AS dbsize
+    FROM
+       (SELECT pg_database_size('%s') AS dbsize) AS stat_dbsize;
+    } % [ dbname ])[0])
+
+
+  res.merge!((pgcxn.exec %q{
+    SELECT
+        MAX(stat_locks.locks)                     AS locks
+    FROM
+        (SELECT COUNT(*) AS locks FROM pg_locks ) AS stat_locks;
+    })[0])
+
+
+  res.merge!((pgcxn.exec %Q{
+    SELECT
+        MAX(conn_details.setting)             AS max_conn
+    FROM
+        (SELECT * FROM pg_settings WHERE  name = 'max_connections') AS conn_details;
+    })[0])
+
+
+  res.merge!((pgcxn.exec %q{
+    SELECT
+        SUM(statio_tables.heap_blks_read)     AS heapblkrd,
+        SUM(statio_tables.heap_blks_hit)      AS heapblkhit,
+        SUM(statio_tables.idx_blks_read)      AS idxblkrd,
+        SUM(statio_tables.idx_blks_hit)       AS idxblkhit,
+        SUM(statio_tables.toast_blks_read)    AS tblkrd,
+        SUM(statio_tables.toast_blks_hit)     AS tblkhit,
+        SUM(statio_tables.tidx_blks_read)     AS tidxrd,
+        SUM(statio_tables.tidx_blks_hit)      AS tidxhit
+    FROM
+        pg_statio_all_tables AS statio_tables;
+    })[0])
+
+  res.merge!((pgcxn.exec %q{
+    SELECT
         SUM(stat_tables.n_tup_ins)            AS rowins,
         SUM(stat_tables.n_tup_upd)            AS rowupd,
         SUM(stat_tables.n_tup_del)            AS rowdel,
@@ -207,32 +266,12 @@ def get_stats(pgcxn, dbname)
         SUM(stat_tables.idx_tup_fetch)        AS idxrowfetched,
         SUM(stat_tables.n_tup_hot_upd)        AS rowhotupd,
         SUM(stat_tables.n_live_tup)           AS liverows,
-        SUM(stat_tables.n_dead_tup)           AS deadrows,
-        MAX(conn_details.setting)             AS max_conn,
-        ((MAX(stat_db.numbackends)::decimal / MAX(conn_details.setting)::decimal) * 100)    AS percentconn,
-        SUM(statio_tables.heap_blks_read)     AS heapblkrd,
-        SUM(statio_tables.heap_blks_hit)      AS heapblkhit,
-        SUM(statio_tables.idx_blks_read)      AS idxblkrd,
-        SUM(statio_tables.idx_blks_hit)       AS idxblkhit,
-        SUM(statio_tables.toast_blks_read)    AS tblkrd,
-        SUM(statio_tables.toast_blks_hit)     AS tblkhit,
-        SUM(statio_tables.tidx_blks_read)     AS tidxrd,
-        SUM(statio_tables.tidx_blks_hit)      AS tidxhit,
-        SUM(stat_indexes.idx_tup_read)        AS idxrowread
+        SUM(stat_tables.n_dead_tup)           AS deadrows
     FROM
-        pg_stat_database    AS stat_db,
-        pg_stat_all_tables AS stat_tables,
-        pg_stat_bgwriter AS stat_bgwriter,
-        (SELECT COUNT(*) AS locks FROM pg_locks ) AS stat_locks,
-        (SELECT pg_database_size('%s') AS dbsize) AS stat_dbsize,
-        (SELECT * FROM pg_settings WHERE  name = 'max_connections') AS conn_details,
-        pg_statio_all_tables AS statio_tables,
-        pg_stat_all_indexes AS stat_indexes
-    WHERE
-        stat_db.datname = '%s';
-    } % [ dbname, dbname ]
-  return res[0]
+        pg_stat_all_tables AS stat_tables;
+    })[0])
 
+  res
 end
 
 
