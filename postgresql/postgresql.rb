@@ -385,25 +385,25 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {type: 'ce_counter', name: 'commits', label: 'Commits', unit: 'commits'}
-  metric_group.metrics << {type: 'ce_counter', name: 'rollbacks', label: 'Rollbacks', unit: 'rollbacks'}
-  metric_group.metrics << {type: 'ce_counter', name: 'disk_reads', label: 'Disk Reads', unit: 'disk reads'}
-  metric_group.metrics << {type: 'ce_counter', name: 'buffer_hits', label: 'Buffer Hits', unit: 'buffer hits'}
-  metric_group.metrics << {type: 'ce_counter', name: 'rows_returned', label: 'Rows Returned', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'rows_fetched', label: 'Rows Fetched', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'rows_inserted', label: 'Rows Inserted', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'rows_updated', label: 'Rows Updated', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'rows_deleted', label: 'Rows Deleted', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'sequential_scans', label: 'Sequential Scans', unit: 'sequential scans'}
-  metric_group.metrics << {type: 'ce_counter', name: 'live_rows_fetched_by_seqscan', label: 'Live Rows Fetched by Sequential Scans', unit: 'live rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'index_scans', label: 'Index Scans', unit: 'index scans'}
-  metric_group.metrics << {type: 'ce_counter', name: 'live_rows_fetched_by_idxscan', label: 'Live Rows Fetched by Index Scans', unit: 'live rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'rows_hot_updated', label: 'Rows HOT Updated', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'live_rows', label: 'Live Rows', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'dead_rows', label: 'Dead Rows', unit: 'rows'}
-  metric_group.metrics << {type: 'ce_counter', name: 'deadlocks', label: 'Deadlocks', unit: 'deadlocks'}
-  metric_group.metrics << {type: 'ce_counter', name: 'temp_bytes', label: 'Temp Bytes', unit: 'bytes'}
-  metric_group.metrics << {type: 'ce_counter', name: 'temp_files', label: 'Temp Files', unit: 'temporary files'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'commits', label: 'Commits', unit: 'transaction/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'rollbacks', label: 'Rollbacks', unit: 'transaction/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'disk_reads', label: 'Disk Reads', unit: 'block/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'buffer_hits', label: 'Buffer Hits', unit: 'hit/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'rows_returned', label: 'Rows Returned', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'rows_fetched', label: 'Rows Fetched', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'rows_inserted', label: 'Rows Inserted', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'rows_updated', label: 'Rows Updated', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'rows_deleted', label: 'Rows Deleted', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'sequential_scans', label: 'Sequential Scans', unit: 'sequential scans'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'live_rows_fetched_by_seqscan', label: 'Live Rows Fetched by Sequential Scans', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'index_scans', label: 'Index Scans', unit: 'index scans'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'live_rows_fetched_by_idxscan', label: 'Live Rows Fetched by Index Scans', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'rows_hot_updated', label: 'Rows HOT Updated', unit: 'row/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'live_rows', label: 'Live Rows', unit: 'rows'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'dead_rows', label: 'Dead Rows', unit: 'rows'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'deadlocks', label: 'Deadlocks', unit: 'deadlocks'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'temp_bytes', label: 'Temp Bytes', unit: 'byte/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'temp_files', label: 'Temp Files', unit: 'file/second'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoints_scheduled', label: 'Checkpoints Scheduled', unit: 'checkpoints'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoints_requested', label: 'Checkpoints Requested', unit: 'checkpoints'}
   metric_group.metrics << {type: 'ce_counter', name: 'buf_written_in_checkpoints', label: 'Buffers Written During Checkpoints', unit: 'buffers'}
@@ -413,20 +413,20 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_counter', name: 'fsync_calls_executed', label: 'fsync Calls Executed', unit: 'fsync calls'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'milliseconds'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'milliseconds'}
-  metric_group.metrics << {type: 'ce_counter', name: 'db_size', label: 'Database Size', unit: 'bytes'}
-  metric_group.metrics << {type: 'ce_counter', name: 'locks', label: 'Locks', unit: 'locks'}
-  metric_group.metrics << {type: 'ce_counter', name: 'connections', label: 'Connections', unit: 'connections'}
-  metric_group.metrics << {type: 'ce_counter', name: 'max_connections', label: 'Max Connections', unit: 'connections'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'bytes'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'locks', label: 'Locks', unit: 'locks'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'connections', label: 'Connections', unit: 'connections'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'max_connections', label: 'Max Connections', unit: 'connections'}
   metric_group.metrics << {type: 'ce_gauge', name: 'percent_used_connections', label: 'Percentage Used Connections', unit: '% connections'}
-  metric_group.metrics << {type: 'ce_counter', name: 'heap_blocks_read', label: 'Heap Blocks Read', unit: 'blocks'}
-  metric_group.metrics << {type: 'ce_counter', name: 'heap_blocks_hit', label: 'Heap Blocks Hit', unit: 'buffer hits'}
-  metric_group.metrics << {type: 'ce_counter', name: 'index_blocks_read', label: 'Index Blocks Read', unit: 'blocks'}
-  metric_group.metrics << {type: 'ce_counter', name: 'index_blocks_hit', label: 'Index Blocks Hit', unit: 'buffer hits'}
-  metric_group.metrics << {type: 'ce_counter', name: 'toast_block_read', label: 'Toast Block Read', unit: 'blocks'}
-  metric_group.metrics << {type: 'ce_counter', name: 'toast_blocks_hit', label: 'Toast Blocks Hit', unit: 'bufer hits'}
-  metric_group.metrics << {type: 'ce_counter', name: 'toast_index_block_read', label: 'Toast Index Blocks Read', unit: 'blocks'}
-  metric_group.metrics << {type: 'ce_counter', name: 'toast_index_block_hit', label: 'Toast Index Blocks Hit', unit: 'buffer hits'}
-  metric_group.metrics << {type: 'ce_counter', name: 'index_row_read', label: 'Index Row Read', unit: 'rows'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'heap_blocks_read', label: 'Heap Blocks Read', unit: 'block/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'heap_blocks_hit', label: 'Heap Blocks Hit', unit: 'hit/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'index_blocks_read', label: 'Index Blocks Read', unit: 'block/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'index_blocks_hit', label: 'Index Blocks Hit', unit: 'hit/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'toast_block_read', label: 'Toast Block Read', unit: 'block/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'toast_blocks_hit', label: 'Toast Blocks Hit', unit: 'hit/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'toast_index_block_read', label: 'Toast Index Blocks Read', unit: 'block/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'toast_index_block_hit', label: 'Toast Index Blocks Hit', unit: 'hit/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'index_row_read', label: 'Index Row Read', unit: 'row/second'}
   metric_group.save
   metric_group
 end
