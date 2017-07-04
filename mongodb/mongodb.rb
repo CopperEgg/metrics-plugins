@@ -349,7 +349,7 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
   metric_group.metrics << { type: 'ce_gauge', name: 'repl_getmores', unit: 'Operations', label: 'Replicated Getmore Operations' }
   metric_group.metrics << { type: 'ce_gauge', name: 'repl_commands', unit: 'Commands', label: 'Replicated Commands' }
 
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'uptime', unit: 'Seconds', label: 'Uptime' }
+  metric_group.metrics << { type: 'ce_counter', name: 'uptime', unit: 'Seconds', label: 'Uptime' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'cursors_total_open', unit: 'Cursors', label: 'Open Cursors' }
   metric_group.metrics << { type: 'ce_gauge', name: 'cursors_timedout', unit: 'Cursors', label: 'Timed Out Cursors' }

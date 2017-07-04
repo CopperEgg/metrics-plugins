@@ -192,13 +192,13 @@ def ensure_oracle_metric_group(metric_group, group_name, group_label, service)
   metric_group.metrics << {type: 'ce_counter', name: 'db_block_gets', position: 8, label: 'DB Block Gets'}
   metric_group.metrics << {type: 'ce_counter', name: 'physical_reads', position: 9, label: 'Physical Reads'}
   # Connection and User Count
-  metric_group.metrics << {type: 'ce_counter', name: 'max_concurrent_sessions', position: 10,
+  metric_group.metrics << {type: 'ce_gauge', name: 'max_concurrent_sessions', position: 10,
                            label: 'Maximum Concurrent User Sessions Allowed', unit: 'sessions'}
-  metric_group.metrics << {type: 'ce_counter', name: 'curr_concurrent_sessions', position: 11,
+  metric_group.metrics << {type: 'ce_gauge', name: 'curr_concurrent_sessions', position: 11,
                            label: 'Current Concurrent User Sessions', unit: 'sessions'}
-  metric_group.metrics << {type: 'ce_counter', name: 'highest_concurrent_sessions', position: 12,
+  metric_group.metrics << {type: 'ce_gauge', name: 'highest_concurrent_sessions', position: 12,
                            label: 'Highest Concurrent User Sessions', unit: 'sessions'}
-  metric_group.metrics << {type: 'ce_counter', name: 'max_named_users', position: 13,
+  metric_group.metrics << {type: 'ce_gauge', name: 'max_named_users', position: 13,
                            label: 'Maximum Named Users Allowed'}
   # Connection Time
   metric_group.metrics << {type: 'ce_gauge_f', name: 'connection_time', position: 14,
