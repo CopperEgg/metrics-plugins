@@ -276,17 +276,8 @@ end
 
 
 def monitor_postgresql(pg_servers, group_name)
-  log "Monitoring postgresql: "
+  log 'Monitoring postgresql: '
   return if @interrupted
-  server_db_map = Hash.new
-  pg_servers.each do |mhost|
-    pg_dbs = mhost['databases']
-    dbhash = Hash.new
-    pg_dbs.each do |db|
-      dbhash[ db['name'] ] = nil
-    end
-    server_db_map[ mhost['hostname']] = dbhash
-  end
   while !@interupted do
     return if @interrupted
 
@@ -296,11 +287,13 @@ def monitor_postgresql(pg_servers, group_name)
       pg_dbs = mhost['databases']
       pg_dbs.each do |db|
         return if @interrupted
-        pgcxn = connect_to_postgresql(mhost["hostname"], mhost["port"].to_i, db["username"], db["password"], db["name"], mhost["sslmode"])
+
+        pgcxn = connect_to_postgresql(mhost['hostname'], mhost['port'].to_i, db['username'], db['password'], db['name'], mhost['sslmode'])
         if pgcxn == nil
-          log "[skipping]"
+          log '[skipping]'
           next
         end
+
         begin
           curr_stats = get_stats(pgcxn, db['name'])
         rescue Exception => e
