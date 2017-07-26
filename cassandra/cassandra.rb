@@ -132,8 +132,8 @@ class CassandraMonitoring
         metric_group = ensure_metric_group(metric_group, service)
         raise "Could not create a metric group for #{service}" if metric_group.nil?
         log "Checking for existence of #{@config[service]['dashboard']}"
-        dashboard = dashboards.detect { |d| d.name == @config[service]['dashboard'] } unless dashboards.nil?
-        dashboard = create_dashboard(service, metric_group) if dashboard.nil?
+        dashboard = dashboards.nil? ? nil : dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
+            create_dashboard(service, metric_group)
         log "Could not create a dashboard for #{service}" if dashboard.nil?
       rescue => e
         log e.message

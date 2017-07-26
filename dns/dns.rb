@@ -333,7 +333,8 @@ end
       raise "Could not create a metric group for #{service}" if metric_group.nil?
 
       log "Checking for existence of #{service} Dashboard"
-      dashboard = dashboards.nil? ? nil : dashboards.detect { |d| d.name == @config[service]['dashboard'] } || create_dashboard(service, metric_group)
+      dashboard = dashboards.nil? ? nil : dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
+          create_dashboard(service, metric_group)
       log "Could not create a dashboard for #{service}" if dashboard.nil?
     rescue => e
       log "Message : #{e.message.inspect}"
