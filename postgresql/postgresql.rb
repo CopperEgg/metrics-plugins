@@ -24,12 +24,12 @@ class CopperEggAgentError < Exception; end
 ####################################################################
 
 def help
-  puts "usage: $0 args"
-  puts "Examples:"
-  puts "  -c config.yml"
-  puts "  -f 60                 (for 60s updates. Valid values: 15, 60, 300, 900, 3600)"
-  puts "  -k hcd7273hrejh712    (your APIKEY from the UI dashboard settings)"
-  puts "  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])"
+  puts 'usage: $0 args'
+  puts 'Examples:'
+  puts '  -c config.yml'
+  puts '  -f 60                 (for 60s updates. Valid values: 15, 60, 300, 900, 3600)'
+  puts '  -k hcd7273hrejh712    (your APIKEY from the UI dashboard settings)'
+  puts '  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])'
 end
 
 TIME_STRING='%Y/%m/%d %H:%M:%S'
@@ -58,7 +58,7 @@ def child_interrupt
 end
 
 def parent_interrupt
-  log "INTERRUPTED"
+  log 'INTERRUPTED'
   # parent clean-up
   @interrupted = true
 
@@ -66,15 +66,15 @@ def parent_interrupt
     Process.kill 'TERM', pid
   end
 
-  log "Waiting for all workers to exit"
+  log 'Waiting for all workers to exit'
   Process.waitall
 
   if @monitor_thread
-    log "Waiting for monitor thread to exit"
+    log 'Waiting for monitor thread to exit'
     @monitor_thread.join
   end
 
-  log "Exiting cleanly"
+  log 'Exiting cleanly'
   exit
 end
 
@@ -126,26 +126,26 @@ end
 
 if !@config.nil?
   # load config
-  if !@config["copperegg"].nil?
-    CopperEgg::Api.apikey = @config["copperegg"]["apikey"] if !@config["copperegg"]["apikey"].nil? && CopperEgg::Api.apikey.nil?
-    CopperEgg::Api.host = @config["copperegg"]["host"] if !@config["copperegg"]["host"].nil?
-    @freq = @config["copperegg"]["frequency"] if !@config["copperegg"]["frequency"].nil?
+  if !@config['copperegg'].nil?
+    CopperEgg::Api.apikey = @config['copperegg']['apikey'] if !@config['copperegg']['apikey'].nil? && CopperEgg::Api.apikey.nil?
+    CopperEgg::Api.host = @config['copperegg']['host'] if !@config['copperegg']['host'].nil?
+    @freq = @config['copperegg']['frequency'] if !@config['copperegg']['frequency'].nil?
     @services = @config['copperegg']['services']
   else
-    log "You have no copperegg entry in your config.yml!"
-    log "Edit your config.yml and restart."
+    log 'You have no copperegg entry in your config.yml!'
+    log 'Edit your config.yml and restart.'
     exit
   end
 end
 
 if CopperEgg::Api.apikey.nil?
-  log "You need to supply an apikey with the -k option or in the config.yml."
+  log 'You need to supply an apikey with the -k option or in the config.yml.'
   exit
 end
 
 if @services.empty?
-  log "No services listed in the config file."
-  log "Nothing will be monitored!"
+  log 'No services listed in the config file.'
+  log 'Nothing will be monitored!'
   exit
 end
 
@@ -364,11 +364,11 @@ end
 
 def ensure_postgresql_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating postgresql metric group"
+    log 'Creating postgresql metric group'
     metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label,
       :frequency => @freq, service: service)
   else
-    log "Updating postgresql metric group"
+    log 'Updating postgresql metric group'
     metric_group.frequency = @freq
   end
 
@@ -420,7 +420,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
 end
 
 def create_postgresql_dashboard(metric_group, name, server_list)
-  log "Creating new PostgreSQL Dashboard"
+  log 'Creating new PostgreSQL Dashboard'
   metrics = metric_group.metrics || []
 
   # Create a dashboard for all identifiers:
@@ -431,15 +431,15 @@ end
 ####################################################################
 
 # init - check apikey? make sure site is valid, and apikey is ok
-trap("INT") { parent_interrupt }
-trap("TERM") { parent_interrupt }
+trap('INT') { parent_interrupt }
+trap('TERM') { parent_interrupt }
 
 #################################
 
 def ensure_metric_group(metric_group, service)
   if service == 'postgresql'
-    return ensure_postgresql_metric_group(metric_group, @config[service]["group_name"],
-      @config[service]["group_label"], service)
+    return ensure_postgresql_metric_group(metric_group, @config[service]['group_name'],
+      @config[service]['group_label'], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -447,7 +447,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'postgresql'
-    create_postgresql_dashboard(metric_group, @config[service]["dashboard"], @config[service]["servers"])
+    create_postgresql_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -455,7 +455,7 @@ end
 
 def monitor_service(service, metric_group)
   if service == 'postgresql'
-    monitor_postgresql(@config[service]["servers"], metric_group.name)
+    monitor_postgresql(@config[service]['servers'], metric_group.name)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -484,14 +484,15 @@ end
 
 
 @services.each do |service|
-  if @config[service] && @config[service]["servers"].length > 0
+  if @config[service] && @config[service]['servers'].length > 0
     begin
       log "Checking for existence of metric group for #{service}"
-      metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]}
+      metric_group = metric_groups.detect {|m| m.name == @config[service]['group_name']}
       metric_group = ensure_metric_group(metric_group, service)
       raise "Could not create a metric group for #{service}" if metric_group.nil?
       log "Checking for existence of #{@config[service]['dashboard']}"
-      dashboard = dashboards.detect {|d| d.name == @config[service]["dashboard"]} || create_dashboard(service, metric_group)
+      dashboard = dashboards.nil? ? nil : dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
+          create_dashboard(service, metric_group)
       log "Could not create a dashboard for #{service}" if dashboard.nil?
     rescue => e
       log e.message
@@ -499,8 +500,8 @@ end
     end
 
     child_pid = fork {
-      trap("INT") { child_interrupt if !@interrupted }
-      trap("TERM") { child_interrupt if !@interrupted }
+      trap('INT') { child_interrupt if !@interrupted }
+      trap('TERM') { child_interrupt if !@interrupted }
       last_failure = 0
       retries = MAX_RETRIES
       begin

@@ -14,11 +14,11 @@ require 'time'
 ####################################################################
 
 def help
-  puts "usage: $0 args"
-  puts "Examples:"
-  puts "  -c config.yml"
-  puts "  -k hcd7273hrejh712    (your APIKEY from the UI dashboard settings)"
-  puts "  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])"
+  puts 'usage: $0 args'
+  puts 'Examples:'
+  puts '  -c config.yml'
+  puts '  -k hcd7273hrejh712    (your APIKEY from the UI dashboard settings)'
+  puts '  -a https://api.copperegg.com    (API endpoint to use [DEBUG ONLY])'
 end
 
 def interruptible_sleep(seconds)
@@ -60,7 +60,7 @@ opts = GetoptLong.new(
   ['--apihost',   '-a', GetoptLong::REQUIRED_ARGUMENT]
 )
 
-config_file = "config.yml"
+config_file = 'config.yml'
 apikey = nil
 @apihost = nil
 @debug = false
@@ -98,15 +98,15 @@ end
 
 if !@config.nil?
   # load config
-  if !@config["copperegg"].nil?
-    CopperEgg::Api.apikey = @config["copperegg"]["apikey"] if !@config["copperegg"]["apikey"].nil? && apikey.nil?
-    @freq = @config["copperegg"]["frequency"] if !@config["copperegg"]["frequency"].nil?
+  if !@config['copperegg'].nil?
+    CopperEgg::Api.apikey = @config['copperegg']['apikey'] if !@config['copperegg']['apikey'].nil? && apikey.nil?
+    @freq = @config['copperegg']['frequency'] if !@config['copperegg']['frequency'].nil?
   else
-    log "You have no copperegg entry in your config.yml!"
-    log "Edit your config.yml and restart."
+    log 'You have no copperegg entry in your config.yml!'
+    log 'Edit your config.yml and restart.'
     exit
   end
-  if !@config["aws"].nil?
+  if !@config['aws'].nil?
     @services = @config['aws']['services']
     log "Reading config: services are #{@services.inspect}\n"
 
@@ -115,26 +115,26 @@ if !@config.nil?
     log "Reading config: regions are #{@regions.inspect}\n"
   end
 else
-  log "You need to have a config.yml to set your AWS credentials"
+  log 'You need to have a config.yml to set your AWS credentials'
   exit
 end
 
 if CopperEgg::Api.apikey.nil?
-  log "You need to supply an apikey with the -k option or in the config.yml."
+  log 'You need to supply an apikey with the -k option or in the config.yml.'
   exit
 end
 
 if @services.length == 0
-  log "No AWS services listed in the config file."
-  log "Nothing will be monitored!"
+  log 'No AWS services listed in the config file.'
+  log 'Nothing will be monitored!'
   exit
 end
 
 @freq = 60 if ![15, 60, 300, 900, 3600, 21600].include?(@freq)
 log "Update frequency set to #{@freq}s."
 
-@aws_config_default = { :access_key_id => @config["aws"]["access_key_id"],
-                       :secret_access_key => @config["aws"]["secret_access_key"],
+@aws_config_default = { :access_key_id => @config['aws']['access_key_id'],
+                       :secret_access_key => @config['aws']['secret_access_key'],
                        :max_retries => 2,
                        :http_open_timeout => 5,
                        :http_read_timeout => 10 }
@@ -147,7 +147,7 @@ def child_interrupt
 end
 
 def parent_interrupt
-  log "INTERRUPTED"
+  log 'INTERRUPTED'
   # parent clean-up
   @interrupted = true
 
@@ -161,15 +161,15 @@ def parent_interrupt
     Process.kill 'KILL', pid
   end
 
-  log "Waiting for all workers to exit"
+  log 'Waiting for all workers to exit'
   Process.waitall
 
   if @monitor_thread
-    log "Waiting for monitor thread to exit"
+    log 'Waiting for monitor thread to exit'
     @monitor_thread.join
   end
 
-  log "Exiting cleanly"
+  log 'Exiting cleanly'
   exit
 end
 
@@ -211,7 +211,7 @@ end
 
 
 def monitor_aws_ec2(group_name)
-  log "Monitoring AWS EC2.."
+  log 'Monitoring AWS EC2..'
 
   while !@interrupted do
     return if @interrupted
@@ -260,7 +260,7 @@ def monitor_aws_ec2(group_name)
 
     begin
       log "ec2: #{group_name} - total - #{total_ec2_counts.inspect}" if @verbose
-      CopperEgg::MetricSample.save(group_name, "total", Time.now.to_i, total_ec2_counts) if post_total
+      CopperEgg::MetricSample.save(group_name, 'total', Time.now.to_i, total_ec2_counts) if post_total
     rescue Exception => e
       log "Exception posting ec2 instance data: #{e.to_s}.\nIgnoring and moving on."
       log e.inspect if @debug
@@ -272,7 +272,7 @@ def monitor_aws_ec2(group_name)
 end
 
 def monitor_aws_elb(group_name)
-  log "Monitoring AWS ELB.."
+  log 'Monitoring AWS ELB..'
 
   while !@interupted do
     return if @interrupted
@@ -292,87 +292,87 @@ def monitor_aws_elb(group_name)
           metrics = {}
           instance = lb.name
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "Latency", ['Average'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'Latency', ['Average'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : Latency : #{stats[:datapoints][-1][:average]*1000} ms" if @debug
-            metrics["Latency"] = stats[:datapoints][-1][:average]*1000
+            metrics['Latency'] = stats[:datapoints][-1][:average]*1000
           else
-            metrics["Latency"] = 0
+            metrics['Latency'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "RequestCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'RequestCount', ['Sum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : RequestCount : #{stats[:datapoints][-1][:sum].to_i} requests" if @debug
-            metrics["RequestCount"] = stats[:datapoints][-1][:sum].to_i
+            metrics['RequestCount'] = stats[:datapoints][-1][:sum].to_i
           else
-            metrics["RequestCount"] = 0
+            metrics['RequestCount'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_2XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'HTTPCode_Backend_2XX', ['Sum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : HTTPCode_Backend_2XX : #{stats[:datapoints][-1][:sum].to_i} Successes" if @debug
-            metrics["HTTPCode_Backend_2XX"] = stats[:datapoints][-1][:sum].to_i
+            metrics['HTTPCode_Backend_2XX'] = stats[:datapoints][-1][:sum].to_i
           else
-            metrics["HTTPCode_Backend_2XX"] = 0
+            metrics['HTTPCode_Backend_2XX'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_Backend_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'HTTPCode_Backend_5XX', ['Sum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : HTTPCode_Backend_5XX : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
-            metrics["HTTPCode_Backend_5XX"] = stats[:datapoints][-1][:sum].to_i
+            metrics['HTTPCode_Backend_5XX'] = stats[:datapoints][-1][:sum].to_i
           else
-            metrics["HTTPCode_Backend_5XX"] = 0
+            metrics['HTTPCode_Backend_5XX'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "HTTPCode_ELB_5XX", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'HTTPCode_ELB_5XX', ['Sum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : HTTPCode_ELB_5XX : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
-            metrics["HTTPCode_ELB_5XX"] = stats[:datapoints][-1][:sum].to_i
+            metrics['HTTPCode_ELB_5XX'] = stats[:datapoints][-1][:sum].to_i
           else
-            metrics["HTTPCode_ELB_5XX"] = 0
+            metrics['HTTPCode_ELB_5XX'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "BackendConnectionErrors", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'BackendConnectionErrors', ['Sum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : BackendConnectionErrors : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
-            metrics["BackendConnectionErrors"] = stats[:datapoints][-1][:sum].to_i
+            metrics['BackendConnectionErrors'] = stats[:datapoints][-1][:sum].to_i
           else
-            metrics["BackendConnectionErrors"] = 0
+            metrics['BackendConnectionErrors'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "SurgeQueueLength", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'SurgeQueueLength', ['Maximum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : SurgeQueueLength : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
-            metrics["SurgeQueueLength"] = stats[:datapoints][-1][:sum].to_i
+            metrics['SurgeQueueLength'] = stats[:datapoints][-1][:sum].to_i
           else
-            metrics["SurgeQueueLength"] = 0
+            metrics['SurgeQueueLength'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/ELB", "SpilloverCount", ['Sum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          stats = fetch_cloudwatch_stats('AWS/ELB', 'SpilloverCount', ['Sum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "elb stat: #{lb.name} : SpilloverCount : #{stats[:datapoints][-1][:sum].to_i} Errors" if @debug
-            metrics["SpilloverCount"] = stats[:datapoints][-1][:sum].to_i
+            metrics['SpilloverCount'] = stats[:datapoints][-1][:sum].to_i
           else
-            metrics["SpilloverCount"] = 0
+            metrics['SpilloverCount'] = 0
           end
 
           # FIXME: doesn't work right
-          # needs to fetch each az separately, eg :name=>"Availability-zone", :value=>us-east-1b
-          #stats = fetch_cloudwatch_stats("AWS/ELB", "HealthyHostCount", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          # needs to fetch each az separately, eg :name=>'Availability-zone', :value=>us-east-1b
+          #stats = fetch_cloudwatch_stats('AWS/ELB', 'HealthyHostCount', ['Maximum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           #if stats != nil && stats[:datapoints].length > 0
             #log "elb stat: #{lb.name} : HealthyHostCount : #{stats[:datapoints][-1][:maximum].to_i} Errors" if @debug
-            #metrics["HealthyHostCount"] = stats[:datapoints][-1][:maximum].to_i
+            #metrics['HealthyHostCount'] = stats[:datapoints][-1][:maximum].to_i
           #else
-            #metrics["HealthyHostCount"] = 0
+            #metrics['HealthyHostCount'] = 0
           #end
 
           # FIXME: doesn't work right
-          #stats = fetch_cloudwatch_stats("AWS/ELB", "UnHealthyHostCount", ['Maximum'], [{:name=>"LoadBalancerName", :value=>lb.name}], cl)
+          #stats = fetch_cloudwatch_stats('AWS/ELB', 'UnHealthyHostCount', ['Maximum'], [{:name=>'LoadBalancerName', :value=>lb.name}], cl)
           #if stats != nil && stats[:datapoints].length > 0
             #log "elb stat: #{lb.name} : UnHealthyHostCount : #{stats[:datapoints][-1][:maximum].to_i} Errors" if @debug
-            #metrics["UnHealthyHostCount"] = stats[:datapoints][-1][:maximum].to_i
+            #metrics['UnHealthyHostCount'] = stats[:datapoints][-1][:maximum].to_i
           #else
-            #metrics["UnHealthyHostCount"] = 0
+            #metrics['UnHealthyHostCount'] = 0
           #end
 
           log "elb: #{group_name} - #{instance} - #{metrics.inspect}" if @verbose
@@ -391,7 +391,7 @@ def monitor_aws_elb(group_name)
 end
 
 def monitor_aws_rds(group_name)
-  log "Monitoring AWS RDS.."
+  log 'Monitoring AWS RDS..'
 
   while !@interupted do
     return if @interrupted
@@ -411,85 +411,85 @@ def monitor_aws_rds(group_name)
           metrics = {}
           instance = db.db_instance_id
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "DiskQueueDepth", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'DiskQueueDepth', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} queue depth" if @debug
-            metrics["DiskQueueDepth"] = stats[:datapoints][-1][:average].to_i
+            metrics['DiskQueueDepth'] = stats[:datapoints][-1][:average].to_i
           else
-            metrics["DiskQueueDepth"] = 0
+            metrics['DiskQueueDepth'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "ReadLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'ReadLatency', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]*1000} read latency (ms)" if @debug
-            metrics["ReadLatency"] = stats[:datapoints][-1][:average]*1000
+            metrics['ReadLatency'] = stats[:datapoints][-1][:average]*1000
           else
-            metrics["ReadLatency"] = 0
+            metrics['ReadLatency'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "WriteLatency", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'WriteLatency', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]*1000} write latency (ms)" if @debug
-            metrics["WriteLatency"] = stats[:datapoints][-1][:average]*1000
+            metrics['WriteLatency'] = stats[:datapoints][-1][:average]*1000
           else
-            metrics["WriteLatency"] = 0
+            metrics['WriteLatency'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "CPUUtilization", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'CPUUtilization', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} CPUUtilization" if @debug
-            metrics["CPUUtilization"] = stats[:datapoints][-1][:average]
+            metrics['CPUUtilization'] = stats[:datapoints][-1][:average]
           else
-            metrics["CPUUtilization"] = 0
+            metrics['CPUUtilization'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "FreeableMemory", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'FreeableMemory', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]/1048576} FreeableMemory" if @debug
-            metrics["FreeableMemory"] = stats[:datapoints][-1][:average]/1048576
+            metrics['FreeableMemory'] = stats[:datapoints][-1][:average]/1048576
           else
-            metrics["FreeableMemory"] = 0
+            metrics['FreeableMemory'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "FreeStorageSpace", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'FreeStorageSpace', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]/1048576} FreeStorageSpace" if @debug
-            metrics["FreeStorageSpace"] = stats[:datapoints][-1][:average]/1048576
+            metrics['FreeStorageSpace'] = stats[:datapoints][-1][:average]/1048576
           else
-            metrics["FreeStorageSpace"] = 0
+            metrics['FreeStorageSpace'] = 0
           end
 
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "DatabaseConnections", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'DatabaseConnections', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} DatabaseConnections" if @debug
-            metrics["DatabaseConnections"] = stats[:datapoints][-1][:average]
+            metrics['DatabaseConnections'] = stats[:datapoints][-1][:average]
           else
-            metrics["DatabaseConnections"] = 0
+            metrics['DatabaseConnections'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "ReadIOPS", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'ReadIOPS', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} ReadIOPS" if @debug
-            metrics["ReadIOPS"] = stats[:datapoints][-1][:average]
+            metrics['ReadIOPS'] = stats[:datapoints][-1][:average]
           else
-            metrics["ReadIOPS"] = 0
+            metrics['ReadIOPS'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "WriteIOPS", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'WriteIOPS', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} WriteIOPS" if @debug
-            metrics["WriteIOPS"] = stats[:datapoints][-1][:average]
+            metrics['WriteIOPS'] = stats[:datapoints][-1][:average]
           else
-            metrics["WriteIOPS"] = 0
+            metrics['WriteIOPS'] = 0
           end
 
-          stats = fetch_cloudwatch_stats("AWS/RDS", "ReplicaLag", ['Average'], [{:name=>"DBInstanceIdentifier", :value=>db.db_instance_id}], cl)
+          stats = fetch_cloudwatch_stats('AWS/RDS', 'ReplicaLag', ['Average'], [{:name=>'DBInstanceIdentifier', :value=>db.db_instance_id}], cl)
           if stats != nil && stats[:datapoints].length > 0
             log "RDS: #{db.db_instance_id} #{stats[:datapoints][-1][:average]} ReplicaLag" if @debug
-            metrics["ReplicaLag"] = stats[:datapoints][-1][:average]
+            metrics['ReplicaLag'] = stats[:datapoints][-1][:average]
           else
-            metrics["ReplicaLag"] = 0
+            metrics['ReplicaLag'] = 0
           end
 
           log "rds: #{group_name} - #{instance} - #{metrics.inspect}" if @verbose
@@ -508,7 +508,7 @@ def monitor_aws_rds(group_name)
 end
 
 def monitor_aws_billing(group_name)
-  log "Monitoring AWS Billing.."
+  log 'Monitoring AWS Billing..'
   AWS.config(@aws_config_default) # don't need to update it every loop
 
   while !@interrupted do
@@ -516,80 +516,80 @@ def monitor_aws_billing(group_name)
 
     metrics = {}
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing Total: #{stats[:datapoints]}" if @debug
-      metrics["Total"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['Total'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["Total"] = 0.0
+      metrics['Total'] = 0.0
     end
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonEC2"},
-                                                      {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'ServiceName', :value=>'AmazonEC2'},
+                                                      {:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats.datapoints.length > 0
       log "Billing EC2: #{stats[:datapoints]}" if @debug
-      metrics["EC2"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['EC2'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["EC2"] = 0.0
+      metrics['EC2'] = 0.0
     end
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonRDS"},
-                                                      {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'ServiceName', :value=>'AmazonRDS'},
+                                                      {:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing RDS: #{stats[:datapoints]}" if @debug
-      metrics["RDS"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['RDS'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["RDS"] = 0.0
+      metrics['RDS'] = 0.0
     end
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonS3"},
-                                                      {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'ServiceName', :value=>'AmazonS3'},
+                                                      {:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing S3: #{stats[:datapoints]}" if @debug
-      metrics["S3"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['S3'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["S3"] = 0.0
+      metrics['S3'] = 0.0
     end
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonRoute53"},
-                                                      {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'ServiceName', :value=>'AmazonRoute53'},
+                                                      {:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing Route53: #{stats[:datapoints]}" if @debug
-      metrics["Route53"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['Route53'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["Route53"] = 0.0
+      metrics['Route53'] = 0.0
     end
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"SimpleDB"},
-                                                      {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'ServiceName', :value=>'SimpleDB'},
+                                                      {:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing SimpleDB: #{stats[:datapoints]}" if @debug
-      metrics["SimpleDB"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['SimpleDB'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["SimpleDB"] = 0.0
+      metrics['SimpleDB'] = 0.0
     end
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AmazonSNS"},
-                                                      {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'ServiceName', :value=>'AmazonSNS'},
+                                                      {:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing SNS: #{stats[:datapoints]}" if @debug
-      metrics["SNS"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['SNS'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["SNS"] = 0.0
+      metrics['SNS'] = 0.0
     end
 
-    stats = fetch_cloudwatch_stats("AWS/Billing", "EstimatedCharges", ['Maximum'], [{:name=>"ServiceName", :value=>"AWSDataTransfer"},
-                                                      {:name=>"Currency", :value=>"USD"}], nil, @freq*720)
+    stats = fetch_cloudwatch_stats('AWS/Billing', 'EstimatedCharges', ['Maximum'], [{:name=>'ServiceName', :value=>'AWSDataTransfer'},
+                                                      {:name=>'Currency', :value=>'USD'}], nil, @freq*720)
     if stats != nil && stats[:datapoints].length > 0
       log "Billing AWSDataTransfer: #{stats[:datapoints]}" if @debug
-      metrics["DataTransfer"] = stats[:datapoints][-1][:maximum].to_f
+      metrics['DataTransfer'] = stats[:datapoints][-1][:maximum].to_f
     else
-      metrics["DataTransfer"] = 0.0
+      metrics['DataTransfer'] = 0.0
     end
 
     log "billing: #{group_name} - aws_charges - #{metrics.inspect}" if @verbose
     begin
-      CopperEgg::MetricSample.save(group_name, "aws_charges", Time.now.to_i, metrics)
+      CopperEgg::MetricSample.save(group_name, 'aws_charges', Time.now.to_i, metrics)
     rescue Exception => e
         log "Exception getting AWS Billing information: #{e.to_s}.\nIgnoring and moving on."
         log e.inspect if @debug
@@ -618,49 +618,50 @@ def monitor_aws_sqs(group_name)
         sqsqueues = sqsclient.queues()
 
         sqsqueues.each do |sqsqueue|
-          name = sqsqueue.url.split("/").last
+          name = sqsqueue.url.split('/').last
           filter = @config['sqs']['filter']
           if !filter || name.include?(filter)
             metrics = {}
-            #"NumberOfMessagesSent":0,
-            #"NumberOfMessagesReceived":0,
-            #"NumberOfMessagesDeleted":0,
-            #"NumberOfEmptyReceives":0,
-            metrics["NumberOfMessagesSent"] = 0
-            metrics["NumberOfMessagesReceived"] = 0
-            metrics["NumberOfMessagesDeleted"] = 0
-            metrics["NumberOfEmptyReceives"] = 0
-            metrics["ApproximateNumberOfMessagesVisible"] = sqsqueue.approximate_number_of_messages()
-            metrics["ApproximateNumberOfMessagesNotVisible"] = sqsqueue.approximate_number_of_messages_not_visible()
-            metrics["ApproximateNumberOfMessagesDelayed"] = sqsqueue.approximate_number_of_messages_delayed()
+            #'NumberOfMessagesSent':0,
+            #'NumberOfMessagesReceived':0,
+            #'NumberOfMessagesDeleted':0,
+            #'NumberOfEmptyReceives':0,
+            metrics['NumberOfMessagesSent'] = 0
+            metrics['NumberOfMessagesReceived'] = 0
+            metrics['NumberOfMessagesDeleted'] = 0
+            metrics['NumberOfEmptyReceives'] = 0
+            metrics['ApproximateNumberOfMessagesVisible'] = sqsqueue.approximate_number_of_messages()
+            metrics['ApproximateNumberOfMessagesNotVisible'] = sqsqueue.approximate_number_of_messages_not_visible()
+            metrics['ApproximateNumberOfMessagesDelayed'] = sqsqueue.approximate_number_of_messages_delayed()
 
 
-            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfMessagesSent", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+            stats = fetch_cloudwatch_stats('AWS/SQS', 'NumberOfMessagesSent', ['Maximum'], [
+                                                        {:name => 'QueueName', :value => name}], cl, @freq*720)
 
             if stats != nil && stats[:datapoints].length > 0
               log "sqs stat: #{name} : NumberOfMessagesSent : #{stats[:datapoints][-1][:maximum]}" if @debug
-              metrics["NumberOfMessagesSent"] = stats[:datapoints][-1][:maximum]
+              metrics['NumberOfMessagesSent'] = stats[:datapoints][-1][:maximum]
             end
 
-            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfMessagesReceived", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+            stats = fetch_cloudwatch_stats('AWS/SQS', 'NumberOfMessagesReceived', ['Maximum'], [{:name => 'QueueName', :value => name}], cl, @freq*720)
 
             if stats != nil && stats[:datapoints].length > 0
               log "sqs stat: #{name} : NumberOfMessagesReceived : #{stats[:datapoints][-1][:maximum]}" if @debug
-              metrics["NumberOfMessagesReceived"] = stats[:datapoints][-1][:maximum]
+              metrics['NumberOfMessagesReceived'] = stats[:datapoints][-1][:maximum]
             end
 
-            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfMessagesDeleted", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+            stats = fetch_cloudwatch_stats('AWS/SQS', 'NumberOfMessagesDeleted', ['Maximum'], [{:name => 'QueueName', :value => name}], cl, @freq*720)
 
             if stats != nil && stats[:datapoints].length > 0
               log "sqs stat: #{name} : NumberOfMessagesDeleted : #{stats[:datapoints][-1][:maximum]}" if @debug
-              metrics["NumberOfMessagesDeleted"] = stats[:datapoints][-1][:maximum]
+              metrics['NumberOfMessagesDeleted'] = stats[:datapoints][-1][:maximum]
             end
 
-            stats = fetch_cloudwatch_stats("AWS/SQS", "NumberOfEmptyReceives", ['Maximum'], [{:name => "QueueName", :value => name}], cl, @freq*720)
+            stats = fetch_cloudwatch_stats('AWS/SQS', 'NumberOfEmptyReceives', ['Maximum'], [{:name => 'QueueName', :value => name}], cl, @freq*720)
 
             if stats != nil && stats[:datapoints].length > 0
               log "sqs stat: #{name} : NumberOfEmptyReceives : #{stats[:datapoints][-1][:maximum]}" if @debug
-              metrics["NumberOfEmptyReceives"] = stats[:datapoints][-1][:maximum]
+              metrics['NumberOfEmptyReceives'] = stats[:datapoints][-1][:maximum]
             end
 
             #log "sqs: #{group_name} -  - #{stats.inspect}" if @verbose
@@ -683,21 +684,21 @@ end
 
 def ensure_ec2_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating EC2 metric group"
+    log 'Creating EC2 metric group'
     metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
   else
-    log "Updating EC2 metric group"
+    log 'Updating EC2 metric group'
     metric_group.frequency = @freq
     #metric_group.is_hidden = false
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => "ce_gauge",   :name => "running",        :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "stopped",        :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "pending",        :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "shutting_down",  :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "terminated",     :unit => "Instances"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "stopping",       :unit => "Instances"}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'running',        :unit => 'Instances'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'stopped',        :unit => 'Instances'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'pending',        :unit => 'Instances'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'shutting_down',  :unit => 'Instances'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'terminated',     :unit => 'Instances'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'stopping',       :unit => 'Instances'}
   metric_group.save
   metric_group
 end
@@ -705,27 +706,27 @@ end
 
 def ensure_elb_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating ELB metric group"
+    log 'Creating ELB metric group'
     metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
   else
-    log "Updating ELB metric group"
+    log 'Updating ELB metric group'
     metric_group.frequency = @freq
     #metric_group.is_hidden = false
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => "ce_gauge",   :name => "RequestCount",         :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge_f", :name => "Latency",              :unit => "ms"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "HTTPCode_Backend_2XX", :unit => "Responses"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "HTTPCode_Backend_5XX", :unit => "Responses"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "HTTPCode_ELB_5XX",     :unit => "Responses"}
-  metric_group.metrics << {:type => "ce_gauge",   :name => "BackendConnectionErrors", :unit => "Errors"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "SurgeQueueLength",     :unit => "Requests"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "SpilloverCount",       :unit => "Requests"}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'RequestCount',         :unit => 'Requests'}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'Latency',              :unit => 'ms'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_Backend_2XX', :unit => 'Responses'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_Backend_5XX', :unit => 'Responses'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_ELB_5XX',     :unit => 'Responses'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'BackendConnectionErrors', :unit => 'Errors'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SurgeQueueLength',     :unit => 'Requests'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SpilloverCount',       :unit => 'Requests'}
 
   # FIXME: doesn't work right
-  #metric_group.metrics << {:type => "ce_gauge",   :name => "HealthyHostCount",     :unit => "Hosts"}
-  #metric_group.metrics << {:type => "ce_gauge",   :name => "UnHealthyHostCount",   :unit => "Hosts"}
+  #metric_group.metrics << {:type => 'ce_gauge',   :name => 'HealthyHostCount',     :unit => 'Hosts'}
+  #metric_group.metrics << {:type => 'ce_gauge',   :name => 'UnHealthyHostCount',   :unit => 'Hosts'}
 
   metric_group.save
   metric_group
@@ -734,25 +735,25 @@ end
 
 def ensure_rds_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating RDS metric group"
+    log 'Creating RDS metric group'
     metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
   else
-    log "Updating RDS metric group"
+    log 'Updating RDS metric group'
     metric_group.frequency = @freq
     #metric_group.is_hidden = false
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "DiskQueueDepth"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "ReadLatency",     :unit => "ms"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "WriteLatency",     :unit => "ms"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "CPUUtilization",     :unit => "%"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "FreeableMemory",     :unit => "MB"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "FreeStorageSpace",     :unit => "MB"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "DatabaseConnections"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "ReadIOPS",     :unit => "IO/s"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "WriteIOPS",     :unit => "IO/s"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "ReplicaLag",     :unit => "s"}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'DiskQueueDepth'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'ReadLatency',     :unit => 'ms'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'WriteLatency',     :unit => 'ms'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'CPUUtilization',     :unit => '%'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'FreeableMemory',     :unit => 'MB'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'FreeStorageSpace',     :unit => 'MB'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'DatabaseConnections'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'ReadIOPS',     :unit => 'IO/s'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'WriteIOPS',     :unit => 'IO/s'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'ReplicaLag',     :unit => 's'}
   metric_group.save
   metric_group
 end
@@ -760,44 +761,44 @@ end
 
 def ensure_billing_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating AWS Billing metric group"
+    log 'Creating AWS Billing metric group'
     metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
   else
-    log "Updating AWS Billing metric group"
+    log 'Updating AWS Billing metric group'
     metric_group.frequency = @freq
     #metric_group.is_hidden = false
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "Total",        :unit => "USD"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "EC2",          :unit => "USD"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "RDS",          :unit => "USD"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "S3",           :unit => "USD"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "Route53",      :unit => "USD"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "SimpleDB",     :unit => "USD"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "SNS",          :unit => "USD"}
-  metric_group.metrics << {:type => "ce_gauge_f",   :name => "DataTransfer", :unit => "USD"}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'Total',        :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'EC2',          :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'RDS',          :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'S3',           :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'Route53',      :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SimpleDB',     :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SNS',          :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'DataTransfer', :unit => 'USD'}
   metric_group.save
   metric_group
 end
 
 def ensure_sqs_metric_group(metric_group, group_name, group_label)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
-    log "Creating SQS metric group"
+    log 'Creating SQS metric group'
     metric_group = CopperEgg::MetricGroup.new(:name => group_name, :label => group_label, :frequency => @freq)
   else
-    log "Updating SQS metric group"
+    log 'Updating SQS metric group'
     metric_group.frequency = @freq
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfMessagesSent", :unit => "Count"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfMessagesReceived", :unit => "Count"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfMessagesDeleted", :unit => "Count"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "NumberOfEmptyReceives", :unit => "Count"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "ApproximateNumberOfMessagesVisible", :unit => "Count"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "ApproximateNumberOfMessagesNotVisible", :unit => "Count"}
-  metric_group.metrics << {:type => "ce_gauge", :name => "ApproximateNumberOfMessagesDelayed", :unit => "Count"}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesSent', :unit => 'Count'}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesReceived', :unit => 'Count'}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesDeleted', :unit => 'Count'}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfEmptyReceives', :unit => 'Count'}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesVisible', :unit => 'Count'}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesNotVisible', :unit => 'Count'}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesDelayed', :unit => 'Count'}
 
   metric_group.save
   metric_group
@@ -806,10 +807,10 @@ end
 
 def ensure_aws_dashboard(service, metric_group, identifiers)
   dashboards = CopperEgg::CustomDashboard.find
-  dashboard_name = @config[service]["dashboard"] || "AWS #{service}"
+  dashboard_name = @config[service]['dashboard'] || "AWS #{service}"
   dashboard = nil
   dashboard = dashboards.detect {|d| d.name == dashboard_name} if dashboards
-  if !dashboard.nil?
+  if dashboard
     log "Dashboard #{dashboard_name} exists.  Skipping create"
     return
   end
@@ -817,39 +818,40 @@ def ensure_aws_dashboard(service, metric_group, identifiers)
   log "Creating new AWS Dashboard '#{dashboard_name}' for service #{service}"
   log "  with metrics #{metric_group.metrics.inspect}" if @debug
 
-  CopperEgg::CustomDashboard.create(metric_group, :name => dashboard_name, :identifiers => identifiers, :metrics => metric_group.metrics.reverse)
+  CopperEgg::CustomDashboard.create(metric_group, :name => dashboard_name,
+                                    :identifiers => identifiers, :metrics => metric_group.metrics.reverse)
 end
 
 
 ####################################################################
 
 def monitor_aws(service)
-  if service == "ec2"
-    monitor_aws_ec2(@config[service]["group_name"])
-  elsif service == "elb"
-    monitor_aws_elb(@config[service]["group_name"])
-  elsif service == "rds"
-    monitor_aws_rds(@config[service]["group_name"])
-  elsif service == "billing"
-    monitor_aws_billing(@config[service]["group_name"])
-  elsif service == "sqs"
-    monitor_aws_sqs(@config[service]["group_name"])
+  if service == 'ec2'
+    monitor_aws_ec2(@config[service]['group_name'])
+  elsif service == 'elb'
+    monitor_aws_elb(@config[service]['group_name'])
+  elsif service == 'rds'
+    monitor_aws_rds(@config[service]['group_name'])
+  elsif service == 'billing'
+    monitor_aws_billing(@config[service]['group_name'])
+  elsif service == 'sqs'
+    monitor_aws_sqs(@config[service]['group_name'])
   else
     log "Service #{service} not recognized"
   end
 end
 
 def ensure_metric_group(metric_group, service)
-  if service == "ec2"
-    return ensure_ec2_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
-  elsif service == "elb"
-    return ensure_elb_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
-  elsif service == "rds"
-    return ensure_rds_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
-  elsif service == "billing"
-    return ensure_billing_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
-  elsif service == "sqs"
-    return ensure_sqs_metric_group(metric_group, @config[service]["group_name"], @config[service]["group_label"])
+  if service == 'ec2'
+    return ensure_ec2_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+  elsif service == 'elb'
+    return ensure_elb_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+  elsif service == 'rds'
+    return ensure_rds_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+  elsif service == 'billing'
+    return ensure_billing_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+  elsif service == 'sqs'
+    return ensure_sqs_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
   else
     log "Service #{service} not recognized"
   end
@@ -859,11 +861,11 @@ end
 
 
 # metric group check
-log "Checking for existence of AWS metric groups"
+log 'Checking for existence of AWS metric groups'
 
 
-trap("INT") { parent_interrupt }
-trap("TERM") { parent_interrupt }
+trap('INT') { parent_interrupt }
+trap('TERM') { parent_interrupt }
 MAX_RETRIES = 30
 last_failure = 0
 
@@ -871,7 +873,7 @@ MAX_SETUP_RETRIES = 5
 setup_retries = MAX_SETUP_RETRIES
 
 @services.each do |service|
-  if @config[service] && @config[service]["group_name"] && @config[service]["group_label"]
+  if @config[service] && @config[service]['group_name'] && @config[service]['group_label']
 
     if !@supported_services.include?(service)
       log "Unknown service #{service}.  Skipping"
@@ -879,7 +881,7 @@ setup_retries = MAX_SETUP_RETRIES
     end
 
     identifiers = nil
-    if service == "billing"
+    if service == 'billing'
       identifiers = ['aws_charges']
     end
 
@@ -888,7 +890,7 @@ setup_retries = MAX_SETUP_RETRIES
     begin
       metric_groups = CopperEgg::MetricGroup.find
       metric_group = nil
-      metric_group = metric_groups.detect {|m| m.name == @config[service]["group_name"]} if metric_groups
+      metric_group = metric_groups.detect {|m| m.name == @config[service]['group_name']} if metric_groups
       metric_group = ensure_metric_group(metric_group, service)
 
       # create dashboard
@@ -905,8 +907,8 @@ setup_retries = MAX_SETUP_RETRIES
 
 
     child_pid = fork {
-      trap("INT") { child_interrupt if !@interrupted }
-      trap("TERM") { child_interrupt if !@interrupted }
+      trap('INT') { child_interrupt if !@interrupted }
+      trap('TERM') { child_interrupt if !@interrupted }
       last_failure = 0
       retries = MAX_RETRIES
       begin
