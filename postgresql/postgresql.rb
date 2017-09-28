@@ -425,7 +425,7 @@ def create_postgresql_dashboard(metric_group, name, server_list)
 
   # Create a dashboard for all identifiers:
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: 'postgresql')
 end
 
 ####################################################################

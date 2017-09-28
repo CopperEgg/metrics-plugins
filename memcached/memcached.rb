@@ -288,7 +288,7 @@ def create_memcached_dashboard(metric_group, name)
   metrics = metric_group.metrics || []
 
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: 'memcached')
 end
 
 def ensure_metric_group(metric_group, service)

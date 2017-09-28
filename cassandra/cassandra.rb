@@ -535,7 +535,7 @@ class CassandraMonitoring
 
     # Create a dashboard for all identifiers:
     CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                      is_database: true)
+                                      is_database: true, service: 'cassandra')
   end
 
   def ensure_metric_group(metric_group, service)

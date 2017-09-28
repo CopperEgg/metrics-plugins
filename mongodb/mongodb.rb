@@ -400,13 +400,13 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
   metric_group
 end
 
-def create_mongodb_dashboard(metric_group, name)
+def create_mongodb_dashboard(metric_group, name, service)
   log 'Creating new MongoDB Dashboard'
   metrics = metric_group.metrics || []
 
   # Create a dashboard for all identifiers:
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: service)
 end
 
 #########################################################################
@@ -425,7 +425,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'mongodb' || service == 'mongodb_admin'
-    create_mongodb_dashboard(metric_group, @config[service]['dashboard'])
+    create_mongodb_dashboard(metric_group, @config[service]['dashboard'], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
