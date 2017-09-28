@@ -1,4 +1,4 @@
 source 'http://rubygems.org'
 
-gem 'copperegg', '~> 0.6.0'
+gem 'copperegg', '~> 0.6.4'
 gem 'net-ssh', '2.9.2'

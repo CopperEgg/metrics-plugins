@@ -9,22 +9,38 @@ setup_admin_base_group()
     echo "Configuring MongoDB Admin Service"
 
     echo -n "Mongo Server Metrics Group Name: [$MONGO_ADMIN_GROUP] "
-    read ADMIN_GROUP_NAME
-    if [ -z "$ADMIN_GROUP_NAME" ]; then
-        ADMIN_GROUP_NAME="$MONGO_ADMIN_GROUP"
-    fi
+    while true; do
+        read ADMIN_GROUP_NAME
+        if [ -z "$ADMIN_GROUP_NAME" ]; then
+            ADMIN_GROUP_NAME="$MONGO_ADMIN_GROUP"
+        fi
 
-    echo -n "Mongo Server Metrics Group Label: [$MONGO_ADMIN_LABEL Metrics] "
-    read ADMIN_GROUP_LABEL
-    if [ -z "$ADMIN_GROUP_LABEL" ]; then
-        ADMIN_GROUP_LABEL="$MONGO_ADMIN_LABEL Metrics"
-    fi
+        ADMIN_GROUP_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$ADMIN_GROUP_NAME" $API_HOST/v2/revealmetrics/validate_metric_group_name?service=$MONGO_ADMIN_GROUP)
+
+        if [ "$ADMIN_GROUP_NAME_VALID" == "invalid" ]; then
+            echo -n "This metric group name is already in use for a different service. Enter a different name:"
+        else
+            ADMIN_GROUP_NAME="$ADMIN_GROUP_NAME_VALID"
+            ADMIN_GROUP_LABEL="$ADMIN_GROUP_NAME"
+            break
+        fi
+    done
 
     echo -n "Mongo Server Metrics Dashboard: [$MONGO_ADMIN_LABEL] "
-    read ADMIN_DASHBOARD
-    if [ -z "$ADMIN_DASHBOARD" ]; then
-        ADMIN_DASHBOARD="$MONGO_ADMIN_LABEL"
-    fi
+    while true; do
+        read ADMIN_DASHBOARD
+        if [ -z "$ADMIN_DASHBOARD" ]; then
+            ADMIN_DASHBOARD="$MONGO_ADMIN_LABEL"
+        fi
+
+        ADMIN_DASHBOARD_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$ADMIN_DASHBOARD" $API_HOST/v2/revealmetrics/validate_dashboard_name?service=$MONGO_ADMIN_GROUP)
+
+        if [ "$ADMIN_DASHBOARD_NAME_VALID" == "invalid" ]; then
+            echo -n "This dashboard name is already in use for a different service. Enter a different name:"
+        else
+            break
+        fi
+    done
 
     sed -i "0,/MONGO-ADMIN-GROUP/s//$ADMIN_GROUP_NAME/" $CONFIG_FILE
     sed -i "0,/MONGO-ADMIN-GROUP-LABEL/s//$ADMIN_GROUP_LABEL/" $CONFIG_FILE
@@ -40,22 +56,38 @@ setup_db_base_group()
     echo "Configuring MongoDB Database Service"
 
     echo -n "Mongo Server Metrics Group Name: [$MONGO_DB_GROUP] "
-    read DB_GROUP_NAME
-    if [ -z "$DB_GROUP_NAME" ]; then
-        DB_GROUP_NAME="$MONGO_DB_GROUP"
-    fi
+    while true; do
+        read DB_GROUP_NAME
+        if [ -z "$DB_GROUP_NAME" ]; then
+            DB_GROUP_NAME="$MONGO_DB_GROUP"
+        fi
 
-    echo -n "Mongo Server Metrics Group Label: [$MONGO_DB_LABEL Metrics] "
-    read DB_GROUP_LABEL
-    if [ -z "$DB_GROUP_LABEL" ]; then
-        DB_GROUP_LABEL="$MONGO_DB_LABEL Metrics"
-    fi
+        DB_GROUP_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$DB_GROUP_NAME" $API_HOST/v2/revealmetrics/validate_metric_group_name?service=$MONGO_DB_GROUP)
+
+        if [ "$DB_GROUP_NAME_VALID" == "invalid" ]; then
+            echo -n "This metric group name is already in use for a different service. Enter a different name:"
+        else
+            DB_GROUP_NAME="$DB_GROUP_NAME_VALID"
+            DB_GROUP_LABEL="$DB_GROUP_NAME"
+            break
+        fi
+    done
 
     echo -n "Mongo Server Metrics Dashboard: [$MONGO_DB_LABEL] "
-    read DB_DASHBOARD
-    if [ -z "$DB_DASHBOARD" ]; then
-        DB_DASHBOARD="$MONGO_DB_LABEL"
-    fi
+    while true; do
+        read DB_DASHBOARD
+        if [ -z "$DB_DASHBOARD" ]; then
+            DB_DASHBOARD="$MONGO_DB_LABEL"
+        fi
+
+        DB_DASHBOARD_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$DB_DASHBOARD" $API_HOST/v2/revealmetrics/validate_dashboard_name?service=$MONGO_DB_GROUP)
+
+        if [ "$DB_DASHBOARD_NAME_VALID" == "invalid" ]; then
+            echo -n "This dashboard name is already in use for a different service. Enter a different name:"
+        else
+            break
+        fi
+    done
 
     sed -i "0,/MONGO-DB-GROUP/s//$DB_GROUP_NAME/" $CONFIG_FILE
     sed -i "0,/MONGO-DB-GROUP-LABEL/s//$DB_GROUP_LABEL/" $CONFIG_FILE
@@ -581,7 +613,7 @@ for gem in $gems; do
         echo "*** unable to run 'gem install ${array[0]}' manually."
     else
         echo "*** unable to run 'gem install ${array[0]} -v \"${array[1]}\"' manually."
-    fi 
+    fi
     echo "*** "
     echo "********************************************************"
     echo

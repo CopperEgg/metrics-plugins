@@ -369,6 +369,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
       :frequency => @freq, service: service)
   else
     log 'Updating postgresql metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -401,7 +402,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_counter', name: 'fsync_calls_executed', label: 'fsync Calls Executed', unit: 'fsync calls'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'milliseconds'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'milliseconds'}
-  metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'bytes'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'b'}
   metric_group.metrics << {type: 'ce_gauge', name: 'locks', label: 'Locks', unit: 'locks'}
   metric_group.metrics << {type: 'ce_gauge', name: 'connections', label: 'Connections', unit: 'connections'}
   metric_group.metrics << {type: 'ce_gauge', name: 'max_connections', label: 'Max Connections', unit: 'connections'}
@@ -425,7 +426,7 @@ def create_postgresql_dashboard(metric_group, name, server_list)
 
   # Create a dashboard for all identifiers:
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: 'postgresql')
 end
 
 ####################################################################

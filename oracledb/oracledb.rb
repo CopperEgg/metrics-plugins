@@ -172,6 +172,7 @@ def ensure_oracle_metric_group(metric_group, group_name, group_label, service)
       frequency: @freq, service: service)
   else
     log 'Updating oracle DB metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -211,7 +212,8 @@ def create_oracle_dashboard(metric_group, name)
   log 'Creating new Oracle DB Dashboard'
   metrics = metric_group.metrics || []
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: 'oracledb')
+)
 end
 
 ####################################################################

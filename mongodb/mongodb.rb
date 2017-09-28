@@ -298,15 +298,16 @@ def ensure_mongodb_metric_group(metric_group, group_name, group_label, service)
       frequency: @freq, service: service)
   else
     log 'Updating MongoDB metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
   metric_group.metrics = []
   metric_group.metrics << { type: 'ce_gauge', name: 'db_objects', unit: 'Objects', label: 'DB Objects' }
   metric_group.metrics << { type: 'ce_gauge', name: 'db_indexes', unit: 'Indexes', label: 'DB Index' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_datasize', unit: 'Bytes', label: 'DB Data Size' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_storage_size', unit: 'Bytes', label: 'DB Storage Size' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_index_size', unit: 'Bytes', label: 'DB Index Size' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_datasize', unit: 'b', label: 'DB Data Size' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_storage_size', unit: 'b', label: 'DB Storage Size' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_index_size', unit: 'b', label: 'DB Index Size' }
 
   metric_group.save
   metric_group
@@ -319,6 +320,7 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
       frequency: @freq, service: service)
   else
     log 'Updating MongoDB Admin metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -373,9 +375,9 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
   metric_group.metrics << { type: 'ce_gauge', name: 'batch_applied_num', unit: 'Batches', label: 'Batches Applied Number' }
   metric_group.metrics << { type: 'ce_gauge', name: 'batch_time_spent', unit: 'Milliseconds', label: 'Time Spent on applying operations from Oplog' }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'mem_resident', unit: 'Megabytes', label: 'Resident Memory' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'mem_virtual', unit: 'Megabytes', label: 'Virtual Memory' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'mem_mapped', unit: 'Megabytes', label: 'Mapped Memory' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'mem_resident', unit: 'mb', label: 'Resident Memory' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'mem_virtual', unit: 'mb', label: 'Virtual Memory' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'mem_mapped', unit: 'mb', label: 'Mapped Memory' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'global_lock_total_time', unit: 'Microseconds', label: 'Global Lock Total Time' }
 
@@ -386,12 +388,12 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
   metric_group.metrics << { type: 'ce_gauge', name: 'index_item_scan_per_query', unit: 'Items', label: 'Index Items Scanned During Query' }
   metric_group.metrics << { type: 'ce_gauge', name: 'records_moved', unit: 'Records', label: 'Records Moved' }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'max_buffer_size', unit: 'Bytes', label: 'Max Buffer Size' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'max_buffer_size', unit: 'b', label: 'Max Buffer Size' }
   metric_group.metrics << { type: 'ce_gauge', name: 'oplog_operations', unit: 'Operations', label: 'Oplog Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_buffer_size', unit: 'Bytes', label: 'Oplog Buffer Size' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_buffer_size', unit: 'b', label: 'Oplog Buffer Size' }
   metric_group.metrics << { type: 'ce_gauge', name: 'oplog_qry_proc_create_ps', unit: 'Queries', label: 'Oplog Queries Processes' }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_sync_src_data_read', unit: 'Bytes', label: 'Replication Sync Source Data Read' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_sync_src_data_read', unit: 'b', label: 'Replication Sync Source Data Read' }
   metric_group.metrics << { type: 'ce_gauge', name: 'op_read_from_repl_src', unit: 'Operations', label: 'Operations Reads from Replication Source' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'getmores_op', unit: 'Operations', label: 'getMore Operations' }
@@ -400,13 +402,13 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
   metric_group
 end
 
-def create_mongodb_dashboard(metric_group, name)
+def create_mongodb_dashboard(metric_group, name, service)
   log 'Creating new MongoDB Dashboard'
   metrics = metric_group.metrics || []
 
   # Create a dashboard for all identifiers:
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: service)
 end
 
 #########################################################################
@@ -425,7 +427,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'mongodb' || service == 'mongodb_admin'
-    create_mongodb_dashboard(metric_group, @config[service]['dashboard'])
+    create_mongodb_dashboard(metric_group, @config[service]['dashboard'], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -544,7 +546,7 @@ end
   next unless @config[service] && !@config[service]['servers'].empty?
   begin
     log "Checking for existence of metric group for #{service}"
-    metric_group =metric_group.nil? ? nil :  metric_groups.detect { |m| m.name == @config[service]['group_name'] }
+    metric_group = metric_group.nil? ? nil :  metric_groups.detect { |m| m.name == @config[service]['group_name'] }
     metric_group = ensure_metric_group(metric_group, service)
     raise "Could not create a metric group for #{service}" if metric_group.nil?
     log "Checking for existence of #{@config[service]['dashboard']}"

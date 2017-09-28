@@ -227,6 +227,7 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label, service)
       service: service)
   else
     log 'Updating CouchDB metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -262,13 +263,12 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label, service)
   metric_group
 end
 
-def create_couchdb_dashboard(metric_group, name, server_list)
+def create_couchdb_dashboard(metric_group, name, service)
   log 'Creating new CouchDB Dashboard'
-  servers = server_list.map { |server_entry| server_entry['name'] }
-  metrics = metric_group.metrics.map { |metric| metric['name'] }
+  metrics = metric_group.metrics || []
   # Create a dashboard for all identifiers:
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: service)
 end
 
 # init - check apikey? make sure site is valid, and apikey is ok
@@ -286,7 +286,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'couchdb'
-    create_couchdb_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
+    create_couchdb_dashboard(metric_group, @config[service]['dashboard'], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end

@@ -269,10 +269,10 @@ def ensure_dns_metric_group(metric_group, group_name, group_label)
   metric_group
 end
 
-def create_couchdb_dashboard(metric_group, name, server_list)
+def create_dns_dashboard(metric_group, name, server_list)
   log 'Creating new DNS Dashboard'
   metrics = metric_group.metrics.map { |metric| metric['name'] }
-  CopperEgg::CustomDashboard.create(metric_group, :name => name, :identifiers => nil, :metrics => metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics, service: 'dns')
 end
 
 def ensure_metric_group(metric_group, service)
@@ -285,7 +285,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'dns'
-    create_couchdb_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
+    create_dns_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end

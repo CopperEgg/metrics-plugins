@@ -292,7 +292,8 @@ end
 def create_remote_server_dashboard(metric_group, name, server_list)
   log 'Creating new Remote Server Dashboard'
   metrics = metric_group.metrics.map { |metric| metric['name'] }
-  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
+                                    service: 'remote_server')
 end
 
 def ensure_metric_group(metric_group, service)
