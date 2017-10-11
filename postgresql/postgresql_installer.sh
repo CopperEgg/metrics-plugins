@@ -47,7 +47,7 @@ setup_base_group()
     echo "  group_label: \"$GROUP_LABEL\"" >> $CONFIG_FILE
     echo "  dashboard: \"$DASHBOARD\"" >> $CONFIG_FILE
     echo "  servers:" >> $CONFIG_FILE
-    echo "Note: Group Label is same as group name which can be changed from config.yml"
+    echo "Note: Group Label is same as group name which can be changed from UI"
 }
 
 setup_database()
@@ -562,10 +562,6 @@ fi
 
 OLDIFS=$IFS
 IFS=$'\n'
-
-# echo "Installing gem copperegg local"
-gem install --no-ri /home/ubuntu/cuegg/copperegg-ruby/copperegg-0.8.1.gem --local >> $PKG_INST_OUT
-
 gems=`grep -w gem postgresql/Gemfile | awk '{$1="" ; print $0}'`
 
 for gem in $gems; do

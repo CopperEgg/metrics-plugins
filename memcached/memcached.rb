@@ -246,11 +246,11 @@ def ensure_memcached_metric_group(metric_group, group_name, group_label, service
   metric_group.metrics << { type: 'ce_counter', name: 'auth_errors', position: 25,
                             label: 'Failed authentications', unit: 'Authentications' }
   metric_group.metrics << { type: 'ce_counter', name: 'bytes_read', position: 26,
-                            label: 'Bytes read', unit: 'Bytes' }
+                            label: 'Bytes read', unit: 'b' }
   metric_group.metrics << { type: 'ce_counter', name: 'bytes_written', position: 27,
-                            label: 'Bytes written', unit: 'Bytes' }
+                            label: 'Bytes written', unit: 'b' }
   metric_group.metrics << { type: 'ce_gauge', name: 'limit_maxbytes', position: 28,
-                            label: 'Bytes allowed for storage', unit: 'Bytes' }
+                            label: 'Bytes allowed for storage', unit: 'b' }
   metric_group.metrics << { type: 'ce_gauge', name: 'accepting_conns', position: 29,
                             label: 'Check if server is accepting connections' }
   metric_group.metrics << { type: 'ce_gauge', name: 'threads', position: 30,
@@ -260,7 +260,7 @@ def ensure_memcached_metric_group(metric_group, group_name, group_label, service
   metric_group.metrics << { type: 'ce_gauge', name: 'hash_power_level', position: 32,
                             label: 'Current size multiplier for hash table' }
   metric_group.metrics << { type: 'ce_gauge', name: 'hash_bytes', position: 33,
-                            label: 'Bytes used by hash tables', unit: 'Bytes' }
+                            label: 'Bytes used by hash tables', unit: 'b' }
   metric_group.metrics << { type: 'ce_gauge', name: 'hash_is_expanding', position: 34,
                             label: 'Indicates if hash table is expanding' }
   metric_group.metrics << { type: 'ce_counter', name: 'expired_unfetched', position: 35,
@@ -270,7 +270,7 @@ def ensure_memcached_metric_group(metric_group, group_name, group_label, service
                             label: 'Items evicted from LRU that were never touched',
                             unit: 'Items' }
   metric_group.metrics << { type: 'ce_gauge', name: 'bytes', position: 37,
-                            label: 'Bytes used', unit: 'Bytes' }
+                            label: 'Bytes used', unit: 'b' }
   metric_group.metrics << { type: 'ce_gauge', name: 'curr_items', position: 38,
                             label: 'Current items stored', unit: 'Items' }
   metric_group.metrics << { type: 'ce_counter', name: 'total_items', position: 39,

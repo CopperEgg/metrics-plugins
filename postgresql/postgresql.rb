@@ -401,7 +401,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_counter', name: 'fsync_calls_executed', label: 'fsync Calls Executed', unit: 'fsync calls'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'milliseconds'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'milliseconds'}
-  metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'bytes'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'b'}
   metric_group.metrics << {type: 'ce_gauge', name: 'locks', label: 'Locks', unit: 'locks'}
   metric_group.metrics << {type: 'ce_gauge', name: 'connections', label: 'Connections', unit: 'connections'}
   metric_group.metrics << {type: 'ce_gauge', name: 'max_connections', label: 'Max Connections', unit: 'connections'}
