@@ -72,16 +72,10 @@ setup_database()
     read PASSWORD
 
     echo
-    if [ -z $USER_NAME ]; then
-        echo "Testing with command: psql -h $URL -p $PORT -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        psql -h $URL -p $PORT -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    else
-        echo "Testing with command: PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    fi
+    echo "Testing with ruby script : "
+    op=`ruby $POSTGRESQL_TEST_SCRIPT $URL $PORT $DBNAME $SSLMODE $USER_NAME $PASSWORD `
 
-    # grep any one metric from the output file
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 -o "$op" == "error" ]; then
         echo
         echo "WARNING: Could not connect to PostgreSQL Server with $URL, "
         echo "  username $USER_NAME, password $PASSWORD and port $PORT."
@@ -606,6 +600,7 @@ echo
 
 CONFIG_FILE="/usr/local/copperegg/ucm-metrics/postgresql/config.yml"
 AGENT_FILE="/usr/local/copperegg/ucm-metrics/postgresql/postgresql.rb"
+POSTGRESQL_TEST_SCRIPT="/usr/local/copperegg/ucm-metrics/postgresql/test_postgresql_connection.rb"
 
 echo
 echo "Creating config.yml."
