@@ -45,6 +45,7 @@ setup_admin_base_group()
     sed -i "0,/MONGO-ADMIN-GROUP/s//$ADMIN_GROUP_NAME/" $CONFIG_FILE
     sed -i "0,/MONGO-ADMIN-GROUP-LABEL/s//$ADMIN_GROUP_LABEL/" $CONFIG_FILE
     sed -i "0,/MONGO-ADMIN-DASH/s//$ADMIN_DASHBOARD/" $CONFIG_FILE
+    echo "Note: Group Label is same as group name which can be changed from UI"
 }
 
 setup_db_base_group()
@@ -92,6 +93,7 @@ setup_db_base_group()
     sed -i "0,/MONGO-DB-GROUP/s//$DB_GROUP_NAME/" $CONFIG_FILE
     sed -i "0,/MONGO-DB-GROUP-LABEL/s//$DB_GROUP_LABEL/" $CONFIG_FILE
     sed -i "0,/MONGO-DB-DASH/s//$DB_DASHBOARD/" $CONFIG_FILE
+    echo "Note: Group Label is same as group name which can be changed from UI"
 }
 
 setup_database()

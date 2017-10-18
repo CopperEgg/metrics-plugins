@@ -420,7 +420,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group
 end
 
-def create_postgresql_dashboard(metric_group, name, server_list)
+def create_postgresql_dashboard(metric_group, name)
   log 'Creating new PostgreSQL Dashboard'
   metrics = metric_group.metrics || []
 
@@ -448,7 +448,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'postgresql'
-    create_postgresql_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
+    create_postgresql_dashboard(metric_group, @config[service]['dashboard'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end

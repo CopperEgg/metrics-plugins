@@ -418,8 +418,8 @@ def ensure_metric_group(metric_group, service)
     return ensure_mongodb_metric_group(metric_group, @config[service]['group_name'],
                                        @config[service]['group_label'], service)
   elsif service == 'mongodb_admin'
-    return ensure_mongo_dbadmin_metric_group metric_group, @config[service]['group_name'],
-      @config[service]['group_label'], service
+    return ensure_mongo_dbadmin_metric_group(metric_group, @config[service]['group_name'],
+      @config[service]['group_label'], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end

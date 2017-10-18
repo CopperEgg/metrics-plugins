@@ -213,7 +213,6 @@ def create_oracle_dashboard(metric_group, name)
   metrics = metric_group.metrics || []
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
                                     is_database: true, service: 'oracledb')
-)
 end
 
 ####################################################################
@@ -332,7 +331,7 @@ end
       raise "Could not create a metric group for #{service}" if metric_group.nil?
       log "Checking for existence of #{@config[service]['dashboard']}"
       dashboard = dashboards.nil? ? nil : dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
-          create_dashboard(service, metric_group)
+          create_oracle_dashboard(metric_group, @config[service]['dashboard'])
       log "Could not create a dashboard for #{service}" if dashboard.nil?
     rescue => e
       log 'Error while creating Metric group/dashboard'

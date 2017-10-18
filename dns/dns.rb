@@ -250,12 +250,14 @@ def monitor_dns(dns_servers, group_name)
   end
 end
 
-def ensure_dns_metric_group(metric_group, group_name, group_label)
+def ensure_dns_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating DNS metric group'
-    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq)
+    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
+                                              frequency: @freq, service: service)
   else
     log 'Updating DNS metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -277,7 +279,8 @@ end
 
 def ensure_metric_group(metric_group, service)
   if service == 'dns'
-    return ensure_dns_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+    return ensure_dns_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'],
+                                   service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
