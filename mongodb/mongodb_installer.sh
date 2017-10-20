@@ -114,28 +114,14 @@ setup_database()
 
     # Each database, user and authentication credentials configured by the customer is tested to verify it has the
     # privilege to access stats commands.
-    echo
-    if [ -z $USER_NAME ]; then
-        if [ -z $INITIAL_CHECK ]; then
-            echo "mongo $URL:$PORT/$DBNAME --eval \"db.runCommand({serverStatus: 1})\" > /tmp/mongodb_stats.txt"
-            mongo $URL:$PORT/$DBNAME --eval "db.runCommand({serverStatus: 1})" > /tmp/mongodb_stats.txt
-        else
-            echo "mongo $URL:$PORT/$DBNAME --eval \"db.runCommand({serverStatus: 1})\" > /tmp/mongodb_stats.txt"
-            mongo $URL:$PORT/$DBNAME --eval "db.runCommand({dbstats: 1})" > /tmp/mongodb_stats.txt
-        fi
+    echo "Testing connection with ruby script"
+    echo "For testing MongoDB admin DB connection, '{serverStatus: 1}' command will be used."
+    echo "For testing MongoDB normal DB connection, '{dbstats: 1}' command will be used."
 
-    else
-        if [ -z $INITIAL_CHECK ]; then
-            echo "mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval \"db.runCommand({serverStatus: 1})\" > /tmp/mongodb_stats.txt"
-            mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval "db.runCommand({dbstats: 1})" > /tmp/mongodb_stats.txt
-        else
-            echo "mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval \"db.runCommand({dbstats: 1})\" > /tmp/mongodb_stats.txt"
-            mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval "db.runCommand({dbstats: 1})" > /tmp/mongodb_stats.txt
-        fi
-    fi
+    op=`ruby $MONGODB_TEST_SCRIPT $URL $PORT $DBNAME $USER_NAME $PASSWORD $INITIAL_CHECK`
 
     # check exit status of last command
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 -o "$op" == "error" ]; then
         echo
         echo "WARNING: Could not connect to MongoDB Server with $URL, "
         echo "  username $USER_NAME, password $PASSWORD and port $PORT."
@@ -635,6 +621,7 @@ echo
 
 CONFIG_FILE="/usr/local/copperegg/ucm-metrics/mongodb/config.yml"
 AGENT_FILE="/usr/local/copperegg/ucm-metrics/mongodb/mongodb.rb"
+MONGODB_TEST_SCRIPT="/usr/local/copperegg/ucm-metrics/mongodb/test_mongodb_connection.rb"
 CONFIG_TEMPLATE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/config-template.yml"
 
 echo
