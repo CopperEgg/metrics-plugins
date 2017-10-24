@@ -537,6 +537,18 @@ for gem in $gems; do
   gem=${gem//[\'\" ]/}
   IFS=',' read -r -a array <<< "$gem"
   echo "Installing gem ${array[0]}"
+
+  if [ -z "${array[1]}" ]; then
+      is_gem_present=`gem query --name-matches "^${array[0]}$" --installed`
+  else
+      is_gem_present=`gem query --name-matches "^${array[0]}$" --installed --version ${array[1]}`
+  fi
+
+  if [[ "${is_gem_present}" == "true" ]]; then
+      echo "  - Skipping gem installation as ${array[0]} is already installed"
+      continue
+  fi
+
   if [ -z "${array[1]}" ]
     then
     gem install --no-ri --no-rdoc ${array[0]} >> $PKG_INST_OUT
