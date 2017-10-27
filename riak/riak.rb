@@ -315,7 +315,7 @@ begin
   dashboards = CopperEgg::CustomDashboard.find
   metric_groups = CopperEgg::MetricGroup.find
 rescue => e
-  log "Error connecting to server.  Retrying (#{retries}) more times..."
+  log "Error connecting to server.  Retrying (#{setup_retries}) more times..."
   raise e if @debug
   sleep 2
   setup_retries -= 1
