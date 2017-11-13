@@ -118,7 +118,7 @@ setup_database()
     echo "For testing MongoDB admin DB connection, '{serverStatus: 1}' command will be used."
     echo "For testing MongoDB normal DB connection, '{dbstats: 1}' command will be used."
 
-    op=`ruby $MONGODB_TEST_SCRIPT $URL $PORT $DBNAME $USER_NAME $PASSWORD $INITIAL_CHECK`
+    op=`ruby $MONGODB_TEST_SCRIPT $URL $PORT $DBNAME $INITIAL_CHECK $USER_NAME $PASSWORD`
 
     # check exit status of last command
     if [ $? -ne 0 -o "$op" == "error" ]; then
