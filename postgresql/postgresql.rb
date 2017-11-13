@@ -391,7 +391,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_gauge', name: 'live_rows', label: 'Live Rows', unit: 'rows'}
   metric_group.metrics << {type: 'ce_gauge', name: 'dead_rows', label: 'Dead Rows', unit: 'rows'}
   metric_group.metrics << {type: 'ce_gauge', name: 'deadlocks', label: 'Deadlocks', unit: 'deadlocks'}
-  metric_group.metrics << {type: 'ce_gauge', name: 'temp_bytes', label: 'Temp Bytes', unit: 'byte/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'temp_bytes', label: 'Temp Bytes', unit: 'bps'}
   metric_group.metrics << {type: 'ce_gauge', name: 'temp_files', label: 'Temp Files', unit: 'file/second'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoints_scheduled', label: 'Checkpoints Scheduled', unit: 'checkpoints'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoints_requested', label: 'Checkpoints Requested', unit: 'checkpoints'}
@@ -400,8 +400,8 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_counter', name: 'buf_written_by_backend', label: 'Buffers Written by Backend', unit: 'buffers'}
   metric_group.metrics << {type: 'ce_counter', name: 'buf_allocated', label: 'Buffers Allocated', unit: 'buffers'}
   metric_group.metrics << {type: 'ce_counter', name: 'fsync_calls_executed', label: 'fsync Calls Executed', unit: 'fsync calls'}
-  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'milliseconds'}
-  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'milliseconds'}
+  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'ms'}
+  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'ms'}
   metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'b'}
   metric_group.metrics << {type: 'ce_gauge', name: 'locks', label: 'Locks', unit: 'locks'}
   metric_group.metrics << {type: 'ce_gauge', name: 'connections', label: 'Connections', unit: 'connections'}

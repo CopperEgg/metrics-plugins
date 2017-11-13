@@ -203,7 +203,7 @@ def ensure_oracle_metric_group(metric_group, group_name, group_label, service)
                            label: 'Maximum Named Users Allowed'}
   # Connection Time
   metric_group.metrics << {type: 'ce_gauge_f', name: 'connection_time', position: 14,
-                           label: 'Connection Time', unit: 'seconds'}
+                           label: 'Connection Time', unit: 's'}
   metric_group.save
   return metric_group
 end

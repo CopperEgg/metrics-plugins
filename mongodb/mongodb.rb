@@ -351,7 +351,7 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
   metric_group.metrics << { type: 'ce_gauge', name: 'repl_getmores', unit: 'Operations', label: 'Replicated Getmore Operations' }
   metric_group.metrics << { type: 'ce_gauge', name: 'repl_commands', unit: 'Commands', label: 'Replicated Commands' }
 
-  metric_group.metrics << { type: 'ce_counter', name: 'uptime', unit: 'Seconds', label: 'Uptime' }
+  metric_group.metrics << { type: 'ce_counter', name: 'uptime', unit: 's', label: 'Uptime' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'cursors_total_open', unit: 'Cursors', label: 'Open Cursors' }
   metric_group.metrics << { type: 'ce_gauge', name: 'cursors_timedout', unit: 'Cursors', label: 'Timed Out Cursors' }
@@ -373,7 +373,7 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
   metric_group.metrics << { type: 'ce_gauge', name: 'ttl_passes', unit: 'Operations', label: 'ttl Indexes Passes' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'batch_applied_num', unit: 'Batches', label: 'Batches Applied Number' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'batch_time_spent', unit: 'Milliseconds', label: 'Time Spent on applying operations from Oplog' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'batch_time_spent', unit: 'ms', label: 'Time Spent on applying operations from Oplog' }
 
   metric_group.metrics << { type: 'ce_gauge', name: 'mem_resident', unit: 'mb', label: 'Resident Memory' }
   metric_group.metrics << { type: 'ce_gauge', name: 'mem_virtual', unit: 'mb', label: 'Virtual Memory' }

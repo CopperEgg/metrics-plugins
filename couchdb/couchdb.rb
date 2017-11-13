@@ -240,7 +240,7 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label, service)
   metric_group.metrics << { type: 'ce_gauge',   name: 'db_writes',         label: 'Database Writes',               unit: 'Writes' }
   metric_group.metrics << { type: 'ce_gauge',   name: 'open_databases',    label: 'Open Databases',                unit: 'Databases' }
   metric_group.metrics << { type: 'ce_gauge',   name: 'open_files',        label: 'Open File Descriptors',         unit: 'Files' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'request_time',      label: 'Request Time',                  unit: 'Milliseconds' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'request_time',      label: 'Request Time',                  unit: 'ms' }
 
   # httpd Metrics
   metric_group.metrics << { type: 'ce_gauge', name: 'bulk_requests',              label: 'Bulk Requests',              unit: 'Requests' }

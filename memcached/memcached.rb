@@ -194,11 +194,11 @@ def ensure_memcached_metric_group(metric_group, group_name, group_label, service
 
   metric_group.metrics = []
   metric_group.metrics << { type: 'ce_counter', name: 'uptime', position: 0,
-                            label: 'Uptime', unit: 'Seconds' }
+                            label: 'Uptime', unit: 's' }
   metric_group.metrics << { type: 'ce_counter_f', name: 'rusage_user', position: 1,
-                            label: 'Accumulated user time', unit: 'Seconds' }
+                            label: 'Accumulated user time', unit: 's' }
   metric_group.metrics << { type: 'ce_counter_f', name: 'rusage_system', position: 2,
-                            label: 'Accumulated system time', unit: 'Seconds' }
+                            label: 'Accumulated system time', unit: 's' }
   metric_group.metrics << { type: 'ce_gauge', name: 'curr_connections', position: 3,
                             label: 'Open connections', unit: 'Connections' }
   metric_group.metrics << { type: 'ce_gauge', name: 'total_connections', position: 4,
