@@ -9,28 +9,45 @@ setup_base_group()
     echo "Configuring $TYPE_UPPER"
 
     echo -n "group_name: [$TYPE_LOWER] "
-    read GROUP_NAME
-    if [ -z "$GROUP_NAME" ]; then
-        GROUP_NAME="$TYPE_LOWER"
-    fi
+    while true; do
+        read GROUP_NAME
+        if [ -z "$GROUP_NAME" ]; then
+            GROUP_NAME="$TYPE_LOWER"
+        fi
 
-    echo -n "group_label: [$TYPE_UPPER Metrics] "
-    read GROUP_LABEL
-    if [ -z "$GROUP_LABEL" ]; then
-        GROUP_LABEL="$TYPE_UPPER Metrics"
-    fi
+        METRIC_GROUP_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$GROUP_NAME" $API_HOST/v2/revealmetrics/validate_metric_group_name?service=$SERVICE)
+
+        if [ "$METRIC_GROUP_NAME_VALID" == "invalid" ]; then
+            echo -n "This metric group name is already in use for a different service. Enter a different name:"
+        else
+            GROUP_NAME="$METRIC_GROUP_NAME_VALID"
+            GROUP_LABEL="$GROUP_NAME"
+            break
+        fi
+    done
 
     echo -n "dashboard: [$TYPE_UPPER] "
-    read DASHBOARD
-    if [ -z "$DASHBOARD" ]; then
-        DASHBOARD="$TYPE_UPPER"
-    fi
+    while true; do
+        read DASHBOARD
+        if [ -z "$DASHBOARD" ]; then
+            DASHBOARD="$TYPE_UPPER"
+        fi
+
+        DASHBOARD_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$DASHBOARD" $API_HOST/v2/revealmetrics/validate_dashboard_name?service=$SERVICE)
+
+        if [ "$DASHBOARD_NAME_VALID" == "invalid" ]; then
+            echo -n "This dashboard name is already in use for a different service. Enter a different name:"
+        else
+            break
+        fi
+    done
 
     echo "$TYPE_LOWER:" >> $CONFIG_FILE
     echo "  group_name: \"$GROUP_NAME\"" >> $CONFIG_FILE
     echo "  group_label: \"$GROUP_LABEL\"" >> $CONFIG_FILE
     echo "  dashboard: \"$DASHBOARD\"" >> $CONFIG_FILE
     echo "  servers:" >> $CONFIG_FILE
+    echo "Note: Group Label is same as group name which can be changed from UI"
 }
 
 setup_database()
@@ -42,7 +59,7 @@ setup_database()
     DEFAULT_DBNAME="$5"
     INITIAL_CHECK="$6"
 
-    echo -n "Databse Name: [postgres]"
+    echo -n "Database Name: [postgres]"
     read DBNAME
     if [ -z "$DBNAME" ]; then
         DBNAME="$DEFAULT_DBNAME"
@@ -55,16 +72,10 @@ setup_database()
     read PASSWORD
 
     echo
-    if [ -z $USER_NAME ]; then
-        echo "Testing with command: psql -h $URL -p $PORT -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        psql -h $URL -p $PORT -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    else
-        echo "Testing with command: PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME  -c \"\\d\" > /tmp/postgresql_stats.txt"
-        PGPASSWORD=$PASSWORD psql -h $URL -p $PORT -U $USER_NAME -d $DBNAME -c "\d" > /tmp/postgresql_stats.txt
-    fi
+    echo "Testing with ruby script : "
+    op=`ruby $POSTGRESQL_TEST_SCRIPT $URL $PORT $DBNAME $SSLMODE $USER_NAME $PASSWORD `
 
-    # grep any one metric from the output file
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 -o "$op" == "error" ]; then
         echo
         echo "WARNING: Could not connect to PostgreSQL Server with $URL, "
         echo "  username $USER_NAME, password $PASSWORD and port $PORT."
@@ -147,7 +158,7 @@ setup_postgresql()
     done
 
     while true; do
-      echo -n "Add another Databse for PostgreSQL server? [Yn] "
+      echo -n "Add another Database for PostgreSQL server? [Yn] "
       read yn
       if [ -n "`echo $yn | egrep -io '^n'`" ]; then
         break
@@ -551,6 +562,18 @@ for gem in $gems; do
   gem=${gem//[\'\" ]/}
   IFS=',' read -r -a array <<< "$gem"
   echo "Installing gem ${array[0]}"
+
+  if [ -z "${array[1]}" ]; then
+      is_gem_present=`gem query --name-matches "^${array[0]}$" --installed`
+  else
+      is_gem_present=`gem query --name-matches "^${array[0]}$" --installed --version ${array[1]}`
+  fi
+
+  if [[ "${is_gem_present}" == "true" ]]; then
+      echo "  - Skipping gem installation as ${array[0]} is already installed"
+      continue
+  fi
+
   if [ -z "${array[1]}" ]
     then
     gem install --no-ri --no-rdoc ${array[0]} >> $PKG_INST_OUT
@@ -589,6 +612,7 @@ echo
 
 CONFIG_FILE="/usr/local/copperegg/ucm-metrics/postgresql/config.yml"
 AGENT_FILE="/usr/local/copperegg/ucm-metrics/postgresql/postgresql.rb"
+POSTGRESQL_TEST_SCRIPT="/usr/local/copperegg/ucm-metrics/postgresql/test_postgresql_connection.rb"
 
 echo
 echo "Creating config.yml."

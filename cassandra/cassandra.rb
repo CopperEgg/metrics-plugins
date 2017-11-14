@@ -479,24 +479,25 @@ class CassandraMonitoring
         frequency: @freq, service: service)
     else
       log 'Updating cassandra metric group'
+      metric_group.service = service
       metric_group.frequency = @freq
     end
 
     metric_group.metrics = []
     metric_group.metrics << { type: 'ce_gauge',   name: 'exceptions', unit: 'Exceptions' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'load', unit: 'Bytes' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_size', unit: 'Bytes' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_capacity', unit: 'Bytes' }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'load', unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_size', unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_capacity', unit: 'b' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'key_cache_hits', unit: 'Hits' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'key_cache_requests', unit: 'Requests' }
     metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_recent_hit_rate', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_size', unit: 'Bytes' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_capacity', unit: 'Bytes' }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_size', unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_capacity', unit: 'b' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'row_cache_hits', unit: 'Hits' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'row_cache_requests', unit: 'Requests' }
     metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_recent_hit_rate', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_size', unit: 'Bytes' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_capacity', unit: 'Bytes' }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_size', unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_capacity', unit: 'b' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'counter_cache_hits', unit: 'Hits' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'counter_cache_requests', unit: 'Requests' }
     metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_recent_hit_rate', unit: '' }
@@ -510,20 +511,20 @@ class CassandraMonitoring
     metric_group.metrics << { type: 'ce_gauge',   name: 'write_latency', unit: 'ms' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'read_latency', unit: 'ms' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_disk_space_used',
-                              unit: 'Bytes' }
+                              unit: 'b' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_false_positive',
                               unit: 'False Positives' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'live_disk_space_used', unit: 'Bytes' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'total_disk_space_used', unit: 'Bytes' }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'live_disk_space_used', unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'total_disk_space_used', unit: 'b' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'sstable_count', unit: 'Tables' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_column_count', unit: 'Columns' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_data_size', unit: 'Bytes' }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_data_size', unit: 'b' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_switch_count', unit: 'Times' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_false_ratio', unit: '' }
     metric_group.metrics << { type: 'ce_gauge',   name: 'compression_ratio', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'min_row_size', unit: 'Bytes' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'max_row_size', unit: 'Bytes' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'mean_row_size', unit: 'Bytes' }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'min_row_size', unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'max_row_size', unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'mean_row_size', unit: 'b' }
 
     metric_group.save
     metric_group
@@ -535,7 +536,7 @@ class CassandraMonitoring
 
     # Create a dashboard for all identifiers:
     CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                      is_database: true)
+                                      is_database: true, service: 'cassandra')
   end
 
   def ensure_metric_group(metric_group, service)

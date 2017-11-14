@@ -172,6 +172,7 @@ def ensure_oracle_metric_group(metric_group, group_name, group_label, service)
       frequency: @freq, service: service)
   else
     log 'Updating oracle DB metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -202,7 +203,7 @@ def ensure_oracle_metric_group(metric_group, group_name, group_label, service)
                            label: 'Maximum Named Users Allowed'}
   # Connection Time
   metric_group.metrics << {type: 'ce_gauge_f', name: 'connection_time', position: 14,
-                           label: 'Connection Time', unit: 'seconds'}
+                           label: 'Connection Time', unit: 's'}
   metric_group.save
   return metric_group
 end
@@ -211,7 +212,7 @@ def create_oracle_dashboard(metric_group, name)
   log 'Creating new Oracle DB Dashboard'
   metrics = metric_group.metrics || []
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: 'oracledb')
 end
 
 ####################################################################
@@ -330,7 +331,7 @@ end
       raise "Could not create a metric group for #{service}" if metric_group.nil?
       log "Checking for existence of #{@config[service]['dashboard']}"
       dashboard = dashboards.nil? ? nil : dashboards.detect { |d| d.name == @config[service]['dashboard'] } ||
-          create_dashboard(service, metric_group)
+          create_oracle_dashboard(metric_group, @config[service]['dashboard'])
       log "Could not create a dashboard for #{service}" if dashboard.nil?
     rescue => e
       log 'Error while creating Metric group/dashboard'

@@ -9,26 +9,43 @@ setup_admin_base_group()
     echo "Configuring MongoDB Admin Service"
 
     echo -n "Mongo Server Metrics Group Name: [$MONGO_ADMIN_GROUP] "
-    read ADMIN_GROUP_NAME
-    if [ -z "$ADMIN_GROUP_NAME" ]; then
-        ADMIN_GROUP_NAME="$MONGO_ADMIN_GROUP"
-    fi
+    while true; do
+        read ADMIN_GROUP_NAME
+        if [ -z "$ADMIN_GROUP_NAME" ]; then
+            ADMIN_GROUP_NAME="$MONGO_ADMIN_GROUP"
+        fi
 
-    echo -n "Mongo Server Metrics Group Label: [$MONGO_ADMIN_LABEL Metrics] "
-    read ADMIN_GROUP_LABEL
-    if [ -z "$ADMIN_GROUP_LABEL" ]; then
-        ADMIN_GROUP_LABEL="$MONGO_ADMIN_LABEL Metrics"
-    fi
+        ADMIN_GROUP_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$ADMIN_GROUP_NAME" $API_HOST/v2/revealmetrics/validate_metric_group_name?service=$MONGO_ADMIN_GROUP)
+
+        if [ "$ADMIN_GROUP_NAME_VALID" == "invalid" ]; then
+            echo -n "This metric group name is already in use for a different service. Enter a different name:"
+        else
+            ADMIN_GROUP_NAME="$ADMIN_GROUP_NAME_VALID"
+            ADMIN_GROUP_LABEL="$ADMIN_GROUP_NAME"
+            break
+        fi
+    done
 
     echo -n "Mongo Server Metrics Dashboard: [$MONGO_ADMIN_LABEL] "
-    read ADMIN_DASHBOARD
-    if [ -z "$ADMIN_DASHBOARD" ]; then
-        ADMIN_DASHBOARD="$MONGO_ADMIN_LABEL"
-    fi
+    while true; do
+        read ADMIN_DASHBOARD
+        if [ -z "$ADMIN_DASHBOARD" ]; then
+            ADMIN_DASHBOARD="$MONGO_ADMIN_LABEL"
+        fi
+
+        ADMIN_DASHBOARD_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$ADMIN_DASHBOARD" $API_HOST/v2/revealmetrics/validate_dashboard_name?service=$MONGO_ADMIN_GROUP)
+
+        if [ "$ADMIN_DASHBOARD_NAME_VALID" == "invalid" ]; then
+            echo -n "This dashboard name is already in use for a different service. Enter a different name:"
+        else
+            break
+        fi
+    done
 
     sed -i "0,/MONGO-ADMIN-GROUP/s//$ADMIN_GROUP_NAME/" $CONFIG_FILE
     sed -i "0,/MONGO-ADMIN-GROUP-LABEL/s//$ADMIN_GROUP_LABEL/" $CONFIG_FILE
     sed -i "0,/MONGO-ADMIN-DASH/s//$ADMIN_DASHBOARD/" $CONFIG_FILE
+    echo "Note: Group Label is same as group name which can be changed from UI"
 }
 
 setup_db_base_group()
@@ -40,26 +57,43 @@ setup_db_base_group()
     echo "Configuring MongoDB Database Service"
 
     echo -n "Mongo Server Metrics Group Name: [$MONGO_DB_GROUP] "
-    read DB_GROUP_NAME
-    if [ -z "$DB_GROUP_NAME" ]; then
-        DB_GROUP_NAME="$MONGO_DB_GROUP"
-    fi
+    while true; do
+        read DB_GROUP_NAME
+        if [ -z "$DB_GROUP_NAME" ]; then
+            DB_GROUP_NAME="$MONGO_DB_GROUP"
+        fi
 
-    echo -n "Mongo Server Metrics Group Label: [$MONGO_DB_LABEL Metrics] "
-    read DB_GROUP_LABEL
-    if [ -z "$DB_GROUP_LABEL" ]; then
-        DB_GROUP_LABEL="$MONGO_DB_LABEL Metrics"
-    fi
+        DB_GROUP_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$DB_GROUP_NAME" $API_HOST/v2/revealmetrics/validate_metric_group_name?service=$MONGO_DB_GROUP)
+
+        if [ "$DB_GROUP_NAME_VALID" == "invalid" ]; then
+            echo -n "This metric group name is already in use for a different service. Enter a different name:"
+        else
+            DB_GROUP_NAME="$DB_GROUP_NAME_VALID"
+            DB_GROUP_LABEL="$DB_GROUP_NAME"
+            break
+        fi
+    done
 
     echo -n "Mongo Server Metrics Dashboard: [$MONGO_DB_LABEL] "
-    read DB_DASHBOARD
-    if [ -z "$DB_DASHBOARD" ]; then
-        DB_DASHBOARD="$MONGO_DB_LABEL"
-    fi
+    while true; do
+        read DB_DASHBOARD
+        if [ -z "$DB_DASHBOARD" ]; then
+            DB_DASHBOARD="$MONGO_DB_LABEL"
+        fi
+
+        DB_DASHBOARD_NAME_VALID=$(curl -su $API_KEY:U -G --data-urlencode "name=$DB_DASHBOARD" $API_HOST/v2/revealmetrics/validate_dashboard_name?service=$MONGO_DB_GROUP)
+
+        if [ "$DB_DASHBOARD_NAME_VALID" == "invalid" ]; then
+            echo -n "This dashboard name is already in use for a different service. Enter a different name:"
+        else
+            break
+        fi
+    done
 
     sed -i "0,/MONGO-DB-GROUP/s//$DB_GROUP_NAME/" $CONFIG_FILE
     sed -i "0,/MONGO-DB-GROUP-LABEL/s//$DB_GROUP_LABEL/" $CONFIG_FILE
     sed -i "0,/MONGO-DB-DASH/s//$DB_DASHBOARD/" $CONFIG_FILE
+    echo "Note: Group Label is same as group name which can be changed from UI"
 }
 
 setup_database()
@@ -80,28 +114,14 @@ setup_database()
 
     # Each database, user and authentication credentials configured by the customer is tested to verify it has the
     # privilege to access stats commands.
-    echo
-    if [ -z $USER_NAME ]; then
-        if [ -z $INITIAL_CHECK ]; then
-            echo "mongo $URL:$PORT/$DBNAME --eval \"db.runCommand({serverStatus: 1})\" > /tmp/mongodb_stats.txt"
-            mongo $URL:$PORT/$DBNAME --eval "db.runCommand({serverStatus: 1})" > /tmp/mongodb_stats.txt
-        else
-            echo "mongo $URL:$PORT/$DBNAME --eval \"db.runCommand({serverStatus: 1})\" > /tmp/mongodb_stats.txt"
-            mongo $URL:$PORT/$DBNAME --eval "db.runCommand({dbstats: 1})" > /tmp/mongodb_stats.txt
-        fi
+    echo "Testing connection with ruby script"
+    echo "For testing MongoDB admin DB connection, '{serverStatus: 1}' command will be used."
+    echo "For testing MongoDB normal DB connection, '{dbstats: 1}' command will be used."
 
-    else
-        if [ -z $INITIAL_CHECK ]; then
-            echo "mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval \"db.runCommand({serverStatus: 1})\" > /tmp/mongodb_stats.txt"
-            mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval "db.runCommand({dbstats: 1})" > /tmp/mongodb_stats.txt
-        else
-            echo "mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval \"db.runCommand({dbstats: 1})\" > /tmp/mongodb_stats.txt"
-            mongo localhost:27017/reporting -u $USER_NAME -p $PASSWORD --authenticationDatabase $DBNAME --eval "db.runCommand({dbstats: 1})" > /tmp/mongodb_stats.txt
-        fi
-    fi
+    op=`ruby $MONGODB_TEST_SCRIPT $URL $PORT $DBNAME $INITIAL_CHECK $USER_NAME $PASSWORD`
 
     # check exit status of last command
-    if [ $? -ne 0 ]; then
+    if [ $? -ne 0 -o "$op" == "error" ]; then
         echo
         echo "WARNING: Could not connect to MongoDB Server with $URL, "
         echo "  username $USER_NAME, password $PASSWORD and port $PORT."
@@ -562,6 +582,18 @@ for gem in $gems; do
   gem=${gem//[\'\" ]/}
   IFS=',' read -r -a array <<< "$gem"
   echo "Installing gem ${array[0]}"
+
+  if [ -z "${array[1]}" ]; then
+      is_gem_present=`gem query --name-matches "^${array[0]}$" --installed`
+  else
+      is_gem_present=`gem query --name-matches "^${array[0]}$" --installed --version ${array[1]}`
+  fi
+
+  if [[ "${is_gem_present}" == "true" ]]; then
+      echo "  - Skipping gem installation as ${array[0]} is already installed"
+      continue
+  fi
+
   if [ -z "${array[1]}" ]
     then
     gem install --no-ri --no-rdoc ${array[0]} >> $PKG_INST_OUT
@@ -581,7 +613,7 @@ for gem in $gems; do
         echo "*** unable to run 'gem install ${array[0]}' manually."
     else
         echo "*** unable to run 'gem install ${array[0]} -v \"${array[1]}\"' manually."
-    fi 
+    fi
     echo "*** "
     echo "********************************************************"
     echo
@@ -601,6 +633,7 @@ echo
 
 CONFIG_FILE="/usr/local/copperegg/ucm-metrics/mongodb/config.yml"
 AGENT_FILE="/usr/local/copperegg/ucm-metrics/mongodb/mongodb.rb"
+MONGODB_TEST_SCRIPT="/usr/local/copperegg/ucm-metrics/mongodb/test_mongodb_connection.rb"
 CONFIG_TEMPLATE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/config-template.yml"
 
 echo

@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
 
-gem 'copperegg', '~> 0.6.3'
+gem 'copperegg', '~> 0.6.4'
 gem 'json_pure', '~> 1.7.6'

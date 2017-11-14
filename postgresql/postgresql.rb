@@ -369,6 +369,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
       :frequency => @freq, service: service)
   else
     log 'Updating postgresql metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -390,7 +391,7 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_gauge', name: 'live_rows', label: 'Live Rows', unit: 'rows'}
   metric_group.metrics << {type: 'ce_gauge', name: 'dead_rows', label: 'Dead Rows', unit: 'rows'}
   metric_group.metrics << {type: 'ce_gauge', name: 'deadlocks', label: 'Deadlocks', unit: 'deadlocks'}
-  metric_group.metrics << {type: 'ce_gauge', name: 'temp_bytes', label: 'Temp Bytes', unit: 'byte/second'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'temp_bytes', label: 'Temp Bytes', unit: 'bps'}
   metric_group.metrics << {type: 'ce_gauge', name: 'temp_files', label: 'Temp Files', unit: 'file/second'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoints_scheduled', label: 'Checkpoints Scheduled', unit: 'checkpoints'}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoints_requested', label: 'Checkpoints Requested', unit: 'checkpoints'}
@@ -399,9 +400,9 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_counter', name: 'buf_written_by_backend', label: 'Buffers Written by Backend', unit: 'buffers'}
   metric_group.metrics << {type: 'ce_counter', name: 'buf_allocated', label: 'Buffers Allocated', unit: 'buffers'}
   metric_group.metrics << {type: 'ce_counter', name: 'fsync_calls_executed', label: 'fsync Calls Executed', unit: 'fsync calls'}
-  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'milliseconds'}
-  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'milliseconds'}
-  metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'bytes'}
+  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'ms'}
+  metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'ms'}
+  metric_group.metrics << {type: 'ce_gauge', name: 'db_size', label: 'Database Size', unit: 'b'}
   metric_group.metrics << {type: 'ce_gauge', name: 'locks', label: 'Locks', unit: 'locks'}
   metric_group.metrics << {type: 'ce_gauge', name: 'connections', label: 'Connections', unit: 'connections'}
   metric_group.metrics << {type: 'ce_gauge', name: 'max_connections', label: 'Max Connections', unit: 'connections'}
@@ -419,13 +420,13 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group
 end
 
-def create_postgresql_dashboard(metric_group, name, server_list)
+def create_postgresql_dashboard(metric_group, name)
   log 'Creating new PostgreSQL Dashboard'
   metrics = metric_group.metrics || []
 
   # Create a dashboard for all identifiers:
   CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
-                                    is_database: true)
+                                    is_database: true, service: 'postgresql')
 end
 
 ####################################################################
@@ -447,7 +448,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'postgresql'
-    create_postgresql_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
+    create_postgresql_dashboard(metric_group, @config[service]['dashboard'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end

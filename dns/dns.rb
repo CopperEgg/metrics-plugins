@@ -250,12 +250,14 @@ def monitor_dns(dns_servers, group_name)
   end
 end
 
-def ensure_dns_metric_group(metric_group, group_name, group_label)
+def ensure_dns_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating DNS metric group'
-    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq)
+    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
+                                              frequency: @freq, service: service)
   else
     log 'Updating DNS metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -269,15 +271,16 @@ def ensure_dns_metric_group(metric_group, group_name, group_label)
   metric_group
 end
 
-def create_couchdb_dashboard(metric_group, name, server_list)
+def create_dns_dashboard(metric_group, name, server_list)
   log 'Creating new DNS Dashboard'
   metrics = metric_group.metrics.map { |metric| metric['name'] }
-  CopperEgg::CustomDashboard.create(metric_group, :name => name, :identifiers => nil, :metrics => metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics, service: 'dns')
 end
 
 def ensure_metric_group(metric_group, service)
   if service == 'dns'
-    return ensure_dns_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'])
+    return ensure_dns_metric_group(metric_group, @config[service]['group_name'], @config[service]['group_label'],
+                                   service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -285,7 +288,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'dns'
-    create_couchdb_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
+    create_dns_dashboard(metric_group, @config[service]['dashboard'], @config[service]['servers'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -314,7 +317,7 @@ begin
   dashboards = CopperEgg::CustomDashboard.find
   metric_groups = CopperEgg::MetricGroup.find
 rescue => e
-  log "Error connecting to server.  Retrying (#{retries}) more times..."
+  log "Error connecting to server.  Retrying (#{setup_retries}) more times..."
   raise e if @debug
 
   sleep 2

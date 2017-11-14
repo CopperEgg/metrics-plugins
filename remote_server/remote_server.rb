@@ -256,12 +256,14 @@ def monitor_remote_server(remote_servers, group_name)
   end
 end
 
-def ensure_remote_server_metric_group(metric_group, group_name, group_label)
+def ensure_remote_server_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating Remote Server metric group'
-    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq)
+    metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label,
+                                              frequency: @freq, service: service)
   else
     log 'Updating Remote Server metric group'
+    metric_group.service = service
     metric_group.frequency = @freq
   end
 
@@ -289,16 +291,17 @@ def ensure_remote_server_metric_group(metric_group, group_name, group_label)
   metric_group
 end
 
-def create_remote_server_dashboard(metric_group, name, server_list)
+def create_remote_server_dashboard(metric_group, name)
   log 'Creating new Remote Server Dashboard'
   metrics = metric_group.metrics.map { |metric| metric['name'] }
-  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics)
+  CopperEgg::CustomDashboard.create(metric_group, name: name, identifiers: nil, metrics: metrics,
+                                    service: 'remote_server')
 end
 
 def ensure_metric_group(metric_group, service)
   if service == 'remote_server'
     return ensure_remote_server_metric_group(metric_group, @config[service]['group_name'],
-      @config[service]['group_label'])
+      @config[service]['group_label'], service)
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -306,8 +309,7 @@ end
 
 def create_dashboard(service, metric_group)
   if service == 'remote_server'
-    create_remote_server_dashboard(metric_group, @config[service]['dashboard'],
-      @config[service]['servers'])
+    create_remote_server_dashboard(metric_group, @config[service]['dashboard'])
   else
     raise CopperEggAgentError.new("Service #{service} not recognized")
   end
@@ -380,7 +382,7 @@ begin
   dashboards = CopperEgg::CustomDashboard.find
   metric_groups = CopperEgg::MetricGroup.find
 rescue => e
-  log "Error connecting to server.  Retrying (#{retries}) more times..."
+  log "Error connecting to server.  Retrying (#{setup_retries}) more times..."
   raise e if @debug
 
   sleep 2
