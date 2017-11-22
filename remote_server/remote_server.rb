@@ -269,23 +269,23 @@ def ensure_remote_server_metric_group(metric_group, group_name, group_label, ser
 
   metric_group.metrics = []
 
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'load_1_min',     label: 'Load Avg (1 min)', unit: '' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'load_5_min',     label: 'Load Avg (5 min)', unit: '' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'load_15_min',    label: 'Load Avg (15 min)', unit: '' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'load_1_min',     label: 'Load Avg (1 min)', unit: '', position: 0 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'load_5_min',     label: 'Load Avg (5 min)', unit: '', position: 1 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'load_15_min',    label: 'Load Avg (15 min)', unit: '', position: 2 }
 
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'ping',           label: 'SSH ping', unit: 'ms' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'root_filled',    label: 'Root partition filled (%)', unit: '%' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'cpu_total',      label: 'CPU consumption (%)', unit: '%' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'ping',           label: 'SSH ping', unit: 'ms', position: 3 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'root_filled',    label: 'Root partition filled (%)', unit: '%', position: 4 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'cpu_total',      label: 'CPU consumption (%)', unit: '%', position: 5 }
 
-  metric_group.metrics << { type: 'ce_gauge',   name: 'free_memory',    label: 'Free Memory', unit: 'b' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'buff_memory',    label: 'Buffered Memory', unit: 'b' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'cach_memory',    label: 'Cached Memory', unit: 'b' }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'free_memory',    label: 'Free Memory', unit: 'b', position: 6 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'buff_memory',    label: 'Buffered Memory', unit: 'b', position: 7 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'cach_memory',    label: 'Cached Memory', unit: 'b', position: 8 }
 
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'disk_read_kb',   label: 'Disk read', unit: 'kb' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'disk_write_kb',  label: 'Disk write', unit: 'kb' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'disk_read_kb',   label: 'Disk read', unit: 'kb', position: 9 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'disk_write_kb',  label: 'Disk write', unit: 'kb', position: 10 }
 
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'network_in_kb',  label: 'Network in', unit: 'kb' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'network_out_kb', label: 'Network out', unit: 'kb' }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'network_in_kb',  label: 'Network in', unit: 'kb', position: 11 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'network_out_kb', label: 'Network out', unit: 'kb', position: 12 }
 
   metric_group.save
   metric_group

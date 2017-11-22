@@ -234,29 +234,29 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label, service)
   metric_group.metrics = []
 
   # Database Metrics
-  metric_group.metrics << { type: 'ce_gauge',   name: 'auth_cache_hits',   label: 'Authentication Cache Hits',     unit: 'Hits' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'auth_cache_misses', label: 'Authentication Cache Misses',   unit: 'Misses' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'db_reads',          label: 'Database Reads',                unit: 'Reads' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'db_writes',         label: 'Database Writes',               unit: 'Writes' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'open_databases',    label: 'Open Databases',                unit: 'Databases' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'open_files',        label: 'Open File Descriptors',         unit: 'Files' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'request_time',      label: 'Request Time',                  unit: 'ms' }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'auth_cache_hits',   label: 'Authentication Cache Hits',     unit: 'Hits',         position: 0 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'auth_cache_misses', label: 'Authentication Cache Misses',   unit: 'Misses',       position: 1 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'db_reads',          label: 'Database Reads',                unit: 'Reads',        position: 2 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'db_writes',         label: 'Database Writes',               unit: 'Writes',       position: 3 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'open_databases',    label: 'Open Databases',                unit: 'Databases',    position: 4 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'open_files',        label: 'Open File Descriptors',         unit: 'Files',        position: 5 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'request_time',      label: 'Request Time',                  unit: 'ms', position: 6 }
 
   # httpd Metrics
-  metric_group.metrics << { type: 'ce_gauge', name: 'bulk_requests',              label: 'Bulk Requests',              unit: 'Requests' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'requests',                   label: 'Total HTTP Requests',        unit: 'Requests' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'temporary_view_reads',       label: 'Temporary View Reads',       unit: 'Reads' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'view_reads',                 label: 'View Reads',                 unit: 'Reads' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'clients_requesting_changes', label: 'Clients Requesting Changes', unit: 'Clients' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'bulk_requests',              label: 'Bulk Requests',              unit: 'Requests', position: 7 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'requests',                   label: 'Total HTTP Requests',        unit: 'Requests', position: 8 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'temporary_view_reads',       label: 'Temporary View Reads',       unit: 'Reads',    position: 9 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'view_reads',                 label: 'View Reads',                 unit: 'Reads',    position: 10 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'clients_requesting_changes', label: 'Clients Requesting Changes', unit: 'Clients',  position: 11 }
 
   # httpd_request_methods Metrics
-  @http_methods.each do |method|
-    metric_group.metrics << { type: 'ce_gauge', name: method, label: "HTTP #{method} Responses", unit: 'Responses' }
+  @http_methods.each_with_index do |method, index|
+    metric_group.metrics << { type: 'ce_gauge', name: method, label: "HTTP #{method} Responses", unit: 'Responses', position: 12+index }
   end
 
   # httpd_status_codes Metrics
-  @status_codes.each do |status_code|
-    metric_group.metrics << { type: 'ce_gauge', name: status_code, label: "HTTP #{status_code} Requests", unit: 'Requests' }
+  @status_codes.each_with_index do |status_code, index|
+    metric_group.metrics << { type: 'ce_gauge', name: status_code, label: "HTTP #{status_code} Requests", unit: 'Requests', position: 18+index  }
   end
 
   metric_group.save

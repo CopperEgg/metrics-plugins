@@ -326,77 +326,77 @@ def ensure_mongo_dbadmin_metric_group(metric_group, group_name, group_label, ser
 
   metric_group.metrics = []
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_regular', unit: 'Asserts', label: 'Regular Asserts Raised' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_warning', unit: 'Warnings', label: 'Warning Asserts' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_msg', unit: 'Asserts', label: 'Assert Messages' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_user', unit: 'Asserts', label: 'User Asserts' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_rollover', unit: 'Rollovers', label: 'Asserts Rollover' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_regular', unit: 'Asserts', label: 'Regular Asserts Raised', position: 0 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_warning', unit: 'Warnings', label: 'Warning Asserts', position: 1 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_msg', unit: 'Asserts', label: 'Assert Messages', position: 2 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_user', unit: 'Asserts', label: 'User Asserts', position: 3 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'asserts_rollover', unit: 'Rollovers', label: 'Asserts Rollover', position: 4 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'connections_available', unit: 'Connections', label: 'Connections Available' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'connections_current', unit: 'Connections', label: 'Current Connections' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'connections_available', unit: 'Connections', label: 'Connections Available', position: 5 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'connections_current', unit: 'Connections', label: 'Current Connections', position: 6 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'page_faults', unit: 'Faults', label: 'Page Faults' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'page_faults', unit: 'Faults', label: 'Page Faults', position: 7 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_inserts', unit: 'Operations', label: 'Insert Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_queries', unit: 'Queries', label: 'Queries' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_updates', unit: 'Operations', label: 'Update Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_deletes', unit: 'Operations', label: 'Delete Operations'  }
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_getmores', unit: 'Operations', label: 'Getmore Operations'  }
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_commands', unit: 'Commands', label: 'Commands'  }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_inserts', unit: 'Operations', label: 'Insert Operations', position: 8 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_queries', unit: 'Queries', label: 'Queries', position: 9 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_updates', unit: 'Operations', label: 'Update Operations', position: 10 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_deletes', unit: 'Operations', label: 'Delete Operations', position: 11  }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_getmores', unit: 'Operations', label: 'Getmore Operations', position: 12  }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_commands', unit: 'Commands', label: 'Commands', position: 13 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_inserts', unit: 'Operations', label: 'Replicated Insert Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_queries', unit: 'Queries', label: 'Replicated Queries' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_updates', unit: 'Operations', label: 'Replicated Update Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_deletes', unit: 'Operations', label: 'Replicated Delete Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_getmores', unit: 'Operations', label: 'Replicated Getmore Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_commands', unit: 'Commands', label: 'Replicated Commands' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_inserts', unit: 'Operations', label: 'Replicated Insert Operations', position: 14 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_queries', unit: 'Queries', label: 'Replicated Queries', position: 15 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_updates', unit: 'Operations', label: 'Replicated Update Operations', position: 16 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_deletes', unit: 'Operations', label: 'Replicated Delete Operations', position: 17 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_getmores', unit: 'Operations', label: 'Replicated Getmore Operations', position: 18 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_commands', unit: 'Commands', label: 'Replicated Commands', position: 19 }
 
-  metric_group.metrics << { type: 'ce_counter', name: 'uptime', unit: 's', label: 'Uptime' }
+  metric_group.metrics << { type: 'ce_counter', name: 'uptime', unit: 's', label: 'Uptime', position: 20 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'cursors_total_open', unit: 'Cursors', label: 'Open Cursors' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'cursors_timedout', unit: 'Cursors', label: 'Timed Out Cursors' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'cursors_total_open', unit: 'Cursors', label: 'Open Cursors', position: 21 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'cursors_timedout', unit: 'Cursors', label: 'Timed Out Cursors', position: 22 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'document_inserted', unit: 'Documents', label: 'Documents Inserted' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'document_deleted', unit: 'Documents', label: 'Documents Deleted' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'document_updated', unit: 'Documents', label: 'Documents Updated' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'document_returned', unit: 'Documents', label: 'Documents Returned' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'document_inserted', unit: 'Documents', label: 'Documents Inserted', position: 23 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'document_deleted', unit: 'Documents', label: 'Documents Deleted', position: 24 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'document_updated', unit: 'Documents', label: 'Documents Updated', position: 25 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'document_returned', unit: 'Documents', label: 'Documents Returned', position: 26 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_fastmod', unit: 'Operations', label: 'Fastmode Update Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_idhack', unit: 'Queries', label: 'Id Hack Queries' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_fastmod', unit: 'Operations', label: 'Fastmode Update Operations', position: 27 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_idhack', unit: 'Queries', label: 'Id Hack Queries', position: 28 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_scan_and_order', unit: 'Queries', label: 'Scan and Order Queries' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_scan_and_order', unit: 'Queries', label: 'Scan and Order Queries', position: 29 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'get_last_error_write_timeouts', unit: 'Operations', label: 'getLastError Write Timeouts' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'get_last_error_write_concerns', unit: 'Concerns', label: 'getLastError Write Concerns' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'get_last_error_write_timeouts', unit: 'Operations', label: 'getLastError Write Timeouts', position: 30 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'get_last_error_write_concerns', unit: 'Concerns', label: 'getLastError Write Concerns', position: 31 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'ttl_deleted_documents', unit: 'Documents', label: 'Documents Deleted from Collections with a ttl index per second' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'ttl_passes', unit: 'Operations', label: 'ttl Indexes Passes' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'ttl_deleted_documents', unit: 'Documents', label: 'Documents Deleted from Collections with a ttl index per second', position: 32 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'ttl_passes', unit: 'Operations', label: 'ttl Indexes Passes', position: 33 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'batch_applied_num', unit: 'Batches', label: 'Batches Applied Number' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'batch_time_spent', unit: 'ms', label: 'Time Spent on applying operations from Oplog' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'batch_applied_num', unit: 'Batches', label: 'Batches Applied Number', position: 34 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'batch_time_spent', unit: 'ms', label: 'Time Spent on applying operations from Oplog', position: 35 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'mem_resident', unit: 'mb', label: 'Resident Memory' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'mem_virtual', unit: 'mb', label: 'Virtual Memory' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'mem_mapped', unit: 'mb', label: 'Mapped Memory' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'mem_resident', unit: 'mb', label: 'Resident Memory', position: 36 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'mem_virtual', unit: 'mb', label: 'Virtual Memory', position: 37 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'mem_mapped', unit: 'mb', label: 'Mapped Memory', position: 38 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'global_lock_total_time', unit: 'Microseconds', label: 'Global Lock Total Time' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'global_lock_total_time', unit: 'Microseconds', label: 'Global Lock Total Time', position: 39 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'current_queue_lock', unit: 'Operations', label: 'Current Lock Queue' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'current_queue_read_lock', unit: 'Operations', label: 'Current Read Lock Queue' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'current_queue_write_lock', unit: 'Operations', label: 'Current Write Lock Queue' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'current_queue_lock', unit: 'Operations', label: 'Current Lock Queue', position: 40 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'current_queue_read_lock', unit: 'Operations', label: 'Current Read Lock Queue', position: 41 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'current_queue_write_lock', unit: 'Operations', label: 'Current Write Lock Queue', position: 42 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'index_item_scan_per_query', unit: 'Items', label: 'Index Items Scanned During Query' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'records_moved', unit: 'Records', label: 'Records Moved' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'index_item_scan_per_query', unit: 'Items', label: 'Index Items Scanned During Query', position: 43 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'records_moved', unit: 'Records', label: 'Records Moved', position: 44 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'max_buffer_size', unit: 'b', label: 'Max Buffer Size' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_operations', unit: 'Operations', label: 'Oplog Operations' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_buffer_size', unit: 'b', label: 'Oplog Buffer Size' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_qry_proc_create_ps', unit: 'Queries', label: 'Oplog Queries Processes' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'max_buffer_size', unit: 'b', label: 'Max Buffer Size', position: 45 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_operations', unit: 'Operations', label: 'Oplog Operations', position: 46 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_buffer_size', unit: 'b', label: 'Oplog Buffer Size', position: 47 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'oplog_qry_proc_create_ps', unit: 'Queries', label: 'Oplog Queries Processes', position: 48 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'repl_sync_src_data_read', unit: 'b', label: 'Replication Sync Source Data Read' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'op_read_from_repl_src', unit: 'Operations', label: 'Operations Reads from Replication Source' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'repl_sync_src_data_read', unit: 'b', label: 'Replication Sync Source Data Read', position: 49 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'op_read_from_repl_src', unit: 'Operations', label: 'Operations Reads from Replication Source', position: 50 }
 
-  metric_group.metrics << { type: 'ce_gauge', name: 'getmores_op', unit: 'Operations', label: 'getMore Operations' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'getmores_op', unit: 'Operations', label: 'getMore Operations', position: 51 }
 
   metric_group.save
   metric_group
