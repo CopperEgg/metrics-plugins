@@ -510,7 +510,7 @@ class CassandraMonitoring
     metric_group.metrics << { type: 'ce_gauge',   name: 'write_count', unit: 'Requests', position: 23 }
     metric_group.metrics << { type: 'ce_gauge',   name: 'write_latency', unit: 'ms', position: 24 }
     metric_group.metrics << { type: 'ce_gauge',   name: 'read_latency', unit: 'ms', position: 25 }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_disk_space_used', unit: 'Bytes', position: 26 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_disk_space_used', unit: 'b', position: 26 }
     metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_false_positive',
                               unit: 'False Positives', position: 27 }
     metric_group.metrics << { type: 'ce_gauge',   name: 'live_disk_space_used', unit: 'b', position: 28 }
