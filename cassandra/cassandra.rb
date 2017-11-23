@@ -484,47 +484,46 @@ class CassandraMonitoring
     end
 
     metric_group.metrics = []
-    metric_group.metrics << { type: 'ce_gauge',   name: 'exceptions', unit: 'Exceptions' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'load', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_size', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_capacity', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'key_cache_hits', unit: 'Hits' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'key_cache_requests', unit: 'Requests' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_recent_hit_rate', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_size', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_capacity', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'row_cache_hits', unit: 'Hits' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'row_cache_requests', unit: 'Requests' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_recent_hit_rate', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_size', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_capacity', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'counter_cache_hits', unit: 'Hits' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'counter_cache_requests', unit: 'Requests' }
-    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_recent_hit_rate', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'active_tasks', unit: 'Tasks' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'pending_tasks', unit: 'Tasks' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'completed_tasks', unit: 'Tasks' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'currently_blocked_tasks', unit: 'Tasks' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'total_blocked_tasks', unit: 'Tasks' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'read_count', unit: 'Requests' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'write_count', unit: 'Requests' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'write_latency', unit: 'ms' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'read_latency', unit: 'ms' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_disk_space_used',
-                              unit: 'b' }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'exceptions', unit: 'Exceptions', position: 0 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'load', unit: 'b', position: 1 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_size', unit: 'b', position: 2 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_capacity', unit: 'b', position: 3 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'key_cache_hits', unit: 'Hits', position: 4 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'key_cache_requests', unit: 'Requests', position: 5 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'key_cache_recent_hit_rate', unit: '', position: 6 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_size', unit: 'b', position: 7 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_capacity', unit: 'b', position: 8 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'row_cache_hits', unit: 'Hits', position: 9 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'row_cache_requests', unit: 'Requests', position: 10 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'row_cache_recent_hit_rate', unit: '', position: 11 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_size', unit: 'b', position: 12 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_capacity', unit: 'b', position: 13 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'counter_cache_hits', unit: 'Hits', position: 14 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'counter_cache_requests', unit: 'Requests', position: 15 }
+    metric_group.metrics << { type: 'ce_gauge_f', name: 'counter_cache_recent_hit_rate', unit: '', position: 16 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'active_tasks', unit: 'Tasks', position: 17 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'pending_tasks', unit: 'Tasks', position: 18 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'completed_tasks', unit: 'Tasks', position: 19 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'currently_blocked_tasks', unit: 'Tasks', position: 20 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'total_blocked_tasks', unit: 'Tasks', position: 21 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'read_count', unit: 'Requests', position: 22 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'write_count', unit: 'Requests', position: 23 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'write_latency', unit: 'ms', position: 24 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'read_latency', unit: 'ms', position: 25 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_disk_space_used', unit: 'b', position: 26 }
     metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_false_positive',
-                              unit: 'False Positives' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'live_disk_space_used', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'total_disk_space_used', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'sstable_count', unit: 'Tables' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_column_count', unit: 'Columns' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_data_size', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_switch_count', unit: 'Times' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_false_ratio', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'compression_ratio', unit: '' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'min_row_size', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'max_row_size', unit: 'b' }
-    metric_group.metrics << { type: 'ce_gauge',   name: 'mean_row_size', unit: 'b' }
+                              unit: 'False Positives', position: 27 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'live_disk_space_used', unit: 'b', position: 28 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'total_disk_space_used', unit: 'b', position: 29 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'sstable_count', unit: 'Tables', position: 30 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_column_count', unit: 'Columns', position: 31 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_data_size', unit: 'b', position: 32 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'memtable_switch_count', unit: 'Times', position: 33 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'bloom_filter_false_ratio', unit: '', position: 34 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'compression_ratio', unit: '', position: 35 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'min_row_size', unit: 'b', position: 36 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'max_row_size', unit: 'b', position: 37 }
+    metric_group.metrics << { type: 'ce_gauge',   name: 'mean_row_size', unit: 'b', position: 38 }
 
     metric_group.save
     metric_group

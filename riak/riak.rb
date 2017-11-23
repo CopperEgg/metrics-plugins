@@ -220,46 +220,46 @@ def ensure_riak_metric_group(metric_group, group_name, group_label)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'node_gets',              			:unit => 'Node GETs'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'node_puts',                	    :unit => 'Node PUTs'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'vnode_gets',             			:unit => 'vnode GETs'}
-  metric_group.metrics << {:type => 'ce_counter', :name => 'vnode_puts',				    :unit => 'vnode PUTs'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_gets',    :unit => 'Node GETs',  :position => 0}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_puts',    :unit => 'Node PUTs',  :position => 1}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'vnode_gets',   :unit => 'vnode GETs', :position => 2}
+  metric_group.metrics << {:type => 'ce_counter', :name => 'vnode_puts',   :unit => 'vnode PUTs', :position => 3}
 
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'read_repairs',					:unit => 'Node Read Repairs'}
-  metric_group.metrics << {:type => 'ce_counter',   :name => 'read_repairs_total',			:unit => 'Total Node Read Repairs'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'read_repairs',			 :unit => 'Node Read Repairs', :position => 4}
+  metric_group.metrics << {:type => 'ce_counter', :name => 'read_repairs_total', :unit => 'Total Node Read Repairs', :position => 5}
 
-  metric_group.metrics << {:type => 'ce_counter',   :name => 'coord_redirs_total',			:unit => 'Redirected Requests'}
+  metric_group.metrics << {:type => 'ce_counter', :name => 'coord_redirs_total', :unit => 'Redirected Requests', :position => 6}
 
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_mean',		:unit => 'Mean Object Size'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_median',	:unit => 'Median Object Size'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_95',		:unit => '95th %ile Object Size'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_100',		:unit => '100th %ile Object Size'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_mean',		:unit => 'Mean Object Size', :position => 7}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_median', :unit => 'Median Object Size', :position => 8}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_95',		  :unit => '95th %ile Object Size', :position => 9}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_objsize_100',		:unit => '100th %ile Object Size', :position => 10}
 
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_mean',		:unit => 'Mean GET Latency (us)'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_median',		:unit => 'Median GET Latency (us)'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_95',			:unit => '95th %tile GET Latency (us)'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_100',			:unit => '100th %ile GET Latency (us)'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_mean',		:unit => 'Mean GET Latency (us)', :position => 11}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_median',	:unit => 'Median GET Latency (us)', :position => 12}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_95',			:unit => '95th %tile GET Latency (us)', :position => 13}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_time_100',			:unit => '100th %ile GET Latency (us)', :position => 14}
 
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_mean',		:unit => 'Mean PUT Latency (us)'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_median',		:unit => 'Median PUT Latency (us)'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_95',			:unit => '95th %ile PUT Latency (us)'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_100',			:unit => '100th %ile PUT Latency (us)'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_mean',		:unit => 'Mean PUT Latency (us)', :position => 15}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_median',	:unit => 'Median PUT Latency (us)', :position => 16}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_95',			:unit => '95th %ile PUT Latency (us)', :position => 17}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_put_fsm_time_100',			:unit => '100th %ile PUT Latency (us)', :position => 18}
 
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_mean',	:unit => 'Mean GET Siblings'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_median',	:unit => 'Median GET Siblings'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_95',		:unit => '95th %ile GET Siblings'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_100',		:unit => '100th %ile GET Siblings'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_mean',	:unit => 'Mean GET Siblings', :position => 19}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_median',:unit => 'Median GET Siblings', :position => 20}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_95',		:unit => '95th %ile GET Siblings', :position => 21}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'node_get_fsm_siblings_100',		:unit => '100th %ile GET Siblings', :position => 22}
 
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'memory_processes_used',			:unit => 'Total memory used'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'sys_process_count',				:unit => 'Number of processes'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'pbc_connect',					:unit => 'Protocol Buffer Connections'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'pbc_active',					:unit => 'Active Protocol Buffer Connections'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'memory_processes_used',	:unit => 'Total memory used', :position => 23}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'sys_process_count',		  :unit => 'Number of processes', :position => 24}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'pbc_connect',					  :unit => 'Protocol Buffer Connections', :position => 25}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'pbc_active',					  :unit => 'Active Protocol Buffer Connections', :position => 26}
 
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'ring_num_partitions',           :unit => 'Partitions in the ring'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'riak_kv_vnodes_running',        :unit => 'Running vnodes'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'riak_pipe_vnodes_running',      :unit => 'Running pipe vnodes'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'precommit_fail',                :unit => 'Precommit fails'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'postcommit_fail',               :unit => 'Postcommit fails'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'ring_num_partitions',      :unit => 'Partitions in the ring', :position => 27}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'riak_kv_vnodes_running',   :unit => 'Running vnodes', :position => 28}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'riak_pipe_vnodes_running', :unit => 'Running pipe vnodes', :position => 29}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'precommit_fail',           :unit => 'Precommit fails', :position => 30}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'postcommit_fail',          :unit => 'Postcommit fails', :position => 31}
 
   metric_group.save
   metric_group

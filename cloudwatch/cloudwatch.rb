@@ -693,12 +693,12 @@ def ensure_ec2_metric_group(metric_group, group_name, group_label)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'running',        :unit => 'Instances'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'stopped',        :unit => 'Instances'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'pending',        :unit => 'Instances'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'shutting_down',  :unit => 'Instances'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'terminated',     :unit => 'Instances'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'stopping',       :unit => 'Instances'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'running',        :unit => 'Instances', :position => 0}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'stopped',        :unit => 'Instances', :position => 1}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'pending',        :unit => 'Instances', :position => 2}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'shutting_down',  :unit => 'Instances', :position => 3}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'terminated',     :unit => 'Instances', :position => 4}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'stopping',       :unit => 'Instances', :position => 5}
   metric_group.save
   metric_group
 end
@@ -715,14 +715,14 @@ def ensure_elb_metric_group(metric_group, group_name, group_label)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'RequestCount',         :unit => 'Requests'}
-  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'Latency',              :unit => 'ms'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_Backend_2XX', :unit => 'Responses'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_Backend_5XX', :unit => 'Responses'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_ELB_5XX',     :unit => 'Responses'}
-  metric_group.metrics << {:type => 'ce_gauge',   :name => 'BackendConnectionErrors', :unit => 'Errors'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SurgeQueueLength',     :unit => 'Requests'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SpilloverCount',       :unit => 'Requests'}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'RequestCount',         :unit => 'Requests', :position => 0}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'Latency',              :unit => 'ms', :position => 1}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_Backend_2XX', :unit => 'Responses', :position => 2}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_Backend_5XX', :unit => 'Responses', :position => 3}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'HTTPCode_ELB_5XX',     :unit => 'Responses', :position => 4}
+  metric_group.metrics << {:type => 'ce_gauge',   :name => 'BackendConnectionErrors', :unit => 'Errors', :position => 5}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SurgeQueueLength',     :unit => 'Requests', :position => 6}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SpilloverCount',       :unit => 'Requests', :position => 7}
 
   # FIXME: doesn't work right
   #metric_group.metrics << {:type => 'ce_gauge',   :name => 'HealthyHostCount',     :unit => 'Hosts'}
@@ -744,16 +744,16 @@ def ensure_rds_metric_group(metric_group, group_name, group_label)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'DiskQueueDepth'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'ReadLatency',     :unit => 'ms'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'WriteLatency',     :unit => 'ms'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'CPUUtilization',     :unit => '%'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'FreeableMemory',     :unit => 'MB'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'FreeStorageSpace',     :unit => 'MB'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'DatabaseConnections'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'ReadIOPS',     :unit => 'IO/s'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'WriteIOPS',     :unit => 'IO/s'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'ReplicaLag',     :unit => 's'}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'DiskQueueDepth', :position => 0}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'ReadLatency',      :unit => 'ms', :position => 1}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'WriteLatency',     :unit => 'ms', :position => 2}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'CPUUtilization',   :unit => '%', :position => 3}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'FreeableMemory',   :unit => 'MB', :position => 4}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'FreeStorageSpace', :unit => 'MB', :position => 5}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'DatabaseConnections', :position => 6}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'ReadIOPS',         :unit => 'IO/s', :position => 7}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'WriteIOPS',        :unit => 'IO/s', :position => 8}
+  metric_group.metrics << {:type => 'ce_gauge_f', :name => 'ReplicaLag',       :unit => 's', :position => 9}
   metric_group.save
   metric_group
 end
@@ -770,14 +770,14 @@ def ensure_billing_metric_group(metric_group, group_name, group_label)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'Total',        :unit => 'USD'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'EC2',          :unit => 'USD'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'RDS',          :unit => 'USD'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'S3',           :unit => 'USD'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'Route53',      :unit => 'USD'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SimpleDB',     :unit => 'USD'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SNS',          :unit => 'USD'}
-  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'DataTransfer', :unit => 'USD'}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'Total',        :unit => 'USD', :position => 0}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'EC2',          :unit => 'USD', :position => 1}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'RDS',          :unit => 'USD', :position => 2}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'S3',           :unit => 'USD', :position => 3}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'Route53',      :unit => 'USD', :position => 4}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SimpleDB',     :unit => 'USD', :position => 5}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'SNS',          :unit => 'USD', :position => 6}
+  metric_group.metrics << {:type => 'ce_gauge_f',   :name => 'DataTransfer', :unit => 'USD', :position => 7}
   metric_group.save
   metric_group
 end
@@ -792,13 +792,13 @@ def ensure_sqs_metric_group(metric_group, group_name, group_label)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesSent', :unit => 'Count'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesReceived', :unit => 'Count'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesDeleted', :unit => 'Count'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfEmptyReceives', :unit => 'Count'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesVisible', :unit => 'Count'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesNotVisible', :unit => 'Count'}
-  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesDelayed', :unit => 'Count'}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesSent', :unit => 'Count', :position => 0}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesReceived', :unit => 'Count', :position => 1}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfMessagesDeleted', :unit => 'Count', :position => 2}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'NumberOfEmptyReceives', :unit => 'Count', :position => 3}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesVisible', :unit => 'Count', :position => 4}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesNotVisible', :unit => 'Count', :position => 5}
+  metric_group.metrics << {:type => 'ce_gauge', :name => 'ApproximateNumberOfMessagesDelayed', :unit => 'Count', :position => 6}
 
   metric_group.save
   metric_group

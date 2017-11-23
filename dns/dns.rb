@@ -263,9 +263,9 @@ def ensure_dns_metric_group(metric_group, group_name, group_label, service)
 
   metric_group.metrics = []
 
-  metric_group.metrics << { type: 'ce_gauge',   name: 'response',      label: 'Response', unit: '' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'response_time', label: 'Response time',  unit: 'ms' }
-  metric_group.metrics << { type: 'ce_gauge',   name: 'match',         label: 'Response match',   unit: '' }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'response',      label: 'Response', unit: '', position: 0 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'response_time', label: 'Response time', unit: 'ms', position: 1 }
+  metric_group.metrics << { type: 'ce_gauge',   name: 'match',         label: 'Response match', unit: '', position: 2 }
 
   metric_group.save
   metric_group
