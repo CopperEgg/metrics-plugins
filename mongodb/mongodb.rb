@@ -303,11 +303,11 @@ def ensure_mongodb_metric_group(metric_group, group_name, group_label, service)
   end
 
   metric_group.metrics = []
-  metric_group.metrics << { type: 'ce_gauge', name: 'db_objects', unit: 'Objects', label: 'DB Objects' }
-  metric_group.metrics << { type: 'ce_gauge', name: 'db_indexes', unit: 'Indexes', label: 'DB Index' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_datasize', unit: 'b', label: 'DB Data Size' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_storage_size', unit: 'b', label: 'DB Storage Size' }
-  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_index_size', unit: 'b', label: 'DB Index Size' }
+  metric_group.metrics << { type: 'ce_gauge', name: 'db_objects', unit: 'Objects', label: 'DB Objects', position: 0 }
+  metric_group.metrics << { type: 'ce_gauge', name: 'db_indexes', unit: 'Indexes', label: 'DB Index', position: 1 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_datasize', unit: 'b', label: 'DB Data Size', position: 2 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_storage_size', unit: 'b', label: 'DB Storage Size', position: 3 }
+  metric_group.metrics << { type: 'ce_gauge_f', name: 'db_index_size', unit: 'b', label: 'DB Index Size', position: 4 }
 
   metric_group.save
   metric_group
