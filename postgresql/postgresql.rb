@@ -357,6 +357,7 @@ def monitor_postgresql(pg_servers, group_name)
         rslt = CopperEgg::        MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i,         metrics)
       end
     end
+
     interruptible_sleep @freq
   end
 end
@@ -504,22 +505,29 @@ end
       trap('INT') { child_interrupt if !@interrupted }
       trap('TERM') { child_interrupt if !@interrupted }
       last_failure = 0
-      retries = MAX_RETRIES
+      last_retry = Time.now.to_i
+      retries = 0
       begin
         monitor_service(service, metric_group)
       rescue => e
-        log "Error monitoring #{service}.  Retrying (#{retries}) more times..."
         log "#{e.inspect}"
         log e.backtrace[0..30].join("\n") if @debug
         # updated 7-9-2013, removed the # before if @debug
         raise e   if @debug
-        sleep 2
-        retries -= 1
-        # reset retries counter if last failure was more than 10 minutes ago
-        retries = MAX_RETRIES if Time.now.to_i - last_failure > 600
-        last_failure = Time.now.to_i
-      retry if retries > 0
-        raise e
+        # reset retries counter if last retry is more than frequency of 5 successful tries
+        retries = 0 if Time.now.to_i - last_retry > @freq * 5
+        if retries < 30
+          sleep_time = 2
+        elsif retries < 60
+          sleep_time = 60
+        else
+          sleep_time = 3600
+        end
+        retries += 1
+        log "Error monitoring #{service}.  Retrying after (#{sleep_time}) seconds..."
+        sleep sleep_time
+        last_retry = Time.now.to_i
+      retry
       end
     }
     @worker_pids.push child_pid
