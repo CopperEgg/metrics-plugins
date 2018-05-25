@@ -176,6 +176,21 @@ def monitor_memcached(mc_servers, group_name)
 
       log "#{group_name} - #{mchost['name']} - #{Time.now.to_i} \n #{metrics.inspect}" if @verbose
       CopperEgg::MetricSample.save(group_name, mchost['name'], Time.now.to_i, metrics)
+      begin
+        if mchost['tags']
+          unless @tags_updated[mchost['name']]
+            mchost['tags'].strip.split(' ').each do |tag|
+              tag = CopperEgg::Tag.new({ name: tag})
+              tag.objects = [mchost['name']]
+              tag.save
+            end
+            @tags_updated[mchost['name']] = true
+            log "Updated tags for object #{mchost['name']}"
+          end
+        end
+      rescue
+        log "Error in updating tags for object #{mchost['name']}"
+      end
     end
     interruptible_sleep @freq
   end
@@ -326,6 +341,7 @@ config_file = "#{base_path}/config.yml"
 @interupted = false
 @worker_pids = []
 @services = []
+@tags_updated = {}
 
 # Options and examples:
 opts.each do |opt, arg|

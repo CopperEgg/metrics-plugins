@@ -97,6 +97,7 @@ config_file = "#{base_path}/config.yml"
 @interupted = false
 @worker_pids = []
 @services = []
+@tags_updated = {}
 
 opts.each do |opt, arg|
   case opt
@@ -216,10 +217,25 @@ def monitor_single_dns(dns_server, group_name)
     metrics['response_time']  = benchmark_result.real * 1000
     metrics['match']          = match_metric unless match.nil?
 
-    log "Sending sample to API "
+    log 'Sending sample to API '
     log "#{group_name} - #{object_name} - #{Time.now.to_i} - #{metrics.inspect}"
 
     CopperEgg::MetricSample.save(group_name, object_name, Time.now.to_i, metrics)
+    begin
+      if dns_server['tags']
+        unless @tags_updated[dns_server['name']]
+          dns_server['tags'].strip.split(' ').each do |tag|
+            tag = CopperEgg::Tag.new({ name: tag})
+            tag.objects = [dns_server['name']]
+            tag.save
+          end
+          @tags_updated[dns_server['name']] = true
+          log "Updated tags for object #{dns_server['name']}"
+        end
+      end
+    rescue
+      log "Error in updating tags for object #{dns_server['name']}"
+    end
     interruptible_sleep((@freq - benchmark_result.real).to_i)
   end
 end

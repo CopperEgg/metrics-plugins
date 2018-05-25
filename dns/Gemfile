@@ -1,4 +1,4 @@
 source 'http://rubygems.org'
 
 gem 'dnsruby', '1.59.3'
-gem 'copperegg', '0.6.4'
+gem 'copperegg', '0.6.5'

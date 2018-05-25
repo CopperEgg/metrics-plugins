@@ -40,6 +40,7 @@ class CassandraMonitoring
     @interrupted = false
     @worker_pids = []
     @services = []
+    @tags_updated = {}
 
     # Look for config file
     @config = YAML.load(File.open(config_file))
@@ -466,6 +467,21 @@ class CassandraMonitoring
         # puts "#{group_name} - #{mhost['name']} - #{Time.now.to_i} - #{metrics.inspect}"
         CopperEgg::MetricSample.save(group_name, "#{mhost['name']}",
                                      Time.now.to_i, metrics)
+        begin
+          if mhost['tags']
+            unless @tags_updated[mhost['name']]
+              mhost['tags'].strip.split(' ').each do |tag|
+                tag = CopperEgg::Tag.new({ name: tag})
+                tag.objects = [mhost['name']]
+                tag.save
+              end
+              @tags_updated[mhost['name']] = true
+              log "Updated tags for object #{mhost['name']}"
+            end
+          end
+        rescue
+          log "Error in updating tags for object #{mhost['name']}"
+        end
       end
       interruptible_sleep @freq
     end

@@ -129,6 +129,15 @@ setup_oracledb()
     echo "    port: \"$PORT\""           >> $CONFIG_FILE
     echo "    user: \"$USER_NAME\""  >> $CONFIG_FILE
     echo "    password: \"$PASSWORD\""   >> $CONFIG_FILE
+
+    echo "Enter tags you want to add to this Oracle DB(optional): "
+    echo "Note: use space(' ') to separate multiple tags"
+    echo "      tags can not contain ', \" and |"
+    read tags
+    if [ -n "${tags}" ]; then
+        echo "    tags: \"${tags}\""        >> $CONFIG_FILE
+    fi
+
 }
 
 

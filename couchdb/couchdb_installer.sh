@@ -123,6 +123,15 @@ setup_couchdb()
     echo "    url: \"$URL:$PORT\"" >> $CONFIG_FILE
     echo "    user: \"$USER_NAME\""       >> $CONFIG_FILE
     echo "    password: \"$PASSWORD\""        >> $CONFIG_FILE
+
+    echo "Enter tags you want to add to this CouchDB(optional): "
+    echo "Note: use space(' ') to separate multiple tags"
+    echo "      tags can not contain ', \" and |"
+    read tags
+    if [ -n "${tags}" ]; then
+        echo "    tags: \"${tags}\""        >> $CONFIG_FILE
+    fi
+
 }
 
 
