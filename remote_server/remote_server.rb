@@ -55,6 +55,7 @@ config_file = "#{@base_path}config.yml"
 @interupted = false
 @worker_pids = []
 @services = []
+@tags_updated = {}
 
 def help
   puts 'usage: $0 args'
@@ -219,6 +220,21 @@ def monitor_single_remote(remote_server, group_name)
         logd "#{group_name} - #{object_name} - #{Time.now} - #{metrics.inspect}"
 
         CopperEgg::MetricSample.save(group_name, object_name, Time.now.to_i, metrics)
+        begin
+          if remote_server['tags']
+            unless @tags_updated[remote_server['name']]
+              remote_server['tags'].strip.split(' ').each do |tag|
+                tag = CopperEgg::Tag.new({ name: tag})
+                tag.objects = [remote_server['name']]
+                tag.save
+              end
+              @tags_updated[remote_server['name']] = true
+              log "Updated tags for object #{remote_server['name']}"
+            end
+          end
+        rescue
+          log "Error in updating tags for object #{remote_server['name']}"
+        end
       rescue SocketError => so_e
         log "SocketError  #{so_e}"
       rescue StandardError => st_e

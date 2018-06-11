@@ -1,5 +1,5 @@
 source 'http://rubygems.org'
-gem 'copperegg', '~> 0.6.4'
+gem 'copperegg', '~> 0.6.5'
 gem 'json_pure', '~> 1.7.6'
 gem 'bson', '~> 4.1.1'
 gem 'mongo', '~> 2.2.7'

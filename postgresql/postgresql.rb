@@ -99,6 +99,7 @@ config_file = "#{base_path}/config.yml"
 @interupted = false
 @worker_pids = []
 @services = []
+@tags_updated = {}
 
 # Options and examples:
 opts.each do |opt, arg|
@@ -355,6 +356,21 @@ def monitor_postgresql(pg_servers, group_name)
 
         puts "#{group_name} - #{mhost['name']} - #{db['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
         rslt = CopperEgg::        MetricSample.save(group_name, "#{mhost['name']}_#{db['name']}", Time.now.to_i,         metrics)
+        begin
+          if db['tags']
+            unless @tags_updated["#{mhost['name']}_#{db['name']}"]
+              db['tags'].strip.split(' ').each do |tag|
+                tag = CopperEgg::Tag.new({ name: tag})
+                tag.objects = ["#{mhost['name']}_#{db['name']}"]
+                tag.save
+              end
+              @tags_updated["#{mhost['name']}_#{db['name']}"] = true
+              log "Updated tags for object #{"#{mhost['name']}_#{db['name']}"}"
+            end
+          end
+        rescue
+          log "Error in updating tags for object #{"#{mhost['name']}_#{db['name']}"}"
+        end
       end
     end
 

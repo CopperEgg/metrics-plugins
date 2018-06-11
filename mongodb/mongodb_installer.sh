@@ -141,15 +141,21 @@ setup_database()
     fi
 
     if [ "$INITIAL_CHECK" == "initial" ]; then
+        echo "Enter tags you want to add to this MongoDB(optional): "
+        echo "Note: use space(' ') to separate multiple tags"
+        echo "      tags can not contain ', \" and |"
+        read TAGS
+
         ADMIN_BLOCK_NAME="  - name: \"$LABEL\""
         ADMIN_BLOCK_HOST="    hostname: \"$URL\""
         ADMIN_BLOCK_PORT="    port: $PORT"
         ADMIN_BLOCK_USER="    username: \"$USER_NAME\""
         ADMIN_BLOCK_PWD="    password: \"$PASSWORD\""
         ADMIN_BLOCK_DB_NAME="    database: \"$DBNAME\""
+        ADMIN_BLOCK_TAGS="    tags: \"$TAGS\""
 
         ADMIN_DATA="$ADMIN_BLOCK_NAME\n$ADMIN_BLOCK_HOST\n$ADMIN_BLOCK_PORT\n$ADMIN_BLOCK_USER\n$ADMIN_BLOCK_PWD\n$ADMIN_BLOCK_DB_NAME"
-        ADMIN_DATA="$ADMIN_DATA\n  - ANOTHER-ADMIN-SERVER"
+        ADMIN_DATA="$ADMIN_DATA\n$ADMIN_BLOCK_TAGS\n  - ANOTHER-ADMIN-SERVER"
         sed -i "0,/  - ANOTHER-ADMIN-SERVER/s//$ADMIN_DATA/" $CONFIG_FILE
 
         DB_BLOCK_START="    databases:"
