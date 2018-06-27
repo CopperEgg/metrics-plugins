@@ -6,7 +6,7 @@ require 'pg'
 end
 
 begin
-  if ARG[4].nil? || ARGV[4] == ''
+  if ARGV[4].nil? || ARGV[4] == ''
     connection = PG.connect(host: ARGV[0],
                             port:     ARGV[1],
                             dbname:   ARGV[2],
