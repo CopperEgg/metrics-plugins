@@ -419,11 +419,11 @@ def ensure_postgresql_metric_group(metric_group, group_name, group_label, servic
   metric_group.metrics << {type: 'ce_counter', name: 'fsync_calls_executed', label: 'fsync Calls Executed', unit: 'fsync calls', position: 25}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_writing_time', label: 'Checkpoint Processing - Writing Time', unit: 'ms', position: 26}
   metric_group.metrics << {type: 'ce_counter', name: 'checkpoint_sync_time', label: 'Checkpoint Processing - Synchronizing Time', unit: 'ms', position: 27}
-  metric_group.metrics << {type: 'ce_counter', name: 'db_size', label: 'Database Size', unit: 'b', position: 28}
-  metric_group.metrics << {type: 'ce_counter', name: 'locks', label: 'Locks', unit: 'locks', position: 29}
-  metric_group.metrics << {type: 'ce_gauge', name: 'connections', label: 'Connections', unit: 'connections', position: 30}
-  metric_group.metrics << {type: 'ce_counter', name: 'max_connections', label: 'Max Connections', unit: 'connections', position: 31}
-  metric_group.metrics << {type: 'ce_counter', name: 'percent_used_connections', label: 'Percentage Used Connections', unit: '% connections', position: 32}
+  metric_group.metrics << {type: 'ce_gauge',   name: 'db_size', label: 'Database Size', unit: 'b', position: 28}
+  metric_group.metrics << {type: 'ce_gauge',   name: 'locks', label: 'Locks', unit: 'locks', position: 29}
+  metric_group.metrics << {type: 'ce_gauge',   name: 'connections', label: 'Connections', unit: 'connections', position: 30}
+  metric_group.metrics << {type: 'ce_gauge',   name: 'max_connections', label: 'Max Connections', unit: 'connections', position: 31}
+  metric_group.metrics << {type: 'ce_gauge',   name: 'percent_used_connections', label: 'Percentage Used Connections', unit: '% connections', position: 32}
   metric_group.metrics << {type: 'ce_counter', name: 'heap_blocks_read', label: 'Heap Blocks Read', unit: 'blocks', position: 33}
   metric_group.metrics << {type: 'ce_counter', name: 'heap_blocks_hit', label: 'Heap Blocks Hit', unit: 'hits', position: 34}
   metric_group.metrics << {type: 'ce_counter', name: 'index_blocks_read', label: 'Index Blocks Read', unit: 'blocks', position: 35}
