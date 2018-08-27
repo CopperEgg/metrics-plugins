@@ -271,7 +271,6 @@ def get_stats(pgcxn, dbname)
     FROM
         pg_stat_all_tables AS stat_tables;
     })[0])
-  pgcxn.close
 
   res
 end
