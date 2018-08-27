@@ -288,17 +288,17 @@ def monitor_postgresql(pg_servers, group_name)
       pg_dbs = mhost['databases']
       pg_dbs.each do |db|
         return if @interrupted
-
-        pgcxn = connect_to_postgresql(mhost['hostname'], mhost['port'].to_i, db['username'], db['password'], db['name'], mhost['sslmode'])
-        if pgcxn == nil
-          log '[skipping]'
-          next
-        end
-
         begin
+          pgcxn = connect_to_postgresql(mhost['hostname'], mhost['port'].to_i, db['username'], db['password'], db['name'], mhost['sslmode'])
+          if pgcxn == nil
+            log '[skipping]'
+            next
+          end
           curr_stats = get_stats(pgcxn, db['name'])
+          pgcxn.close
         rescue Exception => e
           log "Error getting postgresql stats from: #{mhost['hostname']}, #{db['name']} [skipping]"
+          pgcxn.close rescue nil
           next
         end
 
