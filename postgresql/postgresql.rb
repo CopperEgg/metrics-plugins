@@ -289,7 +289,8 @@ def monitor_postgresql(pg_servers, group_name)
       pg_dbs.each do |db|
         return if @interrupted
         begin
-          pgcxn = connect_to_postgresql(mhost['hostname'], mhost['port'].to_i, db['username'], db['password'], db['name'], mhost['sslmode'])
+          pgcxn = connect_to_postgresql(mhost['hostname'], mhost['port'].to_i, db['username'], db['password'],
+                                        db['name'], mhost['sslmode'])
           if pgcxn == nil
             log '[skipping]'
             next
