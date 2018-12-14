@@ -154,6 +154,78 @@ log "Update frequency set to #{@freq}s."
 
 ####################################################################
 
+def fetch_and_post_metrics (rhost, uri_s, old )
+  log "Fetching Metrics from #{uri_s}"
+  begin
+    uri = URI.parse("#{rhost['url'] + uri_s}?range=60")
+
+    unless rhost['user'].empty? && rhost['password'].empty?
+      request = Net::HTTP::Get.new(uri.request_uri)
+      request.basic_auth(rhost['user'], rhost['password'])
+      response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
+    else
+      response = Net::HTTP.get_response(uri)
+    end
+
+    return nil unless response.code == '200'
+
+    # Parse json reply
+    rstats = JSON.parse(response.body)
+
+  rescue StandardError => e
+    log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
+    log "More information : #{e.inspect}"
+    return
+  end
+  metrics = {}
+  val_key = old ? "current" : "value"
+
+  # Database Metrics
+  metrics['auth_cache_hits']    = rstats['couchdb']['auth_cache_hits'][val_key].to_i
+  metrics['auth_cache_misses']  = rstats['couchdb']['auth_cache_misses'][val_key].to_i
+  metrics['db_reads']           = rstats['couchdb']['database_reads'][val_key].to_i
+  metrics['db_writes']          = rstats['couchdb']['database_writes'][val_key].to_i
+  metrics['open_databases']     = rstats['couchdb']['open_databases'][val_key].to_i
+  metrics['open_files']         = rstats['couchdb']['open_os_files'][val_key].to_i
+  if old
+    metrics['request_time']       = rstats['couchdb']['request_time'][val_key].to_f
+    metrics['bulk_requests']         = rstats['httpd']['bulk_requests'][val_key].to_i
+    metrics['requests']              = rstats['httpd']['requests'][val_key].to_i
+    metrics['temporary_view_reads']  = rstats['httpd']['temporary_view_reads'][val_key].to_i
+    metrics['view_reads']            = rstats['httpd']['view_reads'][val_key].to_i
+    metrics['clients_requesting_changes'] = rstats['httpd']['clients_requesting_changes'][val_key].to_i
+    # httpd_request_methods Metrics
+    @http_methods.each do |method|
+      metrics[method] = rstats['httpd_request_methods'][method][val_key].to_i
+    end
+
+    # httpd_status_codes Metrics
+    @status_codes.each do |status_code|
+      metrics[status_code] = rstats['httpd_status_codes'][status_code][val_key].to_i
+    end
+  else
+    metrics['request_time']       = rstats['couchdb']['request_time'][val_key]['arithmetic_mean'].to_f
+    metrics['bulk_requests']         = rstats['couchdb']['httpd']['bulk_requests'][val_key].to_i
+    metrics['requests']              = rstats['couchdb']['httpd']['requests'][val_key].to_i
+    metrics['temporary_view_reads']  = rstats['couchdb']['httpd']['temporary_view_reads'][val_key].to_i
+    metrics['view_reads']            = rstats['couchdb']['httpd']['view_reads'][val_key].to_i
+    metrics['clients_requesting_changes'] = rstats['couchdb']['httpd']['clients_requesting_changes'][val_key].to_i
+    log @http_methods
+    log "KJSLKFJLKASDJF"
+    log @status_codes
+    # httpd_request_methods Metrics
+    @http_methods.each do |method|
+      metrics[method] = rstats['couchdb']['httpd_request_methods'][method][val_key].to_i
+    end
+
+    # httpd_status_codes Metrics
+    @status_codes.each do |status_code|
+      metrics[status_code] = rstats['couchdb']['httpd_status_codes'][status_code][val_key].to_i
+    end
+  end
+  metrics
+end
+
 def monitor_couchdb(couchdb_servers, group_name)
   log 'Monitoring CouchDB: '
   return if @interrupted
@@ -165,7 +237,7 @@ def monitor_couchdb(couchdb_servers, group_name)
       return if @interrupted
 
       begin
-        uri = URI.parse("#{rhost['url']}/_stats?range=60")
+        uri = URI.parse("#{rhost['url']}/")
 
         unless rhost['user'].empty? && rhost['password'].empty?
           request = Net::HTTP::Get.new(uri.request_uri)
@@ -178,7 +250,7 @@ def monitor_couchdb(couchdb_servers, group_name)
         return nil unless response.code == '200'
 
         # Parse json reply
-        rstats = JSON.parse(response.body)
+        meta = JSON.parse(response.body)
 
       rescue StandardError => e
         log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
@@ -186,51 +258,90 @@ def monitor_couchdb(couchdb_servers, group_name)
         next
       end
 
-      metrics = {}
+      return unless meta
+      old_v = "1.6.1"
+      v1 = old_v.split('.').map{|s|s.to_i}
+      v2 = meta['version'].split('.').map{|s|s.to_i}
+      old = ( (v2 <=> v1) == 1 ) ? false : true
 
-      # Database Metrics
-      metrics['auth_cache_hits']    = rstats['couchdb']['auth_cache_hits']['current'].to_i
-      metrics['auth_cache_misses']  = rstats['couchdb']['auth_cache_misses']['current'].to_i
-      metrics['db_reads']           = rstats['couchdb']['database_reads']['current'].to_i
-      metrics['db_writes']          = rstats['couchdb']['database_writes']['current'].to_i
-      metrics['open_databases']     = rstats['couchdb']['open_databases']['current'].to_i
-      metrics['open_files']         = rstats['couchdb']['open_os_files']['current'].to_i
-      metrics['request_time']       = rstats['couchdb']['request_time']['current'].to_f
+      if !old
+        log "Setting config for new versions"
+        begin
+          uri = URI.parse("#{rhost['url']}/_membership")
 
-      # httpd Metrics
-      metrics['bulk_requests']         = rstats['httpd']['bulk_requests']['current'].to_i
-      metrics['requests']              = rstats['httpd']['requests']['current'].to_i
-      metrics['temporary_view_reads']  = rstats['httpd']['temporary_view_reads']['current'].to_i
-      metrics['view_reads']            = rstats['httpd']['view_reads']['current'].to_i
-      metrics['clients_requesting_changes'] = rstats['httpd']['clients_requesting_changes']['current'].to_i
+          unless rhost['user'].empty? && rhost['password'].empty?
+            request = Net::HTTP::Get.new(uri.request_uri)
+            request.basic_auth(rhost['user'], rhost['password'])
+            response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
+          else
+            response = Net::HTTP.get_response(uri)
+          end
 
-      # httpd_request_methods Metrics
-      @http_methods.each do |method|
-        metrics[method] = rstats['httpd_request_methods'][method]['current'].to_i
-      end
+          return nil unless response.code == '200'
 
-      # httpd_status_codes Metrics
-      @status_codes.each do |status_code|
-        metrics[status_code] = rstats['httpd_status_codes'][status_code]['current'].to_i
-      end
+          # Parse json reply
+          nodes = JSON.parse(response.body)
 
-      puts "#{group_name} - #{rhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
-      CopperEgg::MetricSample.save(group_name, rhost['name'], Time.now.to_i, metrics)
-      begin
-        if rhost['tags']
-          unless @tags_updated[rhost['name']]
-            rhost['tags'].strip.split(' ').each do |tag|
-              tag = CopperEgg::Tag.new({ name: tag})
-              tag.objects = [rhost['name']]
-              tag.save
+        rescue StandardError => e
+          log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
+          log "More information : #{e.inspect}"
+          next
+        end
+        nodes = (nodes.has_key? 'cluster_nodes')? nodes['cluster_nodes'] : []
+        nodes.each do |node|
+          uri_s = "/_node/#{node}/_stats"
+          metrics = fetch_and_post_metrics(rhost, uri_s, old)
+          if metrics.nil? || metrics.empty?
+            log "Error : Skipping node #{node}"
+            next
+          end
+          host_node_name = "#{node}_"+rhost['name']
+          puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}"
+          CopperEgg::MetricSample.save(group_name, host_node_name, Time.now.to_i, metrics)
+
+          begin
+            if rhost['tags']
+              unless @tags_updated[host_node_name]
+                rhost['tags'].strip.split(' ').each do |tag|
+                  tag = CopperEgg::Tag.new({ name: tag})
+                  tag.objects = [host_node_name]
+                  tag.save
+                end
+                @tags_updated[host_node_name] = true
+                log "Updated tags for object #{host_node_name}"
+              end
             end
-            @tags_updated[rhost['name']] = true
-            log "Updated tags for object #{rhost['name']}"
+          rescue
+            log "Error in updating tags for object #{host_node_name}"
           end
         end
-      rescue
-        log "Error in updating tags for object #{rhost['name']}"
+      else
+        uri_s = "/_stats"
+        metrics = fetch_and_post_metrics(rhost, uri_s, old)
+        if metrics.nil? || metrics.empty?
+          log "Error : Skipping node #{node}"
+          next
+        end
+        puts "#{group_name} - #{rhost['name']} - #{Time.now.to_i} - #{metrics.inspect}"
+        CopperEgg::MetricSample.save(group_name, rhost['name'], Time.now.to_i, metrics)
+
+        begin
+          if rhost['tags']
+            unless @tags_updated[rhost['name']]
+              rhost['tags'].strip.split(' ').each do |tag|
+                tag = CopperEgg::Tag.new({ name: tag})
+                tag.objects = [rhost['name']]
+                tag.save
+              end
+              @tags_updated[rhost['name']] = true
+              log "Updated tags for object #{rhost['name']}"
+            end
+          end
+        rescue
+          log "Error in updating tags for object #{rhost['name']}"
+        end
       end
+
     end
     interruptible_sleep @freq
   end
@@ -240,7 +351,7 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating CouchDB metric group'
     metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq,
-      service: service)
+                                              service: service)
   else
     log 'Updating CouchDB metric group'
     metric_group.service = service
