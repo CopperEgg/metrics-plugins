@@ -92,7 +92,7 @@ config_file = "#{base_path}/config.yml"
 @debug = false
 @verbose = false
 @freq = 60
-@interupted = false
+@interrupted = false
 @worker_pids = []
 @services = []
 @tags_updated = {}
@@ -179,29 +179,8 @@ def db_query (rhost, uri_s)
   response
 end
 
-def post_metrics(group_name, rhost, metrics, node = nil )
+def fetch_and_post_metrics (group_name, rhost, old, node = nil)
   host_node_name = (node.nil?)? "#{rhost['name']}" : "#{node}_"+rhost['name']
-  puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
-  CopperEgg::MetricSample.save(group_name, host_node_name, Time.now.to_i, metrics)
-
-  begin
-    if rhost['tags']
-      unless @tags_updated[host_node_name]
-        rhost['tags'].strip.split(' ').each do |tag|
-          tag = CopperEgg::Tag.new({ name: tag})
-          tag.objects = [host_node_name]
-          tag.save
-        end
-        @tags_updated[host_node_name] = true
-        log "Updated tags for object #{host_node_name}"
-      end
-    end
-  rescue
-    log "Error in updating tags for object #{host_node_name}"
-  end
-end
-
-def fetch_and_post_metrics (rhost, old, node = nil)
   log "Fetching Metrics"
   uri_s = old ? "/_stats?range=60" : "/_node/#{node}/_stats?range=60"
   rstats = db_query(rhost, uri_s)
@@ -248,16 +227,35 @@ def fetch_and_post_metrics (rhost, old, node = nil)
       metrics[status_code] = rstats['couchdb']['httpd_status_codes'][status_code][val_key].to_i
     end
   end
-  metrics
+
+  if metrics.nil? || metrics.empty?
+    log "Error : Skipping node #{host_node_name}"
+    return
+  end
+
+  puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
+  CopperEgg::MetricSample.save(group_name, host_node_name, Time.now.to_i, metrics)
+
+  begin
+    if rhost['tags']
+      unless @tags_updated[host_node_name]
+        rhost['tags'].strip.split(' ').each do |tag|
+          tag = CopperEgg::Tag.new({ name: tag})
+          tag.objects = [host_node_name]
+          tag.save
+        end
+        @tags_updated[host_node_name] = true
+        log "Updated tags for object #{host_node_name}"
+      end
+    end
+  rescue
+    log "Error in updating tags for object #{host_node_name}"
+  end
 end
 
 def monitor_couchdb(couchdb_servers, group_name)
   log 'Monitoring CouchDB: '
-  return if @interrupted
-
-  while !@interupted do
-    return if @interrupted
-
+  while !@interrupted do
     couchdb_servers.each do |rhost|
       return if @interrupted
       meta = db_query(rhost, "/")
@@ -271,21 +269,10 @@ def monitor_couchdb(couchdb_servers, group_name)
         nodes = db_query(rhost, "/_membership")
         nodes = (nodes.has_key? 'cluster_nodes')? nodes['cluster_nodes'] : []
         nodes.each do |node|
-          metrics = fetch_and_post_metrics(rhost, old, node)
-          if metrics.nil? || metrics.empty?
-            log "Error : Skipping node #{node}"
-            next
-          end
-
-          post_metrics(group_name, rhost, metrics, node)
+          fetch_and_post_metrics(group_name, rhost, old, node)
         end
       else
-        metrics = fetch_and_post_metrics(rhost, old)
-        if metrics.nil? || metrics.empty?
-          log "Error : Skipping node #{node}"
-          next
-        end
-        post_metrics(group_name, rhost, metrics)
+        fetch_and_post_metrics(group_name, rhost, old)
       end
 
     end
