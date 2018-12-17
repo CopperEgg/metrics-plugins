@@ -154,10 +154,11 @@ log "Update frequency set to #{@freq}s."
 
 ####################################################################
 
-def fetch_and_post_metrics (rhost, uri_s, old )
-  log "Fetching Metrics from #{uri_s}"
+def fetch_and_post_metrics (rhost, old, node = nil)
+  log "Fetching Metrics"
+  uri_s = old ? "/_stats?range=60" : "/_node/#{node}/_stats?range=60"
   begin
-    uri = URI.parse("#{rhost['url'] + uri_s}?range=60")
+    uri = URI.parse("#{rhost['url'] + uri_s}")
 
     unless rhost['user'].empty? && rhost['password'].empty?
       request = Net::HTTP::Get.new(uri.request_uri)
@@ -210,9 +211,6 @@ def fetch_and_post_metrics (rhost, uri_s, old )
     metrics['temporary_view_reads']  = rstats['couchdb']['httpd']['temporary_view_reads'][val_key].to_i
     metrics['view_reads']            = rstats['couchdb']['httpd']['view_reads'][val_key].to_i
     metrics['clients_requesting_changes'] = rstats['couchdb']['httpd']['clients_requesting_changes'][val_key].to_i
-    log @http_methods
-    log "KJSLKFJLKASDJF"
-    log @status_codes
     # httpd_request_methods Metrics
     @http_methods.each do |method|
       metrics[method] = rstats['couchdb']['httpd_request_methods'][method][val_key].to_i
@@ -259,12 +257,11 @@ def monitor_couchdb(couchdb_servers, group_name)
       end
 
       return unless meta
-      old_v = "1.6.1"
-      v1 = old_v.split('.').map{|s|s.to_i}
-      v2 = meta['version'].split('.').map{|s|s.to_i}
-      old = ( (v2 <=> v1) == 1 ) ? false : true
+      v1 = Gem::Version.new('1.6.1')
+      v2 = Gem::Version.new(meta['version'])
+      old = ( v2 > v1 ) ? false : true
 
-      if !old
+      unless old
         log "Setting config for new versions"
         begin
           uri = URI.parse("#{rhost['url']}/_membership")
@@ -289,14 +286,13 @@ def monitor_couchdb(couchdb_servers, group_name)
         end
         nodes = (nodes.has_key? 'cluster_nodes')? nodes['cluster_nodes'] : []
         nodes.each do |node|
-          uri_s = "/_node/#{node}/_stats"
-          metrics = fetch_and_post_metrics(rhost, uri_s, old)
+          metrics = fetch_and_post_metrics(rhost, old, node)
           if metrics.nil? || metrics.empty?
             log "Error : Skipping node #{node}"
             next
           end
           host_node_name = "#{node}_"+rhost['name']
-          puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}"
+          puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
           CopperEgg::MetricSample.save(group_name, host_node_name, Time.now.to_i, metrics)
 
           begin
@@ -316,13 +312,12 @@ def monitor_couchdb(couchdb_servers, group_name)
           end
         end
       else
-        uri_s = "/_stats"
-        metrics = fetch_and_post_metrics(rhost, uri_s, old)
+        metrics = fetch_and_post_metrics(rhost, old)
         if metrics.nil? || metrics.empty?
           log "Error : Skipping node #{node}"
           next
         end
-        puts "#{group_name} - #{rhost['name']} - #{Time.now.to_i} - #{metrics.inspect}"
+        puts "#{group_name} - #{rhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbosed
         CopperEgg::MetricSample.save(group_name, rhost['name'], Time.now.to_i, metrics)
 
         begin
@@ -351,7 +346,7 @@ def ensure_couchdb_metric_group(metric_group, group_name, group_label, service)
   if metric_group.nil? || !metric_group.is_a?(CopperEgg::MetricGroup)
     log 'Creating CouchDB metric group'
     metric_group = CopperEgg::MetricGroup.new(name: group_name, label: group_label, frequency: @freq,
-                                              service: service)
+      service: service)
   else
     log 'Updating CouchDB metric group'
     metric_group.service = service
