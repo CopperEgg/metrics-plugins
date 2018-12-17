@@ -154,9 +154,7 @@ log "Update frequency set to #{@freq}s."
 
 ####################################################################
 
-def fetch_and_post_metrics (rhost, old, node = nil)
-  log "Fetching Metrics"
-  uri_s = old ? "/_stats?range=60" : "/_node/#{node}/_stats?range=60"
+def db_query (rhost, uri_s)
   begin
     uri = URI.parse("#{rhost['url'] + uri_s}")
 
@@ -171,13 +169,42 @@ def fetch_and_post_metrics (rhost, old, node = nil)
     return nil unless response.code == '200'
 
     # Parse json reply
-    rstats = JSON.parse(response.body)
+    response = JSON.parse(response.body)
 
   rescue StandardError => e
     log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
     log "More information : #{e.inspect}"
     return
   end
+  response
+end
+
+def post_metrics(group_name, rhost, metrics, node = nil )
+  host_node_name = (node.nil?)? "#{rhost['name']}" : "#{node}_"+rhost['name']
+  puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
+  CopperEgg::MetricSample.save(group_name, host_node_name, Time.now.to_i, metrics)
+
+  begin
+    if rhost['tags']
+      unless @tags_updated[host_node_name]
+        rhost['tags'].strip.split(' ').each do |tag|
+          tag = CopperEgg::Tag.new({ name: tag})
+          tag.objects = [host_node_name]
+          tag.save
+        end
+        @tags_updated[host_node_name] = true
+        log "Updated tags for object #{host_node_name}"
+      end
+    end
+  rescue
+    log "Error in updating tags for object #{host_node_name}"
+  end
+end
+
+def fetch_and_post_metrics (rhost, old, node = nil)
+  log "Fetching Metrics"
+  uri_s = old ? "/_stats?range=60" : "/_node/#{node}/_stats?range=60"
+  rstats = db_query(rhost, uri_s)
   metrics = {}
   val_key = old ? "current" : "value"
 
@@ -233,29 +260,7 @@ def monitor_couchdb(couchdb_servers, group_name)
 
     couchdb_servers.each do |rhost|
       return if @interrupted
-
-      begin
-        uri = URI.parse("#{rhost['url']}/")
-
-        unless rhost['user'].empty? && rhost['password'].empty?
-          request = Net::HTTP::Get.new(uri.request_uri)
-          request.basic_auth(rhost['user'], rhost['password'])
-          response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
-        else
-          response = Net::HTTP.get_response(uri)
-        end
-
-        return nil unless response.code == '200'
-
-        # Parse json reply
-        meta = JSON.parse(response.body)
-
-      rescue StandardError => e
-        log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
-        log "More information : #{e.inspect}"
-        next
-      end
-
+      meta = db_query(rhost, "/")
       return unless meta
       v1 = Gem::Version.new('1.6.1')
       v2 = Gem::Version.new(meta['version'])
@@ -263,27 +268,7 @@ def monitor_couchdb(couchdb_servers, group_name)
 
       unless old
         log "Setting config for new versions"
-        begin
-          uri = URI.parse("#{rhost['url']}/_membership")
-
-          unless rhost['user'].empty? && rhost['password'].empty?
-            request = Net::HTTP::Get.new(uri.request_uri)
-            request.basic_auth(rhost['user'], rhost['password'])
-            response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
-          else
-            response = Net::HTTP.get_response(uri)
-          end
-
-          return nil unless response.code == '200'
-
-          # Parse json reply
-          nodes = JSON.parse(response.body)
-
-        rescue StandardError => e
-          log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
-          log "More information : #{e.inspect}"
-          next
-        end
+        nodes = db_query(rhost, "/_membership")
         nodes = (nodes.has_key? 'cluster_nodes')? nodes['cluster_nodes'] : []
         nodes.each do |node|
           metrics = fetch_and_post_metrics(rhost, old, node)
@@ -291,25 +276,8 @@ def monitor_couchdb(couchdb_servers, group_name)
             log "Error : Skipping node #{node}"
             next
           end
-          host_node_name = "#{node}_"+rhost['name']
-          puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
-          CopperEgg::MetricSample.save(group_name, host_node_name, Time.now.to_i, metrics)
 
-          begin
-            if rhost['tags']
-              unless @tags_updated[host_node_name]
-                rhost['tags'].strip.split(' ').each do |tag|
-                  tag = CopperEgg::Tag.new({ name: tag})
-                  tag.objects = [host_node_name]
-                  tag.save
-                end
-                @tags_updated[host_node_name] = true
-                log "Updated tags for object #{host_node_name}"
-              end
-            end
-          rescue
-            log "Error in updating tags for object #{host_node_name}"
-          end
+          post_metrics(group_name, rhost, metrics, node)
         end
       else
         metrics = fetch_and_post_metrics(rhost, old)
@@ -317,24 +285,7 @@ def monitor_couchdb(couchdb_servers, group_name)
           log "Error : Skipping node #{node}"
           next
         end
-        puts "#{group_name} - #{rhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbosed
-        CopperEgg::MetricSample.save(group_name, rhost['name'], Time.now.to_i, metrics)
-
-        begin
-          if rhost['tags']
-            unless @tags_updated[rhost['name']]
-              rhost['tags'].strip.split(' ').each do |tag|
-                tag = CopperEgg::Tag.new({ name: tag})
-                tag.objects = [rhost['name']]
-                tag.save
-              end
-              @tags_updated[rhost['name']] = true
-              log "Updated tags for object #{rhost['name']}"
-            end
-          end
-        rescue
-          log "Error in updating tags for object #{rhost['name']}"
-        end
+        post_metrics(group_name, rhost, metrics)
       end
 
     end
