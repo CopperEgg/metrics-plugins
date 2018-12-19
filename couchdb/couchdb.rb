@@ -92,7 +92,7 @@ config_file = "#{base_path}/config.yml"
 @debug = false
 @verbose = false
 @freq = 60
-@interupted = false
+@interrupted = false
 @worker_pids = []
 @services = []
 @tags_updated = {}
@@ -154,83 +154,127 @@ log "Update frequency set to #{@freq}s."
 
 ####################################################################
 
+def db_query (rhost, uri_s)
+  begin
+    uri = URI.parse("#{rhost['url'] + uri_s}")
+
+    unless rhost['user'].empty? && rhost['password'].empty?
+      request = Net::HTTP::Get.new(uri.request_uri)
+      request.basic_auth(rhost['user'], rhost['password'])
+      response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
+    else
+      response = Net::HTTP.get_response(uri)
+    end
+
+    return nil unless response.code == '200'
+
+    # Parse json reply
+    response = JSON.parse(response.body)
+
+  rescue StandardError => e
+    log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
+    log "More information : #{e.inspect}"
+    return
+  end
+  response
+end
+
+def fetch_and_post_metrics (group_name, rhost, old, node = nil)
+  host_node_name = (node.nil?)? "#{rhost['name']}" : "#{node}_"+rhost['name']
+  log "Fetching Metrics"
+  uri_s = old ? "/_stats?range=60" : "/_node/#{node}/_stats?range=60"
+  rstats = db_query(rhost, uri_s)
+  metrics = {}
+  val_key = old ? "current" : "value"
+
+  # Database Metrics
+  metrics['auth_cache_hits']    = rstats['couchdb']['auth_cache_hits'][val_key].to_i
+  metrics['auth_cache_misses']  = rstats['couchdb']['auth_cache_misses'][val_key].to_i
+  metrics['db_reads']           = rstats['couchdb']['database_reads'][val_key].to_i
+  metrics['db_writes']          = rstats['couchdb']['database_writes'][val_key].to_i
+  metrics['open_databases']     = rstats['couchdb']['open_databases'][val_key].to_i
+  metrics['open_files']         = rstats['couchdb']['open_os_files'][val_key].to_i
+  if old
+    metrics['request_time']       = rstats['couchdb']['request_time'][val_key].to_f
+    metrics['bulk_requests']         = rstats['httpd']['bulk_requests'][val_key].to_i
+    metrics['requests']              = rstats['httpd']['requests'][val_key].to_i
+    metrics['temporary_view_reads']  = rstats['httpd']['temporary_view_reads'][val_key].to_i
+    metrics['view_reads']            = rstats['httpd']['view_reads'][val_key].to_i
+    metrics['clients_requesting_changes'] = rstats['httpd']['clients_requesting_changes'][val_key].to_i
+    # httpd_request_methods Metrics
+    @http_methods.each do |method|
+      metrics[method] = rstats['httpd_request_methods'][method][val_key].to_i
+    end
+
+    # httpd_status_codes Metrics
+    @status_codes.each do |status_code|
+      metrics[status_code] = rstats['httpd_status_codes'][status_code][val_key].to_i
+    end
+  else
+    metrics['request_time']       = rstats['couchdb']['request_time'][val_key]['arithmetic_mean'].to_f
+    metrics['bulk_requests']         = rstats['couchdb']['httpd']['bulk_requests'][val_key].to_i
+    metrics['requests']              = rstats['couchdb']['httpd']['requests'][val_key].to_i
+    metrics['temporary_view_reads']  = rstats['couchdb']['httpd']['temporary_view_reads'][val_key].to_i
+    metrics['view_reads']            = rstats['couchdb']['httpd']['view_reads'][val_key].to_i
+    metrics['clients_requesting_changes'] = rstats['couchdb']['httpd']['clients_requesting_changes'][val_key].to_i
+    # httpd_request_methods Metrics
+    @http_methods.each do |method|
+      metrics[method] = rstats['couchdb']['httpd_request_methods'][method][val_key].to_i
+    end
+
+    # httpd_status_codes Metrics
+    @status_codes.each do |status_code|
+      metrics[status_code] = rstats['couchdb']['httpd_status_codes'][status_code][val_key].to_i
+    end
+  end
+
+  if metrics.nil? || metrics.empty?
+    log "Error : Skipping node #{host_node_name}"
+    return
+  end
+
+  puts "#{group_name} - #{host_node_name} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
+  CopperEgg::MetricSample.save(group_name, host_node_name, Time.now.to_i, metrics)
+
+  begin
+    if rhost['tags']
+      unless @tags_updated[host_node_name]
+        rhost['tags'].strip.split(' ').each do |tag|
+          tag = CopperEgg::Tag.new({ name: tag})
+          tag.objects = [host_node_name]
+          tag.save
+        end
+        @tags_updated[host_node_name] = true
+        log "Updated tags for object #{host_node_name}"
+      end
+    end
+  rescue
+    log "Error in updating tags for object #{host_node_name}"
+  end
+end
+
 def monitor_couchdb(couchdb_servers, group_name)
   log 'Monitoring CouchDB: '
-  return if @interrupted
-
-  while !@interupted do
-    return if @interrupted
-
+  while !@interrupted do
     couchdb_servers.each do |rhost|
       return if @interrupted
+      meta = db_query(rhost, "/")
+      return unless meta
+      v1 = Gem::Version.new('1.6.1')
+      v2 = Gem::Version.new(meta['version'])
+      old = ( v2 > v1 ) ? false : true
 
-      begin
-        uri = URI.parse("#{rhost['url']}/_stats?range=60")
-
-        unless rhost['user'].empty? && rhost['password'].empty?
-          request = Net::HTTP::Get.new(uri.request_uri)
-          request.basic_auth(rhost['user'], rhost['password'])
-          response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
-        else
-          response = Net::HTTP.get_response(uri)
+      unless old
+        log "Setting config for new versions"
+        nodes = db_query(rhost, "/_membership")
+        nodes = (nodes.has_key? 'cluster_nodes')? nodes['cluster_nodes'] : []
+        nodes.each do |node|
+          fetch_and_post_metrics(group_name, rhost, old, node)
         end
-
-        return nil unless response.code == '200'
-
-        # Parse json reply
-        rstats = JSON.parse(response.body)
-
-      rescue StandardError => e
-        log "Error getting CouchDB stats from: #{rhost['url']} [skipping]"
-        log "More information : #{e.inspect}"
-        next
+      else
+        fetch_and_post_metrics(group_name, rhost, old)
       end
 
-      metrics = {}
-
-      # Database Metrics
-      metrics['auth_cache_hits']    = rstats['couchdb']['auth_cache_hits']['current'].to_i
-      metrics['auth_cache_misses']  = rstats['couchdb']['auth_cache_misses']['current'].to_i
-      metrics['db_reads']           = rstats['couchdb']['database_reads']['current'].to_i
-      metrics['db_writes']          = rstats['couchdb']['database_writes']['current'].to_i
-      metrics['open_databases']     = rstats['couchdb']['open_databases']['current'].to_i
-      metrics['open_files']         = rstats['couchdb']['open_os_files']['current'].to_i
-      metrics['request_time']       = rstats['couchdb']['request_time']['current'].to_f
-
-      # httpd Metrics
-      metrics['bulk_requests']         = rstats['httpd']['bulk_requests']['current'].to_i
-      metrics['requests']              = rstats['httpd']['requests']['current'].to_i
-      metrics['temporary_view_reads']  = rstats['httpd']['temporary_view_reads']['current'].to_i
-      metrics['view_reads']            = rstats['httpd']['view_reads']['current'].to_i
-      metrics['clients_requesting_changes'] = rstats['httpd']['clients_requesting_changes']['current'].to_i
-
-      # httpd_request_methods Metrics
-      @http_methods.each do |method|
-        metrics[method] = rstats['httpd_request_methods'][method]['current'].to_i
-      end
-
-      # httpd_status_codes Metrics
-      @status_codes.each do |status_code|
-        metrics[status_code] = rstats['httpd_status_codes'][status_code]['current'].to_i
-      end
-
-      puts "#{group_name} - #{rhost['name']} - #{Time.now.to_i} - #{metrics.inspect}" if @verbose
-      CopperEgg::MetricSample.save(group_name, rhost['name'], Time.now.to_i, metrics)
-      begin
-        if rhost['tags']
-          unless @tags_updated[rhost['name']]
-            rhost['tags'].strip.split(' ').each do |tag|
-              tag = CopperEgg::Tag.new({ name: tag})
-              tag.objects = [rhost['name']]
-              tag.save
-            end
-            @tags_updated[rhost['name']] = true
-            log "Updated tags for object #{rhost['name']}"
-          end
-        end
-      rescue
-        log "Error in updating tags for object #{rhost['name']}"
-      end
     end
     interruptible_sleep @freq
   end
