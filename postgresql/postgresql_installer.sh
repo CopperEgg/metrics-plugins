@@ -331,9 +331,9 @@ do_start()
 
 do_stop()
 {
-    PIDS="\`ps aux|grep \$DAEMON | grep \$CONFIGFILE | awk '{print \$2}'\`"
-    if [ "\$PIDS" != "" ]; then
-        kill \$PIDS
+    PGID="\`ps ax o pgid,args |grep \$DAEMON | grep \$CONFIGFILE | awk '{print \$1}'\`"
+    if [ "\$PGID" != "" ]; then
+        kill -- -\$PGID
     else
         echo "ERROR: process not running"
     fi
