@@ -9,6 +9,8 @@ echo
 # we send one service at a time from main installer script (reveal repo).
 # and then this installer calls specific installer for that service (say couchdb)
 
+export SUPPORT_EMAIL="support@copperegg.com"
+
 if [ -n "`which useradd 2>/dev/null`" ]; then
     COPPEREGG_USER="copperegg"
     COPPEREGG_GROUP="copperegg"
@@ -148,7 +150,7 @@ if [ -z "$HAS_RUBYSSL" ]; then
         fi
         if [ $install_rc -ne 0 ]; then
             echo
-            echo "ERROR: Could not install ruby.  Please report this to support-uptimecm@idera.com"
+            echo "ERROR: Could not install ruby.  Please report this to $SUPPORT_EMAIL"
             echo "  and include all this output, plus the file: $PKG_INST_OUT"
             echo
             exit 1
@@ -191,7 +193,7 @@ if [ -z "$GEM" ]; then
             fi
             if [ $install_rc -ne 0 ]; then
                 echo
-                echo "ERROR: Could not install rubygems package.  Please report this to support-uptimecm@idera.com"
+                echo "ERROR: Could not install rubygems package.  Please report this to $SUPPORT_EMAIL"
                 echo "  and include all this output, plus the file: $PKG_INST_OUT"
                 echo
                 exit 1
@@ -248,7 +250,7 @@ if [ $? -ne 0 ]; then
         update_rubygems >> $PKG_INST_OUT 2>&1
         if [ $? -ne 0 ]; then
             echo
-            echo "ERROR: Could not update rubygems.  Please report this to support-uptimecm@idera.com"
+            echo "ERROR: Could not update rubygems.  Please report this to $SUPPORT_EMAIL"
             echo "  and include all this output, plus the file: $PKG_INST_OUT"
             echo
             exit 1
@@ -290,4 +292,4 @@ esac
 
 echo
 echo "Install complete!"
-echo "If you have any questions, please contact support-uptimecm@idera.com"
+echo "If you have any questions, please contact $SUPPORT_EMAIL"
