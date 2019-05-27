@@ -264,6 +264,9 @@ setup_standard_init()
 
             EXE_FILE=`create_exe_file`
 
+            DESCRIPTION="# Description:        $SUPPORT_EMAIL"
+            AUTHOR="# Author: Uptime Cloud Monitor $SUPPORT_EMAIL"
+
             cat <<ENDINIT > $INIT_FILE
 #!/bin/sh
 ### BEGIN INIT INFO
@@ -273,11 +276,11 @@ setup_standard_init()
 # Default-Start:      2 3 4 5
 # Default-Stop:       0 1 6
 # Short-Description:  analytics collection for Uptime Cloud Monitor Custom Metrics
-# Description:        <support-uptimecm@idera.com>
+$DESCRIPTION
 #
 ### END INIT INFO
 
-# Author: Uptime Cloud Monitor <support-uptimecm@idera.com>
+$AUTHOR
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
@@ -507,7 +510,7 @@ if [ $install_rc -ne 0 ]; then
     echo "********************************************************"
     echo "*** "
     echo "*** WARNING: gem bundler did not install properly!"
-    echo "*** Please contact support-uptimecm@idera.com if you are"
+    echo "*** Please contact $SUPPORT_EMAIL if you are"
     echo "*** unable to run 'gem install bundler -v 1.12.5 ' manually."
     echo "*** "
     echo "********************************************************"
@@ -547,7 +550,7 @@ for gem in $gems; do
     echo "********************************************************"
     echo "*** "
     echo "*** WARNING: gem ${array[0]} did not install properly!"
-    echo "*** Please contact support-uptimecm@idera.com if you are"
+    echo "*** Please contact $SUPPORT_EMAIL if you are"
     if [ -z "${array[1]}" ]
       then
       echo "*** unable to run 'gem install ${array[0]}' manually."
